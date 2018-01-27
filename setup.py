@@ -5,6 +5,7 @@ from setuptools.command.test import test as TestCommand
 import io
 import sys
 import string
+import os
 
 PACKAGE_NAME = 'abnf'
 
