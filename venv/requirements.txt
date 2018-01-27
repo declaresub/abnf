@@ -1,0 +1,6 @@
+-e .
+pyroma
+pylint
+pytest
+pytest-cov
+yapf

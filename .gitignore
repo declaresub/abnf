@@ -1,0 +1,9 @@
+.cache
+.coverage
+*.pyc
+__pycache__
+.tox
+*.egg-info
+# exclude virtual environments. The requirements file for such is stored in venv, and that
+# we want in git.
+venv/py*
