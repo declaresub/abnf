@@ -61,7 +61,7 @@ Activate the virtual environment of your choice:
 
 and install an editable version of the project plus various tools.
 
-    pip install -r venv.requirements.txt
+    pip install -r venv/requirements.txt
 
 Among the tools I use is [yapf](https://github.com/google/yapf) for code formatting.
 
