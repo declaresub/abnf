@@ -20,6 +20,8 @@ from .misc import load_grammar_rules
     ('comment', rfc7230.Rule('comment')),
     ('field-name', rfc7230.Rule('comment')),
     ('partial-URI', rfc7230.Rule('partial-URI')),
+    ('quoted-string', rfc7230.Rule('quoted-string')),
+    ('token', rfc7230.Rule('token')),
 ])
 class Rule(_Rule):
     """Rules from RFC 7231."""

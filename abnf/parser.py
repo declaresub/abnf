@@ -75,6 +75,10 @@ class ParseError(Exception):
 
     pass
 
+class GrammarError(Exception):
+    """Raised in response to errors detected in the grammar."""
+
+    pass
 
 class Literal(object):  #pylint: disable=too-few-public-methods
     """Represents a terminal literal value."""
@@ -428,15 +432,17 @@ class Rule(object):
         :returns: parse tree, new offset at which to continue parsing
         :rtype: Node, int
         :raises ParseError: if source cannot be parsed using rule.
+        :raises GrammarError: if rule has no definition.  This usually means that a 
+            non-terminal in the grammar is not defined or imported.
         """
         try:
             # ensure that rule has been defined.
             definition = self.definition
         except AttributeError as e:
-            raise ParseError('Undefined rule "%s".' % self.name) from e
+            raise GrammarError('Undefined rule "%s".' % self.name) from e
         else:
             try:
-                node, new_start = definition.parse(source, start)
+                node, new_start = self.definition.parse(source, start)
             except ParseError as e:
                 raise ParseError('Rule %s failed at offset %s.' %
                                  (self.name, start)) from e

@@ -16,6 +16,7 @@ from .misc import load_grammar_rules
     ('path-abempty', rfc3986.Rule('path-abempty')),
     ('port', rfc3986.Rule('port')),
     ('query', rfc3986.Rule('query')),
+    ('relative-part', rfc3986.Rule('relative-part')),
     ('scheme', rfc3986.Rule('scheme')),
     ('segment', rfc3986.Rule('segment')),
     ('uri-host', rfc3986.Rule('host')),

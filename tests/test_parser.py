@@ -1,6 +1,6 @@
 import pytest
 from abnf.parser import (Node, LiteralNode, Literal, ABNFGrammarRule, Rule, CharVal, ParseError, Alternation,
-    Concatenation, Repeat, Repetition, Option)
+    Concatenation, Repeat, Repetition, Option, GrammarError)
 
 
 def test_empty_literal():
@@ -159,7 +159,7 @@ def test_option_str():
     assert str(parser) == "Option(Alternation(Literal('foo')))"
 
 def test_rule_undefined():
-    with pytest.raises(ParseError):
+    with pytest.raises(GrammarError):
         Rule('undefined').parse('x', 0)
 
 def test_rule_str():
