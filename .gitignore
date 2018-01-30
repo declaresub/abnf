@@ -1,5 +1,6 @@
 .cache
 .coverage
+.mypy*
 *.pyc
 __pycache__
 .tox
