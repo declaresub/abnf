@@ -188,11 +188,15 @@ def test_rule_make_parser_alternation():
     parser = Rule.make_parser_alternation(node)
     assert parser == Alternation(Rule('a'), Rule('b'))
 
+class XRule(Rule):
+    pass
+
+# an XRule object is created, without definition.
+XRule('foo')
+        
 def test_rule_rules():
-    class XRule(Rule):
-        pass
-    
-    # an XRule object is created, albeit without definition.
-    XRule('foo')
     assert XRule.rules() == [XRule('foo')]
 
+@pytest.mark.parametrize("name, rule", [('foo', XRule('foo')), ('bar', None)])
+def test_rule_get(name, rule):
+    assert XRule.get(name) == rule
