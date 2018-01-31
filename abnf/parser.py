@@ -70,6 +70,34 @@ class LiteralNode(_IterableNode):  #pylint: disable=too-few-public-methods
             self.value.replace('\r', r'\r').replace('\n', r'\n'))
 
 
+class NodeVisitor(object):
+    """An external visitor class."""
+
+    def __init__(self):
+        self._node_method_cache = {}
+
+    def visit(self, node, context=None):
+        return self._node_method(node)(node, context)
+
+    @staticmethod
+    def _dont_visit(node, context):
+        return None
+
+    def _node_method(self, node):
+        node_name = node.name.casefold()
+        try:
+            node_method = self._node_method_cache[node_name]
+        except KeyError:
+            try:
+                node_method = getattr(self, 'visit_%s' % node_name.replace('-', '_'))
+            except AttributeError:
+                node_method = self._dont_visit
+
+            self._node_method_cache[node_name] = node_method
+
+        return node_method
+
+
 class ParseError(Exception):
     """Raised in response to errors during parsing."""
 
@@ -138,27 +166,7 @@ class Literal(object):  #pylint: disable=too-few-public-methods
         return "Literal('%s')" % str(value)
 
 
-class CharVal(Literal):  #pylint: disable=too-few-public-methods
-    """A parser for literals created from a char-val node."""
-
-    def __init__(self, node):
-        context = {}
-        self.visit(node, context)
-        try:
-            super(CharVal, self).__init__(context['value'],
-                                          context['case_sensitive'])
-        except KeyError as e:
-            raise ParseError('Invalid node %s.' % str(node)) from e
-
-    def visit(self, node, context):
-        """Visit a node by invoking visit_node_name."""
-        method_name = 'visit_%s' % node.name.replace('-', '_')
-        try:
-            getattr(self, method_name)(node, context)
-        except AttributeError:
-            # skip node.
-            pass
-
+class CharValNodeVisitor(NodeVisitor):
     def visit_char_val(self, node, context):
         """Visit a char-val node."""
         for child in node.children:
@@ -176,9 +184,25 @@ class CharVal(Literal):  #pylint: disable=too-few-public-methods
         for child in node.children:
             self.visit(child, context)
 
-    def visit_quoted_string(self, node, context):  # pylint: disable=no-self-use
+    @staticmethod
+    def visit_quoted_string(node, context):
         """Visit a quoted-string node."""
         context['value'] = node.value[1:-1]
+
+
+class CharVal(Literal):  #pylint: disable=too-few-public-methods
+    """A parser for literals created from a char-val node."""
+    
+    visitor = CharValNodeVisitor()
+
+    def __init__(self, node):
+        context = {}
+        self.visitor.visit(node, context)
+        try:
+            super(CharVal, self).__init__(context['value'],
+                                          context['case_sensitive'])
+        except KeyError as e:
+            raise ParseError('Invalid node %s.' % str(node)) from e
 
 
 class NumVal(Literal):  #pylint: disable=too-few-public-methods
@@ -432,7 +456,7 @@ class Rule(object):
         :returns: parse tree, new offset at which to continue parsing
         :rtype: Node, int
         :raises ParseError: if source cannot be parsed using rule.
-        :raises GrammarError: if rule has no definition.  This usually means that a 
+        :raises GrammarError: if rule has no definition.  This usually means that a
             non-terminal in the grammar is not defined or imported.
         """
         try:
@@ -461,7 +485,7 @@ class Rule(object):
 
         _name = name.casefold()
         return cls._obj_map.get((cls, _name), cls._obj_map.get((Rule, _name), default))
-        
+
     @classmethod
     def make_parser(cls, node: Node):
         """Creates a parser from node via invocation of some other make_parser_* method,
