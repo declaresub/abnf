@@ -2,4 +2,4 @@
 
 __version__ = '0.0.0'
 
-from .parser import Rule, Node, LiteralNode, NodeVisitor, ParseError
+from .parser import Rule, Node, LiteralNode, NodeVisitor, ParseError, GrammarError
