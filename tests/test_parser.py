@@ -203,12 +203,12 @@ def test_rule_get(name, rule):
 
 def test_parse_all_pass():
     src = 'moof'
-    node, start = ABNFGrammarRule('rulename').parse_all(src)
-    assert node.value == src and start == len(src)
+    node = ABNFGrammarRule('rulename').parse_all(src)
+    assert node.value == src
 
 def test_parse_all_fail():
     src = 'rule name'
     with pytest.raises(ParseError):
-        node, start = ABNFGrammarRule('rulename').parse_all(src)
+        ABNFGrammarRule('rulename').parse_all(src)
 
     

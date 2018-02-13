@@ -492,7 +492,7 @@ class Rule(object):
         node, start = self.parse(source, 0)
         if start < len(source):
             raise ParseError('Not all source was consumed.  Unconsumed source begins at offset %s.' % start)
-        return node, start            
+        return node            
         
     def __str__(self):
         return "%s('%s')" % (self.__class__.__name__, self.name)
