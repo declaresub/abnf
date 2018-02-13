@@ -200,3 +200,15 @@ def test_rule_rules():
 @pytest.mark.parametrize("name, rule", [('foo', XRule('foo')), ('bar', None)])
 def test_rule_get(name, rule):
     assert XRule.get(name) == rule
+
+def test_parse_all_pass():
+    src = 'moof'
+    node, start = ABNFGrammarRule('rulename').parse_all(src)
+    assert node.value == src and start == len(src)
+
+def test_parse_all_fail():
+    src = 'rule name'
+    with pytest.raises(ParseError):
+        node, start = ABNFGrammarRule('rulename').parse_all(src)
+
+    

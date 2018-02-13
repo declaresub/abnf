@@ -474,6 +474,26 @@ class Rule(object):
                 rule_node = Node(self.name, *node)
                 return rule_node, new_start
 
+    def parse_all(self, source):
+        """
+        Parses the source from beginning to end.  If not all of the source is consumed, a
+        ParseError is raised.
+        
+        :param source: source data
+        :type str:
+        :param start=0: offset at which to begin parsing.
+        :returns: parse tree
+        :rtype: Node
+        :raises ParseError: if source cannot be parsed using rule.
+        :raises GrammarError: if rule has no definition.  This usually means that a
+            non-terminal in the grammar is not defined or imported.
+        """
+        
+        node, start = self.parse(source, 0)
+        if start < len(source):
+            raise ParseError('Not all source was consumed.  Unconsumed source begins at offset %s.' % start)
+        return node, start            
+        
     def __str__(self):
         return "%s('%s')" % (self.__class__.__name__, self.name)
 
