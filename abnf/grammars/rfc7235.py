@@ -21,13 +21,30 @@ class Rule(_Rule):
         'Authorization = credentials',
         #BWS = <BWS, see [RFC7230], Section 3.2.3>',
         #OWS = <OWS, see [RFC7230], Section 3.2.3>',
-        'Proxy-Authenticate = *( "," OWS ) challenge *( OWS "," [ OWS challenge ] )',
+        # See discussion below for WWW-Authenticate.
+        #'Proxy-Authenticate = *( "," OWS ) challenge *( OWS "," [ OWS challenge ] )',
+        'Proxy-Authenticate = *( "," OWS ) challenge *( OWS ("," / challenge) )',
         'Proxy-Authorization = credentials',
-        'WWW-Authenticate = *( "," OWS ) challenge *( OWS "," [ OWS challenge ] )',
+        # The rule WWW-Authenticate is ambiguous. I am not the first person to observe this
+        # <https://www.ietf.org/mail-archive/web/httpbisa/current/msg07914.html>.
+        # The problem is essentially nested comma-separated lists.  Using the rules given
+        # in RFC 7235 with this parser, parsing source 'Basic realm="foo", Pascal realm="bar"
+        # using the rule WWW-Authenticate will result in the consumption of 'Basic realm="foo",'.
+        # So we tinker a bit to account for the challenge rule consuming the trailing comma.
+        #'WWW-Authenticate = *( "," OWS ) challenge *( OWS "," [ OWS challenge ] )',
+        'WWW-Authenticate = *( "," OWS ) challenge *( OWS ("," / challenge) )',
         'auth-param = token BWS "=" BWS ( token / quoted-string )',
         'auth-scheme = token',
-        'challenge = auth-scheme [ 1*SP ( token68 / [ ( "," / auth-param ) *(OWS "," [ OWS auth-param ] ) ] ) ]',
-        'credentials = auth-scheme [ 1*SP ( token68 / [ ( "," / auth-param ) *( OWS "," [ OWS auth-param ] ) ] ) ]',
+        # the definition of challenge doesn't work with this parser.  Given a challenge like
+        # 'Basic realm="/"', the substring 'realm=' is matched by the token68 rule.  Then 
+        # what's left is not matched.  So we swap the alternation arguments.  But this is
+        # still not enough, as the new first argument is wrapped in an Optional Sequence.
+        # So, finally, we remove the [].
+        # The credentials rule is similarly modified.
+        #'challenge = auth-scheme [ 1*SP ( token68 / [ ( "," / auth-param ) *(OWS "," [ OWS auth-param ] ) ] ) ]',
+        'challenge = auth-scheme [ 1*SP ( ( "," / auth-param ) *(OWS "," [ OWS auth-param ] )  / token68 ) ]',
+        #'credentials = auth-scheme [ 1*SP ( token68 / [ ( "," / auth-param ) *( OWS "," [ OWS auth-param ] ) ] ) ]',
+        'credentials = auth-scheme [ 1*SP ( ( "," / auth-param ) *(OWS "," [ OWS auth-param ] )  / token68 ) ]',
         #quoted-string = <quoted-string, see [RFC7230], Section 3.2.6>',
         #token = <token, see [RFC7230], Section 3.2.6>',
         'token68 = 1*( ALPHA / DIGIT / "-" / "." / "_" / "~" / "+" / "/" ) *"="',
