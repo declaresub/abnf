@@ -11,7 +11,7 @@ def load_grammar_rules(imported_rules=None):
             cls.create(src)
         if imported_rules:
             for rule_def in imported_rules:
-                cls(*rule_def)
+                cls(rule_def[0], rule_def[1].definition)
         return cls
 
     return rule_decorator
