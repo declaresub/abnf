@@ -4,7 +4,7 @@ https://tools.ietf.org/html/rfc6265
 """
 
 from ..parser import Rule as _Rule
-from . import rfc3986, rfc7230
+from . import rfc3986, rfc7230, rfc7231
 from .misc import load_grammar_rules
 
                       
@@ -12,6 +12,15 @@ from .misc import load_grammar_rules
 ('token', rfc7230.Rule('token')),
 ('IPv4address', rfc3986.Rule('IPv4address')),
 ('IPv6address', rfc3986.Rule('IPv6address')),
+('date1', rfc7231.Rule('date1')),
+('wkday', rfc7231.Rule('day-name')),
+('day', rfc7231.Rule('day')),
+('month', rfc7231.Rule('month')),
+('year', rfc7231.Rule('year')),
+('time', rfc7231.Rule('time-of-day')),
+('hour', rfc7231.Rule('hour')),
+('minute', rfc7231.Rule('minute')),
+('second', rfc7231.Rule('second')),
 ])
 class Rule(_Rule):
     """Rules from RFC 6265."""
@@ -30,9 +39,10 @@ class Rule(_Rule):
     'token = %x21 / %x23-27 / %x2A-2B / %x2D-2E / %x30-39 / %x41-5A / %x5E-7A / %x7C',
     'cookie-av = expires-av / max-age-av / domain-av / path-av / secure-av / httponly-av / extension-av',
     'expires-av = "Expires=" sane-cookie-date',
-    #sane-cookie-date = <rfc1123-date, defined in [RFC2616], Section 3.3.1>'
-    # definition imported by hand.
-    'sane-cookie-date = wkday "," SP date1 SP time SP "GMT"',
+    # sane-cookie-date = <rfc1123-date, defined in [RFC2616], Section 3.3.1>'
+    # rfc1123-date is expressed in terms of rules imported from rfc7231
+    'sane-cookie-date = rfc1123-date',
+    'rfc1123-date = wkday "," SP date1 SP time SP "GMT"',    
     'max-age-av = "Max-Age=" non-zero-digit *DIGIT',
     'non-zero-digit = %x31-39',
     'domain-av = "Domain=" domain-value',
