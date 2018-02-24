@@ -136,9 +136,9 @@ class Literal(object):  #pylint: disable=too-few-public-methods
                 if self.value[0] <= source[start] and source[start] <= self.value[1]:
                     return LiteralNode(source[start], start, 1), start + 1
                 else:
-                    raise ParseError('Parsing error at offset %s.' % start)
+                    raise ParseError('Error parsing %s at offset %s.' % (str(self), offset))
             except IndexError as e:
-                raise ParseError('Parsing error at offset %s.' % start) from e
+                raise ParseError('Error parsing %s at offset %s.' % (str(self), offset))    from e
         else:
             # we check position to ensure that the case pattern = '' and start >= len(source)
             # is handled correctly.
@@ -148,11 +148,9 @@ class Literal(object):  #pylint: disable=too-few-public-methods
                 if match == self.pattern:
                     return LiteralNode(src, start, len(src)), start + len(src)
                 else:
-                    raise ParseError(
-                        'Parsing error at offset %s.  Expected value "%s".' %
-                        (start, self.value))
+                    raise ParseError('Error parsing %s at offset %s.' % (str(self), offset))
             else:
-                raise ParseError('Parsing error at offset %s.' % start)
+                raise ParseError('Error parsing %s at offset %s.' % (str(self), offset))
 
     def __str__(self):
         # str(self.value) handles the case value == tuple.
@@ -468,8 +466,7 @@ class Rule(object):
             try:
                 node, new_start = self.definition.parse(source, start)
             except ParseError as e:
-                raise ParseError('Rule %s failed at offset %s.' %
-                                 (self.name, start)) from e
+                raise ParseError('Error parsing %s at offset %s.' % (str(self), offset)) from e
             else:
                 rule_node = Node(self.name, *node)
                 return rule_node, new_start
@@ -491,7 +488,7 @@ class Rule(object):
         
         node, start = self.parse(source, 0)
         if start < len(source):
-            raise ParseError('Not all source was consumed.  Unconsumed source begins at offset %s.' % start)
+            raise ParseError('%s.parse_all failed.  Unconsumed source begins at offset %s.' % (str(self), start))
         return node            
         
     def __str__(self):
