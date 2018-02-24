@@ -136,9 +136,9 @@ class Literal(object):  #pylint: disable=too-few-public-methods
                 if self.value[0] <= source[start] and source[start] <= self.value[1]:
                     return LiteralNode(source[start], start, 1), start + 1
                 else:
-                    raise ParseError('Error parsing %s at offset %s.' % (str(self), offset))
+                    raise ParseError('Error parsing %s at offset %s.' % (str(self), start))
             except IndexError as e:
-                raise ParseError('Error parsing %s at offset %s.' % (str(self), offset))    from e
+                raise ParseError('Error parsing %s at offset %s.' % (str(self), start))    from e
         else:
             # we check position to ensure that the case pattern = '' and start >= len(source)
             # is handled correctly.
@@ -148,9 +148,9 @@ class Literal(object):  #pylint: disable=too-few-public-methods
                 if match == self.pattern:
                     return LiteralNode(src, start, len(src)), start + len(src)
                 else:
-                    raise ParseError('Error parsing %s at offset %s.' % (str(self), offset))
+                    raise ParseError('Error parsing %s at offset %s.' % (str(self), start))
             else:
-                raise ParseError('Error parsing %s at offset %s.' % (str(self), offset))
+                raise ParseError('Error parsing %s at offset %s.' % (str(self), start))
 
     def __str__(self):
         # str(self.value) handles the case value == tuple.
@@ -466,7 +466,7 @@ class Rule(object):
             try:
                 node, new_start = self.definition.parse(source, start)
             except ParseError as e:
-                raise ParseError('Error parsing %s at offset %s.' % (str(self), offset)) from e
+                raise ParseError('Error parsing %s at offset %s.' % (str(self), start)) from e
             else:
                 rule_node = Node(self.name, *node)
                 return rule_node, new_start
@@ -520,7 +520,7 @@ class Rule(object):
             if child.name == 'concatenation':
                 args.append(cls.make_parser_concatenation(child))
             else:
-                continue
+                continue # pragma: no cover
 
         return Alternation(*args) if len(args) > 1 else args[0]
 
@@ -538,7 +538,7 @@ class Rule(object):
             if child.name == 'repetition':
                 args.append(cls.make_parser_repetition(child))
             else:
-                continue
+                continue # pragma: no cover
 
         return Concatenation(*args) if len(args) > 1 else args[0]
 
@@ -643,7 +643,6 @@ class Rule(object):
             return rule
         else:
             assert False, "Node 'defined-as' returned unexpected value %s." % defined_as
-            return None
 
     @classmethod
     def make_parser_rulename(cls, node):
