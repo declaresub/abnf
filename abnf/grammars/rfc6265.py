@@ -55,10 +55,10 @@ class Rule(_Rule):
     'domain-value = subdomain / IPv4address / IPv6address',
     #
     'path-av = "Path=" path-value',
-    'path-value = %x20-3A / %x3C-7E',
+    'path-value = 1*(%x20-3A / %x3C-7E)',
     'secure-av = "Secure"',
     'httponly-av = "HttpOnly"',
-    'extension-av = %x20-3A / %x3C-7E',
+    'extension-av = 1*( %x20-3A / %x3C-7E)',
     'cookie-date = *delimiter date-token-list *delimiter',
     'date-token-list = date-token *( 1*delimiter date-token )',
     'date-token = 1*non-delimiter',
