@@ -18,7 +18,8 @@ from .misc import load_grammar_rules
     ('URI-reference', rfc7230.Rule('URI-reference')),
     ('absolute-URI', rfc7230.Rule('absolute-URI')),
     ('comment', rfc7230.Rule('comment')),
-    ('field-name', rfc7230.Rule('comment')),
+    # see https://www.rfc-editor.org/errata/eid4225 for field-name.
+    ('field-name', rfc7230.Rule('field-name')),
     ('partial-URI', rfc7230.Rule('partial-URI')),
     ('quoted-string', rfc7230.Rule('quoted-string')),
     ('token', rfc7230.Rule('token')),
