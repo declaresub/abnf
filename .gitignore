@@ -7,4 +7,5 @@ __pycache__
 *.egg-info
 # exclude virtual environments. The requirements file for such is stored in venv, and that
 # we want in git.
-venv/py*
+.pytest*
+.venv

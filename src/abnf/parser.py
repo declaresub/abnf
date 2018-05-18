@@ -7,7 +7,7 @@ class _IterableNode(object):  #pylint: disable=too-few-public-methods
     """Base class for Node objects.  It implements iterator and iterable methods to
     allow a single node to be treated as if it were a list of such."""
 
-    def __init__(self) -> None:
+    def __init__(self):
         super(_IterableNode, self).__init__()
         self._next = False
 

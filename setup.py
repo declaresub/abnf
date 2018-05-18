@@ -10,7 +10,7 @@ import os
 PACKAGE_NAME = 'abnf'
 
 def package_version(pkg_name=PACKAGE_NAME):
-    with io.open(os.path.join(pkg_name, '__init__.py'), 'r', encoding='utf-8') as f:
+    with io.open(os.path.join('src', pkg_name, '__init__.py'), 'r', encoding='utf-8') as f:
         for sourceline in f:
             if sourceline.strip().startswith('__version__'):
                 return sourceline.split('=',
@@ -29,7 +29,8 @@ setup(
     author='Charles Yeomans',
     author_email='charles@declaresub.com',
     url='https://bitbucket.org/yeomans/abnf',
-    packages=find_packages(exclude=["tests"]),
+    packages=find_packages(where="src"),
+    package_dir={"": "src"},
     keywords=['abnf', 'parser', 'generator'],
     classifiers=[
         'Development Status :: 4 - Beta', 'Intended Audience :: Developers',

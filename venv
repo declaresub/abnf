@@ -1,0 +1,116 @@
+#! /bin/bash
+
+# This script creates a virtual environment for testing.  Several directories and
+# files are added to the repository directory.  All of them should be ignored by git.
+# The script should be run from inside the repository directory, and does not wipe out
+# an existing venv setup.  
+
+
+REPO_DIR=$(git rev-parse --show-toplevel)
+VENV_PARENT_DIR="$REPO_DIR"/.venv
+hash pyenv 2>/dev/null
+PYENV=$?
+PY_VERSION="3"
+PYTHON="python$PY_VERSION"
+
+if [[ "$1" == 'create' ]]; then
+    # venv create  --pyversion PY_VERSION VENV_NAME
+    shift
+    
+    
+    
+    while true; do
+        case "${1:-unset}" in  
+            --pyversion)
+                shift
+                PY_VERSION="$1"
+                shift
+                ;;
+            *)
+            break
+        esac
+    done
+
+    VENV_NAME="$1"
+    if [[ -z "$VENV_NAME" ]]; then
+        >&2 echo "No name for new virtual environment supplied."
+        exit 1
+    fi
+    
+    if [[ $PYENV -eq 0 ]]; then
+        eval "$(pyenv init -)"
+        pyenv shell "$PY_VERSION"
+        PYENV_RESULT="$?"
+        if [[ $PYENV_RESULT -ne 0 ]]; then
+            exit "$PYENV_RESULT"
+        fi
+        PYTHON="python"
+    else
+        PYTHON="python$PY_VERSION"
+    fi
+
+    echo "Creating $VENV_PARENT_DIR if needed."
+    mkdir -p "$VENV_PARENT_DIR"
+    # here I need to check for version < 3.5.
+    VENV_DIR="$VENV_PARENT_DIR"/"$VENV_NAME"
+    echo "Creating virtual environment $VENV_DIR."
+    "$PYTHON" -m venv "$VENV_DIR"
+    if [[ $PYENV -eq 0 ]]; then
+        pushd "$VENV_DIR" || exit 1 >> /dev/null
+        #pyenv local
+        popd || exit 1 >> /dev/null
+    fi
+    
+    source "$VENV_DIR"/bin/activate
+    pip install --upgrade pip
+    pip install --requirement "$REPO_DIR"/requirements.txt
+    deactivate
+    echo "New virtual environment created at" "$VENV_PARENT_DIR"/"$VENV_NAME".
+    
+elif [[ "$1" == 'list' ]]; then
+    shift
+    # venv list: list all virtual environments
+    shopt -s nullglob
+    for name in "$VENV_PARENT_DIR"/*; do
+        basename "$name"
+    done
+    
+elif [[ "$1" == 'shell' ]]; then
+    shift
+    
+    # venv shell VENV_NAME
+
+    VENV_NAME="$1"
+    if [[ -z "$VENV_NAME" ]]; then
+        # look to see if there is exactly one subdirectory in VENV_PARENT_DIR.  If so,
+        # use it. Otherwise, fail.
+        
+        if [[ "$(find "$VENV_PARENT_DIR"/* -maxdepth 0 -type d | wc -l)" -eq 1 ]]; then
+            VENV_NAME=$(ls "$VENV_PARENT_DIR")
+            echo "Using virtual environment $VENV_NAME."
+        else
+           >&2 echo "Multiple virtual environments found.  Please supply a name."
+           exit 1 
+        fi
+    fi
+    
+    VENV_DIR="$VENV_PARENT_DIR"/"$VENV_NAME"
+    PS1=venv: bash --init-file "$VENV_DIR"/bin/activate
+
+elif [[ "$1" == 'remove' ]]; then
+    shift
+    VENV_NAME="$1"
+    if [[ -z "$VENV_NAME" ]]; then
+        >&2 echo "You must supply the name of the virtual environment to remove."
+        exit 1
+    fi
+    
+    VENV_DIR="$VENV_PARENT_DIR"/"$VENV_NAME"
+    echo "Removing virtual environment $VENV_DIR."
+    rm -r "$VENV_DIR"
+    
+    
+else
+    >&2 echo Command "$1" not recognized.
+    exit 1
+fi

@@ -1,0 +1,8 @@
+# This requirements file is for use in development.
+
+--process-dependency-links
+
+-e .
+pylint
+pytest
+pytest-cov
