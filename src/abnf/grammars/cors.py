@@ -25,13 +25,12 @@ class Rule(_Rule):
     'origin-or-null = origin / %x6E.75.6C.6C',
     'origin = scheme "://" host [ ":" port ]'
     'Access-Control-Request-Method = method,
-    'Access-Control-Request-Headers = 1#field-name,
-
+    'Access-Control-Request-Headers = field-name *( OWS "," OWS field-name ),
     'wildcard = "*",
     'Access-Control-Allow-Origin = origin-or-null / wildcard',
     'Access-Control-Allow-Credentials = %x74.72.75.65',
-    'Access-Control-Expose-Headers = #field-name',
+    'Access-Control-Expose-Headers = [ field-name *( OWS "," OWS field-name ) ]',
     'Access-Control-Max-Age = delta-seconds,
-    'Access-Control-Allow-Methods = #method,
-    'Access-Control-Allow-Headers = #field-name,
+    'Access-Control-Allow-Methods = [ method *( OWS "," OWS method ) ],
+    'Access-Control-Allow-Headers = [ field-name *( OWS "," OWS field-name ) ],
     ]
