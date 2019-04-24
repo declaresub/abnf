@@ -190,7 +190,7 @@ class CharValNodeVisitor(NodeVisitor):
 
 class CharVal(Literal):  #pylint: disable=too-few-public-methods
     """A parser for literals created from a char-val node."""
-    
+
     visitor = CharValNodeVisitor()
 
     def __init__(self, node):
@@ -475,7 +475,7 @@ class Rule(object):
         """
         Parses the source from beginning to end.  If not all of the source is consumed, a
         ParseError is raised.
-        
+
         :param source: source data
         :type str:
         :param start=0: offset at which to begin parsing.
@@ -485,12 +485,12 @@ class Rule(object):
         :raises GrammarError: if rule has no definition.  This usually means that a
             non-terminal in the grammar is not defined or imported.
         """
-        
+
         node, start = self.parse(source, 0)
         if start < len(source):
             raise ParseError('%s.parse_all failed.  Unconsumed source begins at offset %s.' % (str(self), start))
-        return node            
-        
+        return node
+
     def __str__(self):
         return "%s('%s')" % (self.__class__.__name__, self.name)
 
