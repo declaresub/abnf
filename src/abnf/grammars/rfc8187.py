@@ -14,7 +14,7 @@ class Rule(_Rule):
     """Rules from RFC 8187."""
 
     grammar = [
-    'ext-value = charset "'" [ language ] "'" value-chars',
+    'ext-value = charset "\'" [ language ] "\'" value-chars',
     'charset = "UTF-8" / mime-charset',
     'mime-charset = 1*mime-charsetc',
     'mime-charsetc = ALPHA / DIGIT  / "!" / "#" / "$" / "%" / "&"  / "+" / "-" / "^" / "_" / "`"  / "{" / "}" / "~"',
