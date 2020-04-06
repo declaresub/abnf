@@ -15,22 +15,23 @@ from .misc import load_grammar_rules
     ('port', rfc3986.Rule('port')),
     ('method', rfc7230.Rule('method')),
     ('field-name', rfc7230.Rule('field-name')),
+    ('OWS', rfc7230.Rule('OWS')),
     ('delta-seconds', rfc7234.Rule('delta-seconds')),
     ])
 class Rule(_Rule):
     """Rules from RFC 8187."""
 
     grammar = [
-    'Origin = origin-or-null'
+    'Origin = origin-or-null',
     'origin-or-null = origin / %x6E.75.6C.6C',
-    'origin = scheme "://" host [ ":" port ]'
-    'Access-Control-Request-Method = method,
-    'Access-Control-Request-Headers = field-name *( OWS "," OWS field-name ),
-    'wildcard = "*",
+    'origin = scheme "://" host [ ":" port ]',
+    'Access-Control-Request-Method = method',
+    'Access-Control-Request-Headers = field-name *( OWS "," OWS field-name )',
+    'wildcard = "*"',
     'Access-Control-Allow-Origin = origin-or-null / wildcard',
     'Access-Control-Allow-Credentials = %x74.72.75.65',
     'Access-Control-Expose-Headers = [ field-name *( OWS "," OWS field-name ) ]',
-    'Access-Control-Max-Age = delta-seconds,
-    'Access-Control-Allow-Methods = [ method *( OWS "," OWS method ) ],
-    'Access-Control-Allow-Headers = [ field-name *( OWS "," OWS field-name ) ],
+    'Access-Control-Max-Age = delta-seconds',
+    'Access-Control-Allow-Methods = [ method *( OWS "," OWS method ) ]',
+    'Access-Control-Allow-Headers = [ field-name *( OWS "," OWS field-name ) ]',
     ]
