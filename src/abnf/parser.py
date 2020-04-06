@@ -3,7 +3,7 @@
 from itertools import chain
 
 
-class _IterableNode(object):  #pylint: disable=too-few-public-methods
+class _IterableNode():  #pylint: disable=too-few-public-methods
     """Base class for Node objects.  It implements iterator and iterable methods to
     allow a single node to be treated as if it were a list of such."""
 
@@ -16,7 +16,7 @@ class _IterableNode(object):  #pylint: disable=too-few-public-methods
         return self
 
     def __next__(self):
-        if self._next:
+        if self._next: # pylint: disable=no-else-return
             self._next = False
             return self
         else:
@@ -70,20 +70,23 @@ class LiteralNode(_IterableNode):  #pylint: disable=too-few-public-methods
             self.value.replace('\r', r'\r').replace('\n', r'\n'))
 
 
-class NodeVisitor(object):
+class NodeVisitor(): # pylint: disable=too-few-public-methods
     """An external visitor class."""
 
     def __init__(self):
         self._node_method_cache = {}
 
     def visit(self, node, context=None):
+        """Visit node.  This method invokes the appropriate method for the node type."""
         return self._node_method(node)(node, context)
 
     @staticmethod
-    def _dont_visit(node, context):
+    def _dont_visit(node, context): # pylint: disable=unused-argument
+        """ Skip node visit."""
         return None
 
     def _node_method(self, node):
+        """Looks up method for node using node.name."""
         node_name = node.name.casefold()
         try:
             node_method = self._node_method_cache[node_name]
@@ -101,14 +104,12 @@ class NodeVisitor(object):
 class ParseError(Exception):
     """Raised in response to errors during parsing."""
 
-    pass
 
 class GrammarError(Exception):
     """Raised in response to errors detected in the grammar."""
 
-    pass
 
-class Literal(object):  #pylint: disable=too-few-public-methods
+class Literal():  #pylint: disable=too-few-public-methods
     """Represents a terminal literal value."""
 
     def __init__(self, value, case_sensitive=False):
@@ -133,7 +134,7 @@ class Literal(object):  #pylint: disable=too-few-public-methods
         if isinstance(self.value, tuple):
             # ranges are always case-sensitive
             try:
-                if self.value[0] <= source[start] and source[start] <= self.value[1]:
+                if self.value[0] <= source[start] and source[start] <= self.value[1]: # pylint: disable=no-else-return
                     return LiteralNode(source[start], start, 1), start + 1
                 else:
                     raise ParseError('Error parsing %s at offset %s.' % (str(self), start))
@@ -142,10 +143,10 @@ class Literal(object):  #pylint: disable=too-few-public-methods
         else:
             # we check position to ensure that the case pattern = '' and start >= len(source)
             # is handled correctly.
-            if start < len(source):
+            if start < len(source): # pylint: disable=no-else-return
                 src = source[start:start + len(self.value)]
                 match = src if self.case_sensitive else src.casefold()
-                if match == self.pattern:
+                if match == self.pattern: # pylint: disable=no-else-return
                     return LiteralNode(src, start, len(src)), start + len(src)
                 else:
                     raise ParseError('Error parsing %s at offset %s.' % (str(self), start))
@@ -165,6 +166,7 @@ class Literal(object):  #pylint: disable=too-few-public-methods
 
 
 class CharValNodeVisitor(NodeVisitor):
+    """CharVal node visitor."""
     def visit_char_val(self, node, context):
         """Visit a char-val node."""
         for child in node.children:
@@ -265,7 +267,7 @@ class NumVal(Literal):  #pylint: disable=too-few-public-methods
         return base_info[node.name]
 
 
-class Alternation(object):  # pylint: disable=too-few-public-methods
+class Alternation():  # pylint: disable=too-few-public-methods
     """Implements the ABNF alternation operator. -- Alternation(parser1, parser2, ...)
     returns a parser that invokes parser1, parser2, ... in turn and returns the result
     of the first successful parse.."""
@@ -273,7 +275,7 @@ class Alternation(object):  # pylint: disable=too-few-public-methods
     str_template = 'Alternation(%s)'
 
     def __init__(self, *args):
-        self.args = [x for x in args]
+        self.args = list(args)
 
     def parse(self, source, start):
         """
@@ -304,7 +306,7 @@ class Alternation(object):  # pylint: disable=too-few-public-methods
         return self.str_template % ', '.join(map(str, self.args))
 
 
-class Concatenation(object):  # pylint: disable=too-few-public-methods
+class Concatenation():  # pylint: disable=too-few-public-methods
     """Implements the ABNF concatention operation. Concatention(parser1, parser2, ...)
     returns a parser that invokes parser1, parser2, ... in turn and returns a list of Nodes
     if every parser succeeds.
@@ -341,7 +343,7 @@ class Concatenation(object):  # pylint: disable=too-few-public-methods
         return self.str_template % ', '.join(map(str, self.args))
 
 
-class Repetition(object):  # pylint: disable=too-few-public-methods
+class Repetition():  # pylint: disable=too-few-public-methods
     """Implements the ABNF Repetition operation."""
 
     def __init__(self, repeat, element):
@@ -372,7 +374,7 @@ class Repetition(object):  # pylint: disable=too-few-public-methods
 
         # should write something explicit about behavior when self.element.parse returns
         # a zero-length match  -- [].
-        if len(nodes) >= self.repeat.min:
+        if len(nodes) >= self.repeat.min: # pylint: disable=no-else-return
             return chain(*nodes), new_start
         else:
             raise ParseError('Error parsing Repetition at offset %s.' % start)
@@ -381,7 +383,7 @@ class Repetition(object):  # pylint: disable=too-few-public-methods
         return 'Repetition(%s, %s)' % (self.repeat, self.element)
 
 
-class Repeat(object):  # pylint: disable=too-few-public-methods
+class Repeat():  # pylint: disable=too-few-public-methods
     """Implements the ABNF Repeat operator for Repetition."""
 
     def __init__(self, min=0, max=None):  # pylint: disable=redefined-builtin
@@ -393,7 +395,7 @@ class Repeat(object):  # pylint: disable=too-few-public-methods
                                    if max is not None else 'None')
 
 
-class Option(object):  # pylint: disable=too-few-public-methods
+class Option():  # pylint: disable=too-few-public-methods
     """Implements the ABNF Option operation."""
 
     str_template = 'Option(%s)'
@@ -421,7 +423,7 @@ class Option(object):  # pylint: disable=too-few-public-methods
         return self.str_template % str(self.alternation)
 
 
-class Rule(object):
+class Rule():
     """A parser generated from an ABNF rule.
 
     To create a Rule object, use Rule.create.
@@ -459,7 +461,7 @@ class Rule(object):
         """
         try:
             # ensure that rule has been defined.
-            definition = self.definition
+            getattr(self, 'definition')
         except AttributeError as e:
             raise GrammarError('Undefined rule "%s".' % self.name) from e
         else:
@@ -635,14 +637,15 @@ class Rule(object):
         assert node.children[2].name == 'elements'
         elements = cls.make_parser_elements(node.children[2])
 
+
+        assert defined_as in ['=', '=/'], "Node 'defined-as' returned unexpected value %s." % defined_as
         if defined_as == '=':  # pylint: disable=no-else-return
             return cls(rulename, elements)
-        elif defined_as == '=/':
+        else:
             rule = cls(rulename)
             rule.definition = Alternation(rule.definition, elements)
             return rule
-        else:
-            assert False, "Node 'defined-as' returned unexpected value %s." % defined_as
+
 
     @classmethod
     def make_parser_rulename(cls, node):
