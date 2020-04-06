@@ -24,7 +24,7 @@ setup(
     version=package_version(),
     description='Parsers for ABNF grammars.',
     long_description=
-    'ABNF generates parsers for ABNF grammars. Though intended for use \
+    'ABNF generates parsers for ABNF grammars. Though intended for use with \
     RFC grammars, ABNF should handle any valid grammar.',
     author='Charles Yeomans',
     author_email='charles@declaresub.com',
