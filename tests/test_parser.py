@@ -1,5 +1,5 @@
 import pytest
-from abnf.parser import (Node, LiteralNode, Literal, ABNFGrammarRule, Rule, CharVal, ParseError, Alternation,
+from abnf.parser import (Node, LiteralNode, Literal, ABNFGrammarRule, ABNFGrammarRuleNodeVisitor, Rule, ParseError, Alternation,
     Concatenation, Repeat, Repetition, Option, GrammarError)
 
 
@@ -43,38 +43,38 @@ def test_literal_case_insensitive(value, src):
 @pytest.mark.parametrize("src", ['moof', 'MOOF', 'mOOf', 'mOoF'])
 def test_char_val(src):
     node, start = ABNFGrammarRule('char-val').parse('"moof"', 0)
-    parser = CharVal(node)
+    visitor = ABNFGrammarRuleNodeVisitor(None)
+    parser = visitor.visit_char_val(node)
     char_node, start = parser.parse(src, 0)
     assert char_node and char_node.value == src
 
 @pytest.mark.parametrize("src", ['moof', 'MOOF', 'mOOf', 'mOoF'])
 def test_char_val_case_insensitive(src):
     node, start = ABNFGrammarRule('char-val').parse('%i"moof"', 0)
-    parser = CharVal(node)
+    visitor = ABNFGrammarRuleNodeVisitor(None)
+    parser = visitor.visit_char_val(node)
     char_node, start = parser.parse(src, 0)
     assert char_node and char_node.value.casefold() == 'moof'
 
 def test_CharVal_case_sensitive():
     node, start = ABNFGrammarRule('char-val').parse('%s"MOOF"', 0)
-    parser = CharVal(node)
+    visitor = ABNFGrammarRuleNodeVisitor(None)
+    parser = visitor.visit_char_val(node)
     assert parser.case_sensitive
 
 def test_char_val_case_sensitive():
     node, start = ABNFGrammarRule('char-val').parse('%s"MOOF"', 0)
-    parser = CharVal(node)
+    visitor = ABNFGrammarRuleNodeVisitor(None)
+    parser = visitor.visit_char_val(node)
     src = 'MOOF'
     char_node, start = parser.parse(src, 0)
     assert char_node and char_node.value == src
 
-def test_CharVal_bad_node():
-    node = Node(name='foo')
-    with pytest.raises(ParseError):
-        CharVal(node)
-
 @pytest.mark.parametrize("src", ['MOOF', 'mOOf', 'mOoF'])
 def test_char_val_case_sensitive_fail(src):
     node, start = ABNFGrammarRule('char-val').parse('%s"moof"', 0)
-    parser = CharVal(node)
+    visitor = ABNFGrammarRuleNodeVisitor(None)
+    parser = visitor.visit_char_val(node)
     with pytest.raises(ParseError):
         parser.parse(src, 0)
 
@@ -99,9 +99,9 @@ def test_alternation(src):
     ])
 def test_rule_repeat(src, expected):
     node, start = ABNFGrammarRule('repeat').parse(src, 0)
-    parser = Rule.make_parser_repeat(node)
+    visitor = ABNFGrammarRuleNodeVisitor(None)
+    parser = visitor.visit_repeat(node)
     assert (parser.min, parser.max) == expected
-
 
 def test_repetition():
     parser = Repetition(Repeat(1, 2), Literal('a'))
@@ -116,7 +116,8 @@ def test_repetition_str():
 def test_operator_precedence(src):
     grammar_src = '"a" / "b" "c"'
     node, start = ABNFGrammarRule('alternation').parse(grammar_src, 0)
-    parser = Rule.make_parser(node)
+    visitor = ABNFGrammarRuleNodeVisitor(None)
+    parser = visitor.visit_alternation(node)
     node, start = parser.parse(src, 0)
     print(node)
     assert ''.join(x.value for x in node) == src
@@ -126,7 +127,8 @@ def test_operator_precedence(src):
 def test_operator_precedence_1(src):
     grammar_src = '("a" / "b") "c"'
     node, start = ABNFGrammarRule('concatenation').parse(grammar_src, 0)
-    parser = Rule.make_parser(node)
+    visitor = ABNFGrammarRuleNodeVisitor(None)
+    parser = visitor.visit_concatenation(node)
     node, start = parser.parse(src, 0)
     print(node)
     assert ''.join(x.value for x in node) == src
@@ -145,6 +147,18 @@ def test_Alternation_eq():
     p1 = Alternation(Rule('a'), Rule('b'))
     p2 = Alternation(Rule('a'), Rule('b'))
     assert p1 == p2
+    
+def test_visit_option_bad_node():
+    node = Node('foo')
+    visitor = ABNFGrammarRuleNodeVisitor(None)
+    with pytest.raises(AssertionError):
+        parser = visitor.visit_option(node)
+
+def test_visit_group_bad_node():
+    node = Node('foo')
+    visitor = ABNFGrammarRuleNodeVisitor(None)
+    with pytest.raises(AssertionError):
+        parser = visitor.visit_group(node)
 
 def test_Alternation_str():
     parser = Alternation(Literal('foo'), Literal('bar'))
@@ -180,12 +194,14 @@ def test_rule_def_alternation(src):
 def test_rule_bad_defined_as():
     node = Node('rule', *[Node('rulename', *[Node('ALPHA', *[LiteralNode('a', 0, 1)])]), Node('defined-as', *[LiteralNode("=\\", 1, 2)]), Node('elements', *[Node('alternation', *[Node('concatenation', *[Node('repetition', *[Node('element', *[Node('rulename', *[Node('ALPHA', *[LiteralNode('b', 3, 1)])])])])])])]), Node('c-nl', *[Node('CRLF', *[Node('CR', *[LiteralNode('\r', 4, 1)]), Node('LF', *[LiteralNode('\n', 5, 1)])])])])
     with pytest.raises(AssertionError):
-        Rule.make_parser_rule(node)
+        visitor = ABNFGrammarRuleNodeVisitor(ABNFGrammarRule)
+        visitor.visit_rule(node)
 
-def test_rule_make_parser_alternation():
+def test_visit_alternation():
     src = 'a/b'
-    node, start = ABNFGrammarRule('alternation').parse(src, 0)    
-    parser = Rule.make_parser_alternation(node)
+    node, start = ABNFGrammarRule('alternation').parse(src, 0)  
+    visitor = ABNFGrammarRuleNodeVisitor(ABNFGrammarRule)
+    parser = visitor.visit_alternation(node)
     assert parser == Alternation(Rule('a'), Rule('b'))
 
 class XRule(Rule):

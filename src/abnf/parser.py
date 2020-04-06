@@ -76,12 +76,12 @@ class NodeVisitor(): # pylint: disable=too-few-public-methods
     def __init__(self):
         self._node_method_cache = {}
 
-    def visit(self, node, context=None):
+    def visit(self, node):
         """Visit node.  This method invokes the appropriate method for the node type."""
-        return self._node_method(node)(node, context)
+        return self._node_method(node)(node)
 
     @staticmethod
-    def _dont_visit(node, context): # pylint: disable=unused-argument
+    def _dont_visit(node): # pylint: disable=unused-argument
         """ Skip node visit."""
         return None
 
@@ -166,42 +166,32 @@ class Literal():  #pylint: disable=too-few-public-methods
 
 class CharValNodeVisitor(NodeVisitor):
     """CharVal node visitor."""
-    def visit_char_val(self, node, context):
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.case_sensitive = None
+        self.value = None
+        
+    def visit_char_val(self, node):
         """Visit a char-val node."""
         for child in node.children:
-            self.visit(child, context)
+            self.visit(child)
 
-    def visit_case_insensitive_string(self, node, context):
+    def visit_case_insensitive_string(self, node):
         """Visit a case-insensitive-string node."""
-        context['case_sensitive'] = False
+        self.case_sensitive = False
         for child in node.children:
-            self.visit(child, context)
+            self.visit(child)
 
-    def visit_case_sensitive_string(self, node, context):
+    def visit_case_sensitive_string(self, node):
         """Visit a case-sensitive-string node."""
-        context['case_sensitive'] = True
+        self.case_sensitive = True
         for child in node.children:
-            self.visit(child, context)
+            self.visit(child)
 
-    @staticmethod
-    def visit_quoted_string(node, context):
+    def visit_quoted_string(self, node):
         """Visit a quoted-string node."""
-        context['value'] = node.value[1:-1]
-
-
-class CharVal(Literal):  #pylint: disable=too-few-public-methods
-    """A parser for literals created from a char-val node."""
-
-    visitor = CharValNodeVisitor()
-
-    def __init__(self, node):
-        context = {}
-        self.visitor.visit(node, context)
-        try:
-            super(CharVal, self).__init__(context['value'],
-                                          context['case_sensitive'])
-        except KeyError as e:
-            raise ParseError('Invalid node %s.' % str(node)) from e
+        self.value = node.value[1:-1]
 
 
 class NumVal(Literal):  #pylint: disable=too-few-public-methods
@@ -496,150 +486,6 @@ class Rule():
         return "%s('%s')" % (self.__class__.__name__, self.name)
 
     @classmethod
-    def get(cls, name, default=None):
-        """Retrieves Rule by name.  If a Rule object matching name is found, it is returned.
-        Otherwise default is returned, and no Rule object is
-        created, as would be the case when invoking Rule(name)."""
-
-        _name = name.casefold()
-        return cls._obj_map.get((cls, _name), cls._obj_map.get((Rule, _name), default))
-
-    @classmethod
-    def make_parser(cls, node: Node):
-        """Creates a parser from node via invocation of some other make_parser_* method,
-        following an external visitor scheme."""
-
-        method_name = 'make_parser_%s' % node.name.replace('-', '_')
-        return getattr(cls, method_name)(node)
-
-    @classmethod
-    def make_parser_alternation(cls, node: Node):
-        """Creates an Alternation object from alternation node."""
-        assert node.name == 'alternation'
-        args = [cls.make_parser_concatenation(child) for child in node.children if child.name == 'concatenation']
-        return Alternation(*args) if len(args) > 1 else args[0]
-
-    @classmethod
-    def make_parser_char_val(cls, node: Node):
-        """Creates a CharVal object from char-val node."""
-        return CharVal(node)
-
-    @classmethod
-    def make_parser_concatenation(cls, node: Node):
-        """Creates a Concatention object from concatenation node."""
-        assert node.name == 'concatenation'
-        args = [cls.make_parser_repetition(child) for child in node.children if child.name == 'repetition']
-        return Concatenation(*args) if len(args) > 1 else args[0]
-
-    @classmethod
-    def make_parser_element(cls, node: Node):
-        """Creates a parser object from element node."""
-
-        return cls.make_parser(node.children[0])
-
-    @classmethod
-    def make_parser_elements(cls, node: Node):
-        """Creates an Alternation object from elements node."""
-
-        assert node.children[0].name == 'alternation'
-        return cls.make_parser_alternation(node.children[0])
-
-    @classmethod
-    def make_parser_group(cls, node: Node):
-        """Creates an Alternation object from group node."""
-
-        for child in node.children:
-            if child.name == 'alternation':
-                parser = cls.make_parser_alternation(child)
-                break
-        else:
-            assert False, 'group node has no alternation child node'
-        return parser
-
-    @classmethod
-    def make_parser_num_val(cls, node) -> NumVal:
-        """Creates a NumVal object from num-val node."""
-
-        return NumVal(node)
-
-    @classmethod
-    def make_parser_option(cls, node: Node):
-        """Creates an Option object from option node."""
-
-        for child in node.children:
-            if child.name == 'alternation':
-                parser = cls.make_parser_alternation(child)
-                break
-        else:
-            assert False, 'option node has no alternation child node'
-        return Option(parser)
-
-    @classmethod
-    def make_parser_repeat(cls, node):
-        """Creates a Repeat object from repeat node."""
-        repeat_op = '*'
-        min_src = '0'
-        max_src = ''
-        iter_child = iter(node.children)
-
-        child = None
-        for child in iter_child:
-            if child.name == 'DIGIT':
-                min_src = min_src + child.value
-            else:
-                break
-
-        if child.value == repeat_op:
-            max_src = ''
-            for child in iter_child:
-                max_src = max_src + child.value
-        else:
-            max_src = min_src
-
-        return Repeat(
-            min=int(min_src, base=10),
-            max=int(max_src, base=10) if max_src else None)
-
-    @classmethod
-    def make_parser_repetition(cls, node):
-        """Creates a Repetition object from repetition node."""
-        if node.children[0].name == 'repeat':  # pylint: disable=no-else-return
-            return Repetition(
-                cls.make_parser_repeat(node.children[0]),
-                cls.make_parser_element(node.children[1]))
-        else:
-            assert node.children[0].name == 'element'
-            return cls.make_parser_element(node.children[0])
-
-    @classmethod
-    def make_parser_rule(cls, node):
-        """Creates a Rule object from rule node."""
-        assert node.children[0].name == 'rulename'
-        rulename = node.children[0].value
-        assert node.children[1].name == 'defined-as'
-        for child in node.children[1].children:
-            if child.name == 'literal':
-                defined_as = child.value
-                break
-        assert node.children[2].name == 'elements'
-        elements = cls.make_parser_elements(node.children[2])
-
-
-        assert defined_as in ['=', '=/'], "Node 'defined-as' returned unexpected value %s." % defined_as
-        if defined_as == '=':  # pylint: disable=no-else-return
-            return cls(rulename, elements)
-        else:
-            rule = cls(rulename)
-            rule.definition = Alternation(rule.definition, elements)
-            return rule
-
-
-    @classmethod
-    def make_parser_rulename(cls, node):
-        """Returns a Rule object using value of rulename node."""
-        return cls(node.value)
-
-    @classmethod
     def create(cls, rule_source, start=0):
         """Creates a Rule object from ABNF source.  A terminating CRLF will be appended to
         rule_source if needed to satisfy the ABNF grammar rule for "rule".
@@ -655,7 +501,17 @@ class Rule():
         if rule_source[-2:] != '\r\n':
             rule_source = rule_source + '\r\n'
         parse_tree, start = ABNFGrammarRule('rule').parse(rule_source, start)
-        return cls.make_parser_rule(parse_tree)
+        visitor = ABNFGrammarRuleNodeVisitor(cls)
+        return visitor.visit(parse_tree)
+
+    @classmethod
+    def get(cls, name, default=None):
+        """Retrieves Rule by name.  If a Rule object matching name is found, it is returned.
+        Otherwise default is returned, and no Rule object is
+        created, as would be the case when invoking Rule(name)."""
+
+        _name = name.casefold()
+        return cls._obj_map.get((cls, _name), cls._obj_map.get((Rule, _name), default))
 
     @classmethod
     def rules(cls):
@@ -850,3 +706,134 @@ ABNFGrammarRule.grammar = [
 
 for grammar_rule_def in ABNFGrammarRule.grammar:
     ABNFGrammarRule(*grammar_rule_def)
+
+
+class ABNFGrammarRuleNodeVisitor(NodeVisitor):
+    """Visitor for visiting nodes generated from ABNFGrammarRules."""
+    
+    def __init__(self, rule_cls, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.rule_cls = rule_cls
+
+    def visit_alternation(self, node):
+        """Creates an Alternation object from alternation node."""
+        assert node.name == 'alternation'
+        args = [self.visit_concatenation(child) for child in node.children if child.name == 'concatenation']
+        return Alternation(*args) if len(args) > 1 else args[0]
+
+    def visit_char_val(self, node):
+        """Creates a Literal object from char-val node."""
+        visitor = CharValNodeVisitor()
+        visitor.visit(node)
+        return Literal(visitor.value, visitor.case_sensitive)
+
+    def visit_concatenation(self, node):
+        """Creates a Concatention object from concatenation node."""
+        assert node.name == 'concatenation'
+        args = [self.visit_repetition(child) for child in node.children if child.name == 'repetition']
+        return Concatenation(*args) if len(args) > 1 else args[0]
+
+
+    def visit_element(self, node):
+        """Creates a parser object from element node."""
+
+        return self.visit(node.children[0])
+
+
+    def visit_elements(self, node):
+        """Creates an Alternation object from elements node."""
+
+        assert node.children[0].name == 'alternation'
+        return self.visit_alternation(node.children[0])
+
+
+    def visit_group(self, node):
+        """Creates an Alternation object from group node."""
+
+        for child in node.children:
+            if child.name == 'alternation':
+                parser = self.visit_alternation(child)
+                break
+        else:
+            assert False, 'group node has no alternation child node'
+        return parser
+
+
+    def visit_num_val(self, node):
+        """Creates a NumVal object from num-val node."""
+        return NumVal(node)
+
+
+    def visit_option(self, node):
+        """Creates an Option object from option node."""
+
+        for child in node.children:
+            if child.name == 'alternation':
+                parser = self.visit_alternation(child)
+                break
+        else:
+            assert False, 'option node has no alternation child node'
+        return Option(parser)
+
+
+    def visit_repeat(self, node):
+        """Creates a Repeat object from repeat node."""
+        repeat_op = '*'
+        min_src = '0'
+        max_src = ''
+        iter_child = iter(node.children)
+
+        child = None
+        for child in iter_child:
+            if child.name == 'DIGIT':
+                min_src = min_src + child.value
+            else:
+                break
+
+        if child.value == repeat_op:
+            max_src = ''
+            for child in iter_child:
+                max_src = max_src + child.value
+        else:
+            max_src = min_src
+
+        return Repeat(
+            min=int(min_src, base=10),
+            max=int(max_src, base=10) if max_src else None)
+
+
+    def visit_repetition(self, node):
+        """Creates a Repetition object from repetition node."""
+        if node.children[0].name == 'repeat':  # pylint: disable=no-else-return
+            return Repetition(
+                self.visit_repeat(node.children[0]),
+                self.visit_element(node.children[1]))
+        else:
+            assert node.children[0].name == 'element'
+            return self.visit_element(node.children[0])
+
+
+    def visit_rule(self, node):
+        """Creates a Rule object from rule node."""
+        assert node.children[0].name == 'rulename'
+        rulename = node.children[0].value
+        assert node.children[1].name == 'defined-as'
+        for child in node.children[1].children:
+            if child.name == 'literal':
+                defined_as = child.value
+                break
+        assert node.children[2].name == 'elements'
+        elements = self.visit_elements(node.children[2])
+
+        assert defined_as in ['=', '=/'], "Node 'defined-as' returned unexpected value %s." % defined_as
+        if defined_as == '=':  # pylint: disable=no-else-return
+            return self.rule_cls(rulename, elements)
+        else:
+            rule = self.rule_cls(rulename)
+            rule.definition = Alternation(rule.definition, elements)
+            return rule
+
+    def visit_rulename(self, node):
+        """Returns a Rule object using value of rulename node."""
+        return self.rule_cls(node.value)
+        
