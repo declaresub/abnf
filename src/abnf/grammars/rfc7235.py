@@ -36,7 +36,7 @@ class Rule(_Rule):
         'auth-param = token BWS "=" BWS ( token / quoted-string )',
         'auth-scheme = token',
         # the definition of challenge doesn't work with this parser.  Given a challenge like
-        # 'Basic realm="/"', the substring 'realm=' is matched by the token68 rule.  Then 
+        # 'Basic realm="/"', the substring 'realm=' is matched by the token68 rule.  Then
         # what's left is not matched.  So we swap the alternation arguments.  But this is
         # still not enough, as the new first argument is wrapped in an Optional Sequence.
         # So, finally, we remove the [].

@@ -7,7 +7,7 @@ from ..parser import Rule as _Rule
 from . import rfc3986, rfc7230, rfc7231
 from .misc import load_grammar_rules
 
-                      
+
 @load_grammar_rules([
 ('token', rfc7230.Rule('token')),
 ('IPv4address', rfc3986.Rule('IPv4address')),
@@ -35,7 +35,7 @@ class Rule(_Rule):
     # alternation arguments are reversed to work with abnf parser.
     'cookie-value = ( DQUOTE *cookie-octet DQUOTE ) / *cookie-octet',
     'cookie-octet = %x21 / %x23-2B / %x2D-3A / %x3C-5B / %x5D-7E',
-    # token = <token, defined in [RFC2616], Section 2.2>' -- the rule below is 
+    # token = <token, defined in [RFC2616], Section 2.2>' -- the rule below is
     # constructed by hand from RFC 2616 definition.
     'token = %x21 / %x23-27 / %x2A-2B / %x2D-2E / %x30-39 / %x41-5A / %x5E-7A / %x7C',
     'cookie-av = expires-av / max-age-av / domain-av / path-av / secure-av / httponly-av / extension-av',
@@ -43,12 +43,12 @@ class Rule(_Rule):
     # sane-cookie-date = <rfc1123-date, defined in [RFC2616], Section 3.3.1>'
     # rfc1123-date is expressed in terms of rules imported from rfc7231
     'sane-cookie-date = rfc1123-date',
-    'rfc1123-date = wkday "," SP date1 SP time SP "GMT"',    
+    'rfc1123-date = wkday "," SP date1 SP time SP "GMT"',
     'max-age-av = "Max-Age=" non-zero-digit *DIGIT',
     'non-zero-digit = %x31-39',
     'domain-av = "Domain=" domain-value',
     #domain-value = <subdomain>'
-    # these next three rules are constructed following RFC 1034 and RFC 1123, with 
+    # these next three rules are constructed following RFC 1034 and RFC 1123, with
     # IPv6 address support thrown in.
     'label = (ALPHA / DIGIT) *(((ALPHA / DIGIT / "-") (ALPHA / DIGIT)) / (ALPHA / DIGIT))',
     'subdomain = label *("." label)',
