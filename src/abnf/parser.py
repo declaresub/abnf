@@ -160,9 +160,8 @@ class Literal():  #pylint: disable=too-few-public-methods
             r'\x%02x' % ord(x) if x in non_printable_chars else x
             for x in self.value
         ]
-        value = tuple(value) if isinstance(self.value,
-                                           tuple) else ''.join(value)
-        return "Literal('%s')" % str(value)
+
+        return "Literal(%s)" % str(value) if isinstance(self.value, tuple) else "Literal('%s')" % ''.join(value)
 
 
 class CharValNodeVisitor(NodeVisitor):
