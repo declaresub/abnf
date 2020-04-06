@@ -516,13 +516,7 @@ class Rule():
     def make_parser_alternation(cls, node: Node):
         """Creates an Alternation object from alternation node."""
         assert node.name == 'alternation'
-        args = []
-        for child in node.children:
-            if child.name == 'concatenation':
-                args.append(cls.make_parser_concatenation(child))
-            else:
-                continue # pragma: no cover
-
+        args = [cls.make_parser_concatenation(child) for child in node.children if child.name == 'concatenation']
         return Alternation(*args) if len(args) > 1 else args[0]
 
     @classmethod
@@ -533,14 +527,8 @@ class Rule():
     @classmethod
     def make_parser_concatenation(cls, node: Node):
         """Creates a Concatention object from concatenation node."""
-
-        args = []
-        for child in node.children:
-            if child.name == 'repetition':
-                args.append(cls.make_parser_repetition(child))
-            else:
-                continue # pragma: no cover
-
+        assert node.name == 'concatenation'
+        args = [cls.make_parser_repetition(child) for child in node.children if child.name == 'repetition']
         return Concatenation(*args) if len(args) > 1 else args[0]
 
     @classmethod
