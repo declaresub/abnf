@@ -74,5 +74,3 @@ class Rule(_Rule):
     'cookie-header = "Cookie:" OWS cookie-string OWS',
     'cookie-string = cookie-pair *( ";" SP cookie-pair )',
     ]
-
-
