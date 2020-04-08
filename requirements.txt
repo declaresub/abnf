@@ -1,7 +1,14 @@
-# This requirements file is for use in development.
+# This requirements file is for development virtual environments.
 
 
 -e .
+black
+check-manifest
+pep517
 pylint
 pytest
 pytest-cov
+tox
+tox-pyenv
+twine
+wheel
