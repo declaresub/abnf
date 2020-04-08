@@ -14,34 +14,33 @@ class Rule(_Rule):
     """Rule objects generated from ABNF in RFC 4647."""
 
     grammar = [
-        'rulelist = 1*( rule / (*c-wsp c-nl) )',
-        'rule = rulename defined-as elements c-nl\
+        "rulelist = 1*( rule / (*c-wsp c-nl) )",
+        "rule = rulename defined-as elements c-nl\
                                         ; continues if next line starts\
-                                        ;  with white space',
+                                        ;  with white space",
         'rulename = ALPHA *(ALPHA / DIGIT / "-")',
         'defined-as = *c-wsp ("=" / "=/") *c-wsp\
                                         ; basic rules definition and\
                                         ;  incremental alternatives',
-        'elements = alternation *c-wsp',
-        'c-wsp = WSP / (c-nl WSP)',
-        'c-nl = comment / CRLF\
-                                        ; comment or newline',
+        "elements = alternation *c-wsp",
+        "c-wsp = WSP / (c-nl WSP)",
+        "c-nl = comment / CRLF\
+                                        ; comment or newline",
         'comment = ";" *(WSP / VCHAR) CRLF',
         'alternation = concatenation\
                                    *(*c-wsp "/" *c-wsp concatenation)',
-
-        'concatenation = repetition *(1*c-wsp repetition)',
-        'repetition = [repeat] element',
+        "concatenation = repetition *(1*c-wsp repetition)",
+        "repetition = [repeat] element",
         # repeat operand order is reversed from original definition because alternation
         # is first-match, not longest.
         'repeat = (*DIGIT "*" *DIGIT) / 1*DIGIT',
-        'element = rulename / group / option /\
-                                   char-val / num-val',
+        "element = rulename / group / option /\
+                                   char-val / num-val",
         'group = "(" *c-wsp alternation *c-wsp ")"',
         'option = "[" *c-wsp alternation *c-wsp "]"',
-        'char-val = DQUOTE *(%x20-21 / %x23-7E) DQUOTE\
+        "char-val = DQUOTE *(%x20-21 / %x23-7E) DQUOTE\
                                         ; quoted string of SP and VCHAR\
-                                        ;  without DQUOTE',
+                                        ;  without DQUOTE",
         'num-val = "%" (bin-val / dec-val / hex-val)',
         'bin-val = "b" 1*BIT\
                                    [ 1*("." 1*BIT) / ("-" 1*BIT) ]\
@@ -49,7 +48,6 @@ class Rule(_Rule):
                                         ;  or single ONEOF range',
         'dec-val = "d" 1*DIGIT\
                                    [ 1*("." 1*DIGIT) / ("-" 1*DIGIT) ]',
-
         'hex-val = "x" 1*HEXDIG\
                                    [ 1*("." 1*HEXDIG) / ("-" 1*HEXDIG) ]\
                                         ; white space',

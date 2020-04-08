@@ -8,18 +8,17 @@ from . import rfc5646
 from .misc import load_grammar_rules
 
 
-
-@load_grammar_rules([('language', rfc5646.Rule('Language-Tag'))])
+@load_grammar_rules([("language", rfc5646.Rule("Language-Tag"))])
 class Rule(_Rule):
     """Rules from RFC 8187."""
 
     grammar = [
-    'ext-value = charset "\'" [ language ] "\'" value-chars',
-    'charset = "UTF-8" / mime-charset',
-    'mime-charset = 1*mime-charsetc',
-    'mime-charsetc = ALPHA / DIGIT  / "!" / "#" / "$" / "%" / "&"  / "+" / "-" / "^" / "_" / "`"  / "{" / "}" / "~"',
-    #language = <Language-Tag, see [RFC5646], Section 2.1>
-    'value-chars = *( pct-encoded / attr-char )',
-    'pct-encoded = "%" HEXDIG HEXDIG',
-    'attr-char = ALPHA / DIGIT  / "!" / "#" / "$" / "&" / "+" / "-" / "."  / "^" / "_" / "`" / "|" / "~"  ',
+        'ext-value = charset "\'" [ language ] "\'" value-chars',
+        'charset = "UTF-8" / mime-charset',
+        "mime-charset = 1*mime-charsetc",
+        'mime-charsetc = ALPHA / DIGIT  / "!" / "#" / "$" / "%" / "&"  / "+" / "-" / "^" / "_" / "`"  / "{" / "}" / "~"',
+        # language = <Language-Tag, see [RFC5646], Section 2.1>
+        "value-chars = *( pct-encoded / attr-char )",
+        'pct-encoded = "%" HEXDIG HEXDIG',
+        'attr-char = ALPHA / DIGIT  / "!" / "#" / "$" / "&" / "+" / "-" / "."  / "^" / "_" / "`" / "|" / "~"  ',
     ]

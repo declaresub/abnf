@@ -14,13 +14,13 @@ class Rule(_Rule):
     """Rule objects generated from ABNF in RFC 5322."""
 
     grammar = [
-        'char-val = case-insensitive-string /\
-                           case-sensitive-string',
+        "char-val = case-insensitive-string /\
+                           case-sensitive-string",
         'case-insensitive-string =\
                            [ "%i" ] quoted-string',
         'case-sensitive-string =\
                            "%s" quoted-string',
-        'quoted-string  =  DQUOTE *(%x20-21 / %x23-7E) DQUOTE\
+        "quoted-string  =  DQUOTE *(%x20-21 / %x23-7E) DQUOTE\
                                 ; quoted string of SP and VCHAR\
-                                ;  without DQUOTE',
-        ]
+                                ;  without DQUOTE",
+    ]

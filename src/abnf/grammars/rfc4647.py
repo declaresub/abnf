@@ -13,6 +13,6 @@ class Rule(_Rule):
 
     grammar = [
         'language-range = (1*8ALPHA *("-" 1*8alphanum)) / "*"',
-        'alphanum = ALPHA / DIGIT',
-        'extended-language-range = (1*8ALPHA / "*") *("-" (1*8alphanum / "*"))'
+        "alphanum = ALPHA / DIGIT",
+        'extended-language-range = (1*8ALPHA / "*") *("-" (1*8alphanum / "*"))',
     ]
