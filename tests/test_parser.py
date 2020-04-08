@@ -1,6 +1,7 @@
 import pytest
-from abnf.parser import (Node, LiteralNode, Literal, ABNFGrammarRule, ABNFGrammarRuleNodeVisitor, Rule, ParseError, Alternation,
-    Concatenation, Repeat, Repetition, Option, GrammarError)
+from abnf.parser import (Node, LiteralNode, Literal, ABNFGrammarRule, 
+ABNFGrammarRuleNodeVisitor, Rule, ParseError, Alternation, NumValVisitor,
+    Concatenation, Repeat, Repetition, Option, GrammarError, flatten)
 
 
 def test_empty_literal():
@@ -12,6 +13,11 @@ def test_literal():
     source = 'moof'
     node, start = parser.parse(source, 0)
     assert node.value == 'moof'
+
+@pytest.mark.parametrize("value", [None, 47, ('a', 'b', 'c'), (1, 2)])
+def test_literal_bad_value(value):
+    with pytest.raises(TypeError):
+        Literal(value)
 
 def test_literal_range_fail():
     parser = Literal(('a', 'b'))
@@ -78,6 +84,13 @@ def test_char_val_case_sensitive_fail(src):
     with pytest.raises(ParseError):
         parser.parse(src, 0)
 
+def test_bin_val():
+    src = "b01111000"
+    node = ABNFGrammarRule('bin-val').parse_all(src)
+    visitor = NumValVisitor()
+    visitor.visit(node)
+    assert visitor.value == 'x'
+
 @pytest.mark.parametrize("src", ['A', 'B', 'Z'])
 def test_literal_range(src):
     parser = Literal(('\x41', '\x5A'))
@@ -106,7 +119,7 @@ def test_rule_repeat(src, expected):
 def test_repetition():
     parser = Repetition(Repeat(1, 2), Literal('a'))
     node, start = parser.parse('aa', 0)
-    assert [x for x in node] == [LiteralNode('a', x, 1) for x in range(0, 2)]
+    assert [x for x in flatten(node)] == [LiteralNode('a', x, 1) for x in range(0, 2)]
 
 def test_repetition_str():
     parser = Repetition(Repeat(1, 2), Literal('a'))
@@ -120,7 +133,7 @@ def test_operator_precedence(src):
     parser = visitor.visit_alternation(node)
     node, start = parser.parse(src, 0)
     print(node)
-    assert ''.join(x.value for x in node) == src
+    assert ''.join(x.value for x in flatten(node)) == src
 
 
 @pytest.mark.parametrize("src", ['ac', 'bc'])
@@ -139,14 +152,12 @@ def test_node_str():
     node = Node(name=node_name, *node_children)
     assert str(node) == 'Node(name=%s, children=%s)' % (node_name, str(node_children))
 
+def test_node_eq():
+    assert Node('foo') == Node('foo')
+    
 def test_literal_node_children():
     node = LiteralNode('', 0, 0)
     assert node.children == []
-
-def test_Alternation_eq():
-    p1 = Alternation(Rule('a'), Rule('b'))
-    p2 = Alternation(Rule('a'), Rule('b'))
-    assert p1 == p2
     
 def test_visit_option_bad_node():
     node = Node('foo')
@@ -197,13 +208,6 @@ def test_rule_bad_defined_as():
         visitor = ABNFGrammarRuleNodeVisitor(ABNFGrammarRule)
         visitor.visit_rule(node)
 
-def test_visit_alternation():
-    src = 'a/b'
-    node, start = ABNFGrammarRule('alternation').parse(src, 0)  
-    visitor = ABNFGrammarRuleNodeVisitor(ABNFGrammarRule)
-    parser = visitor.visit_alternation(node)
-    assert parser == Alternation(Rule('a'), Rule('b'))
-
 class XRule(Rule):
     pass
 
@@ -215,7 +219,7 @@ def test_rule_rules():
 
 @pytest.mark.parametrize("name, rule", [('foo', XRule('foo')), ('bar', None)])
 def test_rule_get(name, rule):
-    assert XRule.get(name) == rule
+    assert XRule.get(name) is rule
 
 def test_parse_all_pass():
     src = 'moof'

@@ -6,7 +6,7 @@ grammar.
 
 ## Requirements
 
-ABNF has been tested with Python 3.4-6.  Support for Python 2 is not planned at this time.
+ABNF has been tested with Python 3.4-6.
 
 ## Usage
 
@@ -46,6 +46,85 @@ without telling the user, ABNF expects preprocessing of grammars into python lis
 in `abnf.grammars`.
 
 
+## Examples
+
+### Validate an email address
+
+The code below validates an arbitrary email address.  If src is not syntactically valid,
+a ParseError is raised.
+
+    from abnf.grammars import rfc5322
+    
+    src = 'test@example.com'
+    parser = rfc5322.Rule('address')
+    parser.parse_all(src)
+
+### Extract the actual address from an email address
+
+
+    from abnf.grammars import rfc5322
+
+    def get_address(node):
+        """Do a breadth-first search of the tree for addr-spec node.  If found, 
+        return its value."""
+        queue = [node]
+        while queue:
+            n, queue = queue[0], queue[1:]
+            if n.name == 'addr-spec':
+                return n.value
+            else:
+                queue.extend(n.children)
+        return None
+
+    src = 'John Doe <jdoe@example.com>'
+    parser = rfc5322.Rule('address')
+    node = parser.parse_all(src)
+    address = get_address(node)
+        
+        
+for x in node_iterator(node):
+    if x.name == 'addr-spec':
+        print(x.value)
+        break
+
+
+### Extract authentication information from an HTTP Authorization header.
+
+    from abnf.parser import NodeVisitor
+    from abnf.grammars import rfc7235
+
+    header_value = 'Basic YWxhZGRpbjpvcGVuc2VzYW1l'
+    parser = rfc7235.Rule('Authorization')
+    node, offset = parser.parse(header_value, 0)
+
+    class AuthVisitor(NodeVisitor):
+        def __init__(self):
+            super().__init__()
+            self.auth_scheme = None
+            self.token = None
+
+        def visit_authorization(self, node):
+            for child_node in node.children:
+                self.visit(child_node)
+
+        def visit_credentials(self, node):
+            for child_node in node.children:
+                self.visit(child_node)
+
+        def visit_auth_scheme(self, node):
+            self.auth_scheme = node.value
+
+        def visit_token68(self, node):
+            self.token = node.value
+
+    visitor = AuthVisitor()
+    visitor.visit(node)
+    
+The result is that visitor.auth_scheme = 'Basic', and visitor.token = 'YWxhZGRpbjpvcGVuc2VzYW1l'
+
+
+
+        
 ## Development, Testing, etc.
 
 I create virtual environments for development in a directory venv. Should you wish 
@@ -72,3 +151,23 @@ Some of the test rules are long and gruesome.  Thus the tests take a bit of time
 
 abnf is implemented using parser combinators.  As a result, error reporting is not what it
 might be.
+
+
+
+#! /bin/bash
+
+/Users/charles/abnfgen-0.17/abnfgen -d /Users/charles/Documents/git/abnf/abnf/tests/fuzz/rule -n 10 -c -s rule /Users/charles/Documents/git/abnf/abnf/tests/rfc5234.grammar
+
+
+
+#! /bin/bash
+
+
+
+COUNTER=0
+#while [  $COUNTER -lt 1 ]; do
+    /Users/charles/abnfgen-0.17/abnfgen -c -s rule /Users/charles/Documents/git/abnf/abnf/tests/rfc5234.grammar > /tmp/fuzz
+    #echo '"""'$(/Users/charles/abnfgen-0.17/abnfgen -c -s concatenation /Users/charles/Documents/git/abnf/abnf/tests/rfc5234.grammar | python -c "import sys; print(sys.stdin.read().replace('\r', r'\r').replace('\n', r'\n'))")'""",'
+
+    #let COUNTER=COUNTER+1 
+#done
