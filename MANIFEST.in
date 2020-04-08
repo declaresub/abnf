@@ -1,0 +1,6 @@
+include LICENSE.txt
+include pylintrc
+include pytest.ini
+include tox.ini
+recursive-include tests *.grammar
+recursive-include tests *.py
