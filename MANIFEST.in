@@ -1,6 +1,8 @@
 include LICENSE.txt
 include pylintrc
 include pytest.ini
+include requirements.txt
 include tox.ini
 recursive-include tests *.grammar
 recursive-include tests *.py
+recursive-include tests *.tst
