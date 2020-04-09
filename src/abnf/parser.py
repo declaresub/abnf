@@ -17,24 +17,29 @@ class Alternation:  # pylint: disable=too-few-public-methods
     def parse(self, source, start):
         """
         :param source: source data
-        :type str:
+        :type source: str
         :param start: offset at which to begin parsing.
-        :returns: parse tree, new offset at which to continue parsing
-        :rtype: Node, int
+        :type start: int
+        :return: parse tree, new offset at which to continue parsing
+        :rtype: (Node, int)
         :raises ParseError: if none of the alternation arguments can parse source
         """
-        new_start = start
+
+        matches = []
         for parser in self.args:
             try:
-                node, new_start = parser.parse(source, new_start)
+                matches.append(parser.parse(source, start))
             except ParseError:
                 continue
-            else:
-                break
+
+        if matches:
+            longest_match = matches[0]
+            for match in matches[1:]:
+                if match[1] > longest_match[1]:
+                    longest_match = match
+            return longest_match
         else:
             raise ParseError("Error parsing %s at offset %s." % (str(self), start))
-
-        return node, new_start
 
     def __str__(self):
         return self.str_template % ", ".join(map(str, self.args))
@@ -146,9 +151,9 @@ class Literal:  # pylint: disable=too-few-public-methods
     def __str__(self):
         # str(self.value) handles the case value == tuple.
         non_printable_chars = set(map(chr, range(0x00, 0x20)))
-        value = [
+        value = tuple([
             r"\x%02x" % ord(x) if x in non_printable_chars else x for x in self.value
-        ]
+        ])
 
         return (
             "Literal(%s)" % str(value)
@@ -470,7 +475,7 @@ def flatten(*L):
     return flat_list
 
 
-#### Bootstraps ####
+#### Bootstrappery ####
 # To get parsing for parser generation started, the ABNF grammar from RFC 5234 and
 # RFC 7405, plus the core rules from RFC 5234, are defined ab initio.
 
