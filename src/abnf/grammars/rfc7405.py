@@ -1,17 +1,19 @@
 """
 This is the extension to RFC 5234 which adds case-sensitive char-val.
 
-Collected rules from RFC 5322
-https://tools.ietf.org/html/rfc5322
+Collected rules from RFC 7405
+https://tools.ietf.org/html/rfc7405
 """
 
 from ..parser import Rule as _Rule
 from .misc import load_grammar_rules
+from . import rfc5234
 
-
-@load_grammar_rules()
+@load_grammar_rules(
+[(rule.name, rule) for rule in rfc5234.Rule.rules() if rule.name not in {core_rule.name for core_rule in _Rule.rules()}]
+)
 class Rule(_Rule):
-    """Rule objects generated from ABNF in RFC 5322."""
+    """Rule objects generated from ABNF in RFC 7405."""
 
     grammar = [
         "char-val = case-insensitive-string /\
