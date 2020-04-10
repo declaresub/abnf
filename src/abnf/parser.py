@@ -32,7 +32,7 @@ class Alternation:  # pylint: disable=too-few-public-methods
             except ParseError:
                 continue
 
-        if matches:
+        if matches: # pylint: disable=no-else-return
             longest_match = matches[0]
             for match in matches[1:]:
                 if match[1] > longest_match[1]:
