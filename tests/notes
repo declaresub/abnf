@@ -1,0 +1,17 @@
+#! /bin/bash
+
+/Users/charles/abnfgen-0.17/abnfgen -d /Users/charles/Documents/git/abnf/abnf/tests/fuzz/rule -n 10 -c -s rule /Users/charles/Documents/git/abnf/abnf/tests/rfc5234.grammar
+
+
+
+#! /bin/bash
+
+
+
+COUNTER=0
+#while [  $COUNTER -lt 1 ]; do
+    /Users/charles/abnfgen-0.17/abnfgen -c -s rule /Users/charles/Documents/git/abnf/abnf/tests/rfc5234.grammar > /tmp/fuzz
+    #echo '"""'$(/Users/charles/abnfgen-0.17/abnfgen -c -s concatenation /Users/charles/Documents/git/abnf/abnf/tests/rfc5234.grammar | python -c "import sys; print(sys.stdin.read().replace('\r', r'\r').replace('\n', r'\n'))")'""",'
+
+    #let COUNTER=COUNTER+1 
+#done
