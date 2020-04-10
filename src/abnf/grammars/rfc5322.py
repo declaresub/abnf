@@ -12,7 +12,7 @@ class Rule(_Rule):
     """Rule objects generated from ABNF in RFC 5322."""
 
     grammar = [
-        'quoted-pair = ("" (VCHAR / WSP)) / obs-qp',
+        'quoted-pair = ("\\" (VCHAR / WSP)) / obs-qp',
         "FWS = ([*WSP CRLF] 1*WSP) / obs-FWS ",
         "ctext = %d33-39 / %d42-91 / %d93-126 / obs-ctext",
         "ccontent = ctext / quoted-pair / comment",
@@ -22,7 +22,7 @@ class Rule(_Rule):
         "atom = [CFWS] 1*atext [CFWS]",
         'dot-atom-text = 1*atext *("." 1*atext)',
         "dot-atom = [CFWS] dot-atom-text [CFWS]",
-        'specials = "(" / ")" / "<" / ">" / "[" / "]" / ":" / ";" / "@" / "" / "," / "." / DQUOTE',
+        'specials = "(" / ")" / "<" / ">" / "[" / "]" / ":" / ";" / "@" / "\\" / "," / "." / DQUOTE',
         "qtext = %d33 / %d35-91 / %d93-126 / obs-qtext",
         "qcontent = qtext / quoted-pair",
         "quoted-string = [CFWS] DQUOTE *([FWS] qcontent) [FWS] DQUOTE [CFWS]",
@@ -96,7 +96,7 @@ class Rule(_Rule):
         "obs-ctext = obs-NO-WS-CTL",
         "obs-qtext = obs-NO-WS-CTL",
         "obs-utext = %d0 / obs-NO-WS-CTL / VCHAR",
-        'obs-qp = "" (%d0 / obs-NO-WS-CTL / LF / CR)',
+        'obs-qp = "\\" (%d0 / obs-NO-WS-CTL / LF / CR)',
         "obs-body = *((*LF *CR *((%d0 / text) *LF *CR)) / CRLF)",
         "obs-unstruct = *((*LF *CR *(obs-utext *LF *CR)) / FWS)",
         'obs-phrase = word *(word / "." / CFWS)',
