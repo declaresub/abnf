@@ -159,7 +159,7 @@ class Literal:  # pylint: disable=too-few-public-methods
             "Literal(%s)" % str(value)
             if isinstance(self.value, tuple)
             else "Literal('%s'%s)"
-            % ("".join(value), "case_sensitive" if self.case_sensitive else "")
+            % ("".join(value), ", case_sensitive" if self.case_sensitive else "")
         )
 
 
@@ -481,13 +481,13 @@ def flatten(*L):
 
 for core_rule_def in [
     ("ALPHA", Alternation(Literal(("\x41", "\x5A")), Literal(("\x61", "\x7A")))),
-    ("BIT", Literal(("\x30", "\x31"))),
+    ("BIT", Alternation(Literal('0'), Literal('1'))),
     ("CHAR", Literal(("\x01", "\x7F"))),
-    ("CTL", Alternation(Literal(("\x00", "\x1F")), Literal("\x7F"))),
-    ("CR", Literal("\x0D")),
+    ("CTL", Alternation(Literal(("\x00", "\x1F")), Literal("\x7F", case_sensitive=True))),
+    ("CR", Literal("\x0D", case_sensitive=True)),
     ("CRLF", Concatenation(Rule("CR"), Rule("LF"))),
     ("DIGIT", Literal(("\x30", "\x39"))),
-    ("DQUOTE", Literal("\x22")),
+    ("DQUOTE", Literal("\x22", case_sensitive=True)),
     (
         "HEXDIG",
         Alternation(
@@ -500,8 +500,8 @@ for core_rule_def in [
             Literal("F"),
         ),
     ),
-    ("HTAB", Literal("\x09")),
-    ("LF", Literal("\x0A")),
+    ("HTAB", Literal("\x09", case_sensitive=True)),
+    ("LF", Literal("\x0A", case_sensitive=True)),
     (
         "LWSP",
         Repetition(
@@ -509,7 +509,7 @@ for core_rule_def in [
         ),
     ),
     ("OCTET", Literal(("\x00", "\xFF"))),
-    ("SP", Literal("\x20")),
+    ("SP", Literal("\x20", case_sensitive=True)),
     ("VCHAR", Literal(("\x21", "\x7E"))),
     ("WSP", Alternation(Rule("SP"), Rule("HTAB"))),
 ]:
