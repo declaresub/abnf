@@ -4,46 +4,159 @@ ABNF is a package that generates parsers from ABNF grammars.  The main purpose o
 package is to parse data as specified in RFCs.  But it should be able to handle any ABNF 
 grammar.
 
+ABNF was originally written a few years ago for parsing HTTP headers in a web framework.
+The code herein has been in use in production here and there on the internet since then.
+
+
 ## Requirements
 
-ABNF has been tested with Python 3.4-6.
+ABNF has been tested with Python 3.5-8.
 
 ## Usage
 
-The main class of abnf is Rule.  A Rule object is a parser created from an ABNF rule.
+The main class of abnf is Rule.  You should think of a Rule subclass as corresponding to an
+ABNF grammar.  Then instances of that subclass represent the rules of that grammar.
 
-    from abnf import Rule
-    rule = Rule.create('URI = scheme ":" hier-part [ "?" query ] [ "#" fragment ]')
-    
-Once created, a Rule object is retrieved by name.
-
-    rule = Rule('URI')
-    
 The Rule class is initialized with the core ABNF rules OCTET, BIT, HEXDIG, CTL, HTAB, LWSP, 
-CR, VCHAR, DIGIT, WSP, DQUOTE, LF, SP, CRLF, CHAR, ALPHA.
+CR, VCHAR, DIGIT, WSP, DQUOTE, LF, SP, CRLF, CHAR, ALPHA, and so are available in any subclass
+of Rule.
 
-Rule objects are cached, so `Rule('URI')` should always return the same object.  Objects 
-are stored internally by class and casefolded name, so it is possible that loading multiple 
-grammars will result in rulename collisions.  Thus you usually want to define a Rule
-subclass for each grammar. The core rules are available in subclasses.
+Create a Rule object using the class method create.
+
+    rule = Rule.create('double-quoted-string = DQUOTE *(%x20-21 / %x23-7E / %x22.22) DQUOTE')
+
+To later retrieve the object just created:
+
+    rule = Rule('double-quoted-string')
+
+Rule objects are cached, so `Rule('double-quoted-string')` should always return the same object,
+though you might not want to depend on that.
 
 ABNF includes several grammars.  The Rule subclass ABNFGrammarRule implements the rules 
 for ABNF.  The package `abnf.grammars` includes grammars from several RFCs.
 
-    >>> from abnf.grammars import rfc7232
-    >>> src = 'W/"moof"'
-    >>> node, start = rfc7232.Rule('ETag').parse(src)
-    >>> print(str(node))
-    Node(name=ETag, children=[Node(name=entity-tag, children=[Node(name=weak, children=[Node(name=literal, value="W/")]), Node(name=opaque-tag, children=[Node(name=DQUOTE, children=[Node(name=literal, value=""")]), Node(name=etagc, children=[Node(name=literal, value="m")]), Node(name=etagc, children=[Node(name=literal, value="o")]), Node(name=etagc, children=[Node(name=literal, value="o")]), Node(name=etagc, children=[Node(name=literal, value="f")]), Node(name=DQUOTE, children=[Node(name=literal, value=""")])])])])
+    from abnf.grammars import rfc7232
+    src = 'W/"moof"'
+    node, start = rfc7232.Rule('ETag').parse(src)
+    print(str(node))
+    
+The output is
+
+    Node(
+        name=ETag, 
+        children=
+            [
+            Node(
+                name=entity-tag, 
+                children=
+                    [
+                    Node(
+                        name=weak, 
+                        children=
+                            [
+                            Node(
+                                name=literal, 
+                                offset=0, 
+                                value="W/"
+                                )
+                            ]
+                        ), 
+                        Node(
+                            name=opaque-tag, 
+                            children=
+                                [
+                                Node(
+                                    name=DQUOTE, 
+                                    children=
+                                        [
+                                        Node(
+                                            name=literal, 
+                                            offset=2, 
+                                            value="""
+                                            )
+                                        ]
+                                    ), 
+                                Node(
+                                    name=etagc, 
+                                    children=
+                                        [
+                                        Node(
+                                            name=literal, 
+                                            offset=3, 
+                                            value="m"
+                                            )
+                                        ]
+                                    ), 
+                                Node(
+                                    name=etagc, 
+                                    children=
+                                        [
+                                        Node(
+                                            name=literal, 
+                                            offset=4, 
+                                            value="o"
+                                            )
+                                        ]
+                                    ), 
+                                Node(
+                                    name=etagc, 
+                                    children=
+                                        [
+                                        Node(
+                                            name=literal, 
+                                            offset=5, 
+                                            value="o"
+                                            )
+                                        ]
+                                    ), 
+                                Node(
+                                    name=etagc, 
+                                    children=
+                                    [
+                                    Node(
+                                        name=literal, 
+                                        offset=6, 
+                                        value="f"
+                                        )
+                                    ]
+                                ), 
+                            Node(
+                                name=DQUOTE, 
+                                children=
+                                    [
+                                    Node(
+                                        name=literal, 
+                                        offset=7, 
+                                        value="""
+                                        )
+                                    ]
+                                )
+                            ]
+                        )
+                    ]
+                )
+            ]
+        )'
+    
+    
 
 
 The modules in `abnf.grammars` may serve as an example for writing other Rule subclasses. 
 In particular, some of the RFC grammars incorporate rules by reference from other RFC. 
-`abnf.grammars.rfc7230` shows a way to import rules.
+`abnf.grammars.rfc7230` shows a way to import rules from another Rule subclass.
 
 ABNF uses CRLF as a delimiter for rules.  Because many text editors (e.g. BBEdit) substitute line endings 
 without telling the user, ABNF expects preprocessing of grammars into python lists of rules as 
 in `abnf.grammars`.
+
+### Errors
+
+abnf implements two exception subclasses, ParseError and GrammarError.  
+
+A GrammarError is raised when parsing encounters an undefined rule.  
+
+A ParseError is raised when parsing fails for some reason.  Error reporting is nothing
+more than a stack trace, but that usually allows one to get to the source of the problem.
 
 
 ## Examples
@@ -60,7 +173,6 @@ a ParseError is raised.
     parser.parse_all(src)
 
 ### Extract the actual address from an email address
-
 
     from abnf.grammars import rfc5322
 
@@ -80,12 +192,12 @@ a ParseError is raised.
     parser = rfc5322.Rule('address')
     node = parser.parse_all(src)
     address = get_address(node)
+    
         
-        
-for x in node_iterator(node):
-    if x.name == 'addr-spec':
-        print(x.value)
-        break
+    for x in node_iterator(node):
+        if x.name == 'addr-spec':
+            print(x.value)
+            break
 
 
 ### Extract authentication information from an HTTP Authorization header.
@@ -122,52 +234,48 @@ for x in node_iterator(node):
     
 The result is that visitor.auth_scheme = 'Basic', and visitor.token = 'YWxhZGRpbjpvcGVuc2VzYW1l'
 
+## Implementation
 
+abnf is implemented using parser combinators. There is a class Literal whose instances are
+initialized with either a string like 'moof', or a tuple like ('a', 'z') representing a range.
+The result is a parser that can match the initialized value.
+
+ABNF operations -- alternation, concatenation, repeat, etc. are implemented as classes.  
+For example, Alternation(Literal('foo'), Literal('bar')) returns a parser that implements the
+ABNF expression 
+
+    "foo" / "bar"
+ 
+Alternation is implemented to do longest match. In the event of a tie, the first
+match is returned.
+   
+The whole mess is bootstrapped by writing out the parsers for the grammar and core rules 
+by hand.  The ABNFGrammarRule class represents the ABNF grammar, and is used to parse other
+grammars.  It is also capable of parsing its own grammar.
 
         
 ## Development, Testing, etc.
 
-I create virtual environments for development in a directory venv. Should you wish 
-to do the same (with cwd = repository root):
+Should you wish to tinker with the code, install in a virtual environment and have at it.
+The file requirements.txt contains the packages I use for testing and such.
 
-    python3.4 -m venv venv/py34
-    python3.5 -m venv venv/py35
-    python3.6 -m venv venv/py36
-    
-Activate the virtual environment of your choice:
+A good starting point would be to run pytest and see that all tests pass.
 
-    source venv/py34/bin/activate
-
-and install an editable version of the project plus various tools.
-
-    pip install -r venv/requirements.txt
-
-Among the tools I use is [yapf](https://github.com/google/yapf) for code formatting.
+    pytest --cov-report term-missing --cov=abnf
 
 The test suite includes fuzz testing with test data generated using [abnfgen](http://www.quut.com/abnfgen/).
 Some of the test rules are long and gruesome.  Thus the tests take a bit of time to complete.
 
-## Implementation
+Following changes, run 
 
-abnf is implemented using parser combinators.  As a result, error reporting is not what it
-might be.
+    pylint abnf
 
+to resolve any problems found, then 
 
+    tox
+    
+to execute tests for python 3.5-3.8.
 
-#! /bin/bash
-
-/Users/charles/abnfgen-0.17/abnfgen -d /Users/charles/Documents/git/abnf/abnf/tests/fuzz/rule -n 10 -c -s rule /Users/charles/Documents/git/abnf/abnf/tests/rfc5234.grammar
-
-
-
-#! /bin/bash
+The code is formatted using black.
 
 
-
-COUNTER=0
-#while [  $COUNTER -lt 1 ]; do
-    /Users/charles/abnfgen-0.17/abnfgen -c -s rule /Users/charles/Documents/git/abnf/abnf/tests/rfc5234.grammar > /tmp/fuzz
-    #echo '"""'$(/Users/charles/abnfgen-0.17/abnfgen -c -s concatenation /Users/charles/Documents/git/abnf/abnf/tests/rfc5234.grammar | python -c "import sys; print(sys.stdin.read().replace('\r', r'\r').replace('\n', r'\n'))")'""",'
-
-    #let COUNTER=COUNTER+1 
-#done
