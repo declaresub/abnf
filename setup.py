@@ -28,7 +28,7 @@ setup(
     RFC grammars, ABNF should handle any valid grammar.',
     author=meta('author'),
     author_email=meta('author_email'),
-    url='https://bitbucket.org/yeomans/abnf',
+    url=meta('project_url'),
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     keywords=['abnf', 'parser', 'generator'],
