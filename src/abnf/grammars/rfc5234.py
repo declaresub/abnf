@@ -31,9 +31,7 @@ class Rule(_Rule):
                                    *(*c-wsp "/" *c-wsp concatenation)',
         "concatenation = repetition *(1*c-wsp repetition)",
         "repetition = [repeat] element",
-        # repeat operand order is reversed from original definition because alternation
-        # is first-match, not longest.
-        'repeat = (*DIGIT "*" *DIGIT) / 1*DIGIT',
+        'repeat = 1*DIGIT / (*DIGIT "*" *DIGIT)',
         "element = rulename / group / option /\
                                    char-val / num-val",
         'group = "(" *c-wsp alternation *c-wsp ")"',
