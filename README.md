@@ -10,7 +10,7 @@ The code herein has been in use in production here and there on the internet sin
 
 ## Requirements
 
-ABNF has been tested with Python 3.5-8.
+ABNF has been tested with Python 3.5-8. The package has no other dependencies.
 
 ## Usage
 
@@ -279,3 +279,23 @@ to execute tests for python 3.5-3.8.
 The code is formatted using black.
 
 
+## Build Process
+
+Mostly notes to self.
+
+### Test Build
+
+    tox
+    rm -rf build dist
+    python -m pep517.build .
+    twine upload -r test --sign --identity 6A41A77B dist/abnf-1.x.y*
+
+
+### Pypi Build
+
+    git tag -a v1.x.y -m pypi build
+    git branch v1.x.y
+    tox
+    rm -rf build dist
+    python -m pep517.build .
+    twine upload -r pypi --sign --identity 6A41A77B dist/abnf-1.x.y*
