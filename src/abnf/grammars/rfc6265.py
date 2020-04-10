@@ -34,8 +34,7 @@ class Rule(_Rule):
         'set-cookie-string = cookie-pair *( ";" SP cookie-av )',
         'cookie-pair = cookie-name "=" cookie-value',
         "cookie-name = token",
-        # alternation arguments are reversed to work with abnf parser.
-        "cookie-value = ( DQUOTE *cookie-octet DQUOTE ) / *cookie-octet",
+        "cookie-value = *cookie-octet / ( DQUOTE *cookie-octet DQUOTE )",
         "cookie-octet = %x21 / %x23-2B / %x2D-3A / %x3C-5B / %x5D-7E",
         # token = <token, defined in [RFC2616], Section 2.2>' -- the rule below is
         # constructed by hand from RFC 2616 definition.
