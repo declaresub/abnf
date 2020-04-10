@@ -32,7 +32,7 @@ class Alternation:  # pylint: disable=too-few-public-methods
             except ParseError:
                 continue
 
-        if matches: # pylint: disable=no-else-return
+        if matches:  # pylint: disable=no-else-return
             longest_match = matches[0]
             for match in matches[1:]:
                 if match[1] > longest_match[1]:
@@ -151,9 +151,9 @@ class Literal:  # pylint: disable=too-few-public-methods
     def __str__(self):
         # str(self.value) handles the case value == tuple.
         non_printable_chars = set(map(chr, range(0x00, 0x20)))
-        value = tuple([
-            r"\x%02x" % ord(x) if x in non_printable_chars else x for x in self.value
-        ])
+        value = tuple(
+            [r"\x%02x" % ord(x) if x in non_printable_chars else x for x in self.value]
+        )
 
         return (
             "Literal(%s)" % str(value)
@@ -481,9 +481,12 @@ def flatten(*L):
 
 for core_rule_def in [
     ("ALPHA", Alternation(Literal(("\x41", "\x5A")), Literal(("\x61", "\x7A")))),
-    ("BIT", Alternation(Literal('0'), Literal('1'))),
+    ("BIT", Alternation(Literal("0"), Literal("1"))),
     ("CHAR", Literal(("\x01", "\x7F"))),
-    ("CTL", Alternation(Literal(("\x00", "\x1F")), Literal("\x7F", case_sensitive=True))),
+    (
+        "CTL",
+        Alternation(Literal(("\x00", "\x1F")), Literal("\x7F", case_sensitive=True)),
+    ),
     ("CR", Literal("\x0D", case_sensitive=True)),
     ("CRLF", Concatenation(Rule("CR"), Rule("LF"))),
     ("DIGIT", Literal(("\x30", "\x39"))),
