@@ -1,5 +1,8 @@
 # ABNF
 
+![abnf-tox](https://github.com/declaresub/abnf/workflows/abnf-tox/badge.svg)
+
+
 ABNF is a package that generates parsers from ABNF grammars.  The main purpose of this
 package is to parse data as specified in RFCs.  But it should be able to handle any ABNF 
 grammar.
@@ -11,6 +14,30 @@ The code herein has been in use in production here and there on the internet sin
 ## Requirements
 
 ABNF has been tested with Python 3.5-8. The package has no other dependencies.
+
+## Installation
+
+The abnf package is available from [PyPI](https://pypi.org/project/abnf/).
+
+Install it in the usual way.
+
+    pip install abnf
+
+### Verification
+
+The abnf package is signed with GPG.  The public key is available from [github](https://github.com/declaresub.gpg),
+or [OpenPGP](https://keys.openpgp.org/).  The key fingerprint is `3A27 290F D243 BD83 BC3F  5BC8 86C0 57F9 6A41 A77B`.
+
+Once you have imported the public key into GPG, you can check the signature by downloading
+the files and the signature files from [PyPI](https://pypi.org/project/abnf/).  No
+download links for the signature files are present; you need to create them by appending `.asc`
+to the package URLs.  
+
+Once downloaded, use gpg to verify the signatures.
+
+    gpg --verify abnf-1.0.0.tar.gz.asc abnf-1.0.0.tar.gz
+    gpg --verify abnf-1.0.0-py2.py3-none-any.whl.asc abnf-1.0.0-py2.py3-none-any.whl
+
 
 ## Usage
 
