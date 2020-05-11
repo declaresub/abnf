@@ -307,3 +307,6 @@ to resolve any problems found, then
 to execute tests for python 3.5-3.8.
 
 The code is formatted using black.
+
+    black src/abnf
+
