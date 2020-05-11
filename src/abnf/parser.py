@@ -995,6 +995,7 @@ class NumValVisitor(NodeVisitor):
                 value = value + self._decode_bytes(buffer, base)
         return value
 
-    def _decode_bytes(self, data, base):
+    @staticmethod
+    def _decode_bytes(data, base):
         """Decodes num-val byte data. Intended to be private."""
-        return bytearray([int(data, base=base)]).decode(self.encoding)
+        return chr(int(data, base=base))

@@ -231,4 +231,24 @@ def test_parse_all_fail():
     with pytest.raises(ParseError):
         ABNFGrammarRule('rulename').parse_all(src)
 
-    
+@pytest.mark.parametrize("num_val", ['%x2227', '%d8743', '%b0010001000100111'])
+def test_unicode_num_val(num_val):
+    # https://github.com/declaresub/abnf/issues/1
+    class TestRule(Rule):
+        pass
+
+    value = '∧'
+    rule = 'combine = %s' % num_val
+    combine = TestRule.create(rule)
+    node = combine.parse_all(value)
+    assert node.value == value
+
+def test_unicode_hex_val_concat():
+    class TestRule(Rule):
+        pass
+
+    value = 'Я́блоко'
+    rule = 'apple = %x42f.301.431.43b.43e.43a.43e'
+    combine = TestRule.create(rule)
+    node = combine.parse_all(value)
+    assert node.value == value
