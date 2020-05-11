@@ -3,6 +3,7 @@
 
 #### Parser classes ####
 
+# pylint: disable=too-many-lines
 
 class Alternation:  # pylint: disable=too-few-public-methods
     """Implements the ABNF alternation operator. -- Alternation(parser1, parser2, ...)
