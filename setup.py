@@ -37,7 +37,7 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Topic :: Software Development :: Code Generators',
-        'Topic :: Software Development :: Interpreters''
+        'Topic :: Software Development :: Interpreters',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
