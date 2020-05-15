@@ -285,16 +285,16 @@ class Rule:
 
     def exclude_rule(self, rule: 'Rule') -> None:
         """
-        Exclude values which match rule.  For example, suppose we have the following 
+        Exclude values which match rule.  For example, suppose we have the following
         grammar.
-        
+
         foo = %x66.6f.6f
         keyword = foo
         identifier = ALPHA *(ALPHA / DIGIT )
-        
-        We don't want to allow a keyword to be an identifier.  To do this, 
+
+        We don't want to allow a keyword to be an identifier.  To do this,
         Rule('identifier').exclude_rule(Rule('keyword'))
-        
+
         Then attempting to use "foo" as a keyword would result in a ParseError.
         """
         self.exclude = rule
@@ -821,10 +821,10 @@ class ABNFGrammarRulelistNodeVisitor(NodeVisitor):
         super().__init__(*args, **kwargs)
         self.rule_visitor = ABNFGrammarRuleNodeVisitor(rule_cls)
 
-    def visit_rulelist(self, node:Node)-> [Rule]:
+    def visit_rulelist(self, node: Node)-> [Rule]: # pylint: disable=missing-function-docstring
         return list(filter(None, map(self.visit, node.children)))
 
-    def visit_rule(self, node:Node) -> Rule:
+    def visit_rule(self, node: Node) -> Rule: # pylint: disable=missing-function-docstring
         return self.rule_visitor.visit(node)
 
 class ABNFGrammarRuleNodeVisitor(NodeVisitor):
