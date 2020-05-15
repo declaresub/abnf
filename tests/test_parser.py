@@ -262,3 +262,44 @@ def test_from_file(tmp_path):
         pass
         
     FromFileRule.from_file(path)
+    
+@pytest.mark.parametrize("first_match, value", [(True, 'foo'), (False, 'foobar')])
+def test_alternation_first_match(first_match, value):
+    src = 'foobar'
+    parser = Alternation(Literal('foo'), Literal('foobar'), first_match=first_match)
+    node, start = parser.parse(src, 0)
+    assert node.value == value
+
+
+def test_exclude_rule_identifier():
+    class ExcludeRule(Rule):
+        pass
+
+    ExcludeRule.create('foo = %x66.6f.6f')
+    ExcludeRule.create('keyword = foo')
+    ExcludeRule.create('identifier = ALPHA *(ALPHA / DIGIT )')
+    keyword = ExcludeRule('keyword')
+    identifier = ExcludeRule('identifier')
+    identifier.exclude_rule(keyword)
+    src = 'foo1'
+    node, start =  identifier.parse(src, 0)
+    assert node.value == src and start == 4
+        
+def test_exclude_rule_keyword():
+    class ExcludeRule(Rule):
+        pass
+
+    ExcludeRule.create('foo = %x66.6f.6f')
+    ExcludeRule.create('keyword = foo')
+    ExcludeRule.create('identifier = ALPHA *(ALPHA / DIGIT )')
+    keyword = ExcludeRule('keyword')
+    identifier = ExcludeRule('identifier')
+    identifier.exclude_rule(keyword)
+    src = 'foo'
+    with pytest.raises(ParseError):
+        identifier.parse(src, 0)
+
+
+
+
+

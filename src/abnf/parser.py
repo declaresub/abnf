@@ -5,6 +5,9 @@
 
 # pylint: disable=too-many-lines
 
+
+from __future__ import annotations
+
 import pathlib
 import typing
 
@@ -34,7 +37,11 @@ class Alternation:  # pylint: disable=too-few-public-methods
         matches = []
         for parser in self.args:
             try:
-                matches.append(parser.parse(source, start))
+                match = parser.parse(source, start)
+                if self.first_match: #pylint: disable=no-else-return
+                    return match
+                else:
+                    matches.append(parser.parse(source, start))
             except ParseError:
                 continue
 
@@ -256,6 +263,8 @@ class Rule:
     rule = Rule.create('URI = scheme ":" hier-part [ "?" query ] [ "#" fragment ]')
     """
 
+    first_match_alternation = False
+
     _obj_map = {}  # type: dict
 
     def __new__(cls, name, definition=None):  # pylint: disable=unused-argument
@@ -272,6 +281,10 @@ class Rule:
         if definition is not None:
             # when defined-as = '=/', we'll need to overwrite existing definition.
             self.definition = definition
+        self.exclude = None
+
+    def exclude_rule(self, rule: 'Rule') -> None:
+        self.exclude = rule
 
     def parse(self, source, start=0):
         """
@@ -292,6 +305,14 @@ class Rule:
         else:
             try:
                 node, new_start = self.definition.parse(source, start)
+                if self.exclude is not None:
+                    try:
+                        print(''.join(node.value for node in flatten(node)))
+                        self.exclude.parse_all(''.join(node.value for node in flatten(node)))
+                    except ParseError:
+                        pass
+                    else:
+                        raise ParseError
             except ParseError as e:
                 raise ParseError(
                     "Error parsing %s at offset %s." % (str(self), start)
@@ -809,7 +830,7 @@ class ABNFGrammarRuleNodeVisitor(NodeVisitor):
             for child in node.children
             if child.name == "concatenation"
         ]
-        return Alternation(*args) if len(args) > 1 else args[0]
+        return Alternation(*args, first_match=self.rule_cls.first_match_alternation) if len(args) > 1 else args[0]
 
     @staticmethod
     def visit_char_val(node):
