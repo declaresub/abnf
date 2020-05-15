@@ -19,8 +19,8 @@ class Alternation:  # pylint: disable=too-few-public-methods
 
     str_template = "Alternation(%s)"
 
-    def __init__(self, *args, first_match=False):
-        self.args = list(args)
+    def __init__(self, *parsers, first_match=False):
+        self.parsers = list(parsers)
         self.first_match = first_match
 
     def parse(self, source, start):
@@ -35,7 +35,7 @@ class Alternation:  # pylint: disable=too-few-public-methods
         """
 
         matches = []
-        for parser in self.args:
+        for parser in self.parsers:
             try:
                 match = parser.parse(source, start)
                 if self.first_match: #pylint: disable=no-else-return
@@ -55,7 +55,7 @@ class Alternation:  # pylint: disable=too-few-public-methods
             raise ParseError("Error parsing %s at offset %s." % (str(self), start))
 
     def __str__(self):
-        return self.str_template % ", ".join(map(str, self.args))
+        return self.str_template % ", ".join(map(str, self.parsers))
 
 
 class Concatenation:  # pylint: disable=too-few-public-methods
@@ -66,8 +66,8 @@ class Concatenation:  # pylint: disable=too-few-public-methods
 
     str_template = "Concatenation(%s)"
 
-    def __init__(self, *args):
-        self.args = args
+    def __init__(self, *parsers):
+        self.parsers = parsers
 
     def parse(self, source, start):
         """
@@ -80,9 +80,9 @@ class Concatenation:  # pylint: disable=too-few-public-methods
         """
         nodes = []
         new_start = start
-        for arg in self.args:
+        for parser in self.parsers:
             try:
-                node, new_start = arg.parse(source, new_start)
+                node, new_start = parser.parse(source, new_start)
             except ParseError as e:
                 raise ParseError(
                     "Error parsing %s at offset %s." % (str(self), start)
@@ -93,7 +93,7 @@ class Concatenation:  # pylint: disable=too-few-public-methods
         return flatten(nodes), new_start
 
     def __str__(self):
-        return self.str_template % ", ".join(map(str, self.args))
+        return self.str_template % ", ".join(map(str, self.parsers))
 
 
 class Literal:  # pylint: disable=too-few-public-methods
