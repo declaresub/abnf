@@ -129,7 +129,7 @@ def test_repetition_str():
 def test_operator_precedence(src):
     grammar_src = '"a" / "b" "c"'
     node, start = ABNFGrammarRule('alternation').parse(grammar_src, 0)
-    visitor = ABNFGrammarRuleNodeVisitor(None)
+    visitor = ABNFGrammarRuleNodeVisitor(ABNFGrammarRule)
     parser = visitor.visit_alternation(node)
     node, start = parser.parse(src, 0)
     print(node)
@@ -140,7 +140,7 @@ def test_operator_precedence(src):
 def test_operator_precedence_1(src):
     grammar_src = '("a" / "b") "c"'
     node, start = ABNFGrammarRule('concatenation').parse(grammar_src, 0)
-    visitor = ABNFGrammarRuleNodeVisitor(None)
+    visitor = ABNFGrammarRuleNodeVisitor(ABNFGrammarRule)
     parser = visitor.visit_concatenation(node)
     node, start = parser.parse(src, 0)
     print(node)
@@ -252,3 +252,13 @@ def test_unicode_hex_val_concat():
     combine = TestRule.create(rule)
     node = combine.parse_all(value)
     assert node.value == value
+
+def test_from_file(tmp_path):
+    grammar = ['foo = "foo"\r\n', 'bar = "bar"\r\n']
+    path = tmp_path / 'test_grammar.abnf'
+    path.write_text(''.join(grammar))
+    
+    class FromFileRule(Rule):
+        pass
+        
+    FromFileRule.from_file(path)
