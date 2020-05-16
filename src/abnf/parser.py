@@ -38,7 +38,7 @@ class Alternation:  # pylint: disable=too-few-public-methods
                 if self.first_match: #pylint: disable=no-else-return
                     return match
                 else:
-                    matches.append(parser.parse(source, start))
+                    matches.append(match)
             except ParseError:
                 continue
 
