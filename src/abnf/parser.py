@@ -317,7 +317,6 @@ class Rule:
                 node, new_start = self.definition.parse(source, start)
                 if self.exclude is not None:
                     try:
-                        print(''.join(node.value for node in flatten(node)))
                         self.exclude.parse_all(''.join(node.value for node in flatten(node)))
                     except ParseError:
                         pass
