@@ -49,7 +49,7 @@ class Alternation:  # pylint: disable=too-few-public-methods
                     longest_match = match
             return longest_match
         else:
-            raise ParseError("Error parsing %s at offset %s." % (str(self), start))
+            raise ParseError(self, start)
 
     def __str__(self):
         return self.str_template % ", ".join(map(str, self.parsers))
@@ -81,9 +81,7 @@ class Concatenation:  # pylint: disable=too-few-public-methods
             try:
                 node, new_start = parser.parse(source, new_start)
             except ParseError as e:
-                raise ParseError(
-                    "Error parsing %s at offset %s." % (str(self), start)
-                ) from e
+                raise ParseError(self, start) from e
             else:
                 nodes.append(node)
 
@@ -119,7 +117,37 @@ class Literal:  # pylint: disable=too-few-public-methods
             value if isinstance(value, tuple) or case_sensitive else value.casefold()
         )
 
-    def parse(self, source, start):  # pylint: disable=inconsistent-return-statements
+        self.parse = self._parse_range if isinstance(value, tuple) else self._parse
+
+    def _parse_range(self, source, start):
+        """Parse source when self.value represents a range."""
+        # ranges are always case-sensitive
+        try:
+            if (  # pylint: disable=no-else-return
+                self.value[0] <= source[start] and source[start] <= self.value[1]
+            ):
+                return LiteralNode(source[start], start, 1), start + 1
+            else:
+                raise ParseError(self, start)
+        except IndexError as e:
+            raise ParseError(self, start) from e
+
+    def _parse(self, source, start):
+        """Parse source when self.value represents a literal."""
+        # we check position to ensure that the case pattern = '' and start >= len(source)
+        # is handled correctly.
+        if start < len(source):  # pylint: disable=no-else-return
+            src = source[start : start + len(self.value)]
+            match = src if self.case_sensitive else src.casefold()
+            if match == self.pattern:  # pylint: disable=no-else-return
+                return LiteralNode(src, start, len(src)), start + len(src)
+            else:
+                raise ParseError(self, start)
+        else:
+            raise ParseError(self, start)
+
+
+    def x_parse(self, source, start):  # pylint: disable=inconsistent-return-statements
         """Parses source starting at offset start, looking for a literal string. A ParseError
         is raised if no match is found.
 
@@ -136,13 +164,9 @@ class Literal:  # pylint: disable=too-few-public-methods
                 ):
                     return LiteralNode(source[start], start, 1), start + 1
                 else:
-                    raise ParseError(
-                        "Error parsing %s at offset %s." % (str(self), start)
-                    )
+                    raise ParseError(self, start)
             except IndexError as e:
-                raise ParseError(
-                    "Error parsing %s at offset %s." % (str(self), start)
-                ) from e
+                raise ParseError(self, start) from e
         else:
             # we check position to ensure that the case pattern = '' and start >= len(source)
             # is handled correctly.
@@ -152,11 +176,9 @@ class Literal:  # pylint: disable=too-few-public-methods
                 if match == self.pattern:  # pylint: disable=no-else-return
                     return LiteralNode(src, start, len(src)), start + len(src)
                 else:
-                    raise ParseError(
-                        "Error parsing %s at offset %s." % (str(self), start)
-                    )
+                    raise ParseError(self, start)
             else:
-                raise ParseError("Error parsing %s at offset %s." % (str(self), start))
+                raise ParseError(self, start)
 
     def __str__(self):
         # str(self.value) handles the case value == tuple.
@@ -246,7 +268,7 @@ class Repetition:  # pylint: disable=too-few-public-methods
         if len(nodes) >= self.repeat.min:  # pylint: disable=no-else-return
             return flatten(nodes), new_start
         else:
-            raise ParseError("Error parsing %s at offset %s." % (self, start))
+            raise ParseError(self, start)
 
     def __str__(self):
         return "Repetition(%s, %s)" % (self.repeat, self.element)
@@ -322,11 +344,9 @@ class Rule:
                     except ParseError:
                         pass
                     else:
-                        raise ParseError
+                        raise ParseError(self.exclude, start)
             except ParseError as e:
-                raise ParseError(
-                    "Error parsing %s at offset %s." % (str(self), start)
-                ) from e
+                raise ParseError(self, start) from e
             else:
                 rule_node = Node(self.name, *flatten(node))
                 return rule_node, new_start
@@ -348,10 +368,7 @@ class Rule:
 
         node, start = self.parse(source, 0)
         if start < len(source):
-            raise ParseError(
-                "%s.parse_all failed.  Unconsumed source begins at offset %s."
-                % (str(self), start)
-            )
+            raise ParseError(self, start)
         return node
 
     def __str__(self):
@@ -500,7 +517,18 @@ class NodeVisitor:  # pylint: disable=too-few-public-methods
 
 class ParseError(Exception):
     """Raised in response to errors during parsing."""
+    def __init__(self, parser, start: int, *args):
+        if parser is None:
+            raise ValueError('parser must not be None')
+        if start is None:
+            raise ValueError('start must not be None')
 
+        super().__init__(self, args)
+        self.parser = parser
+        self.start = start
+
+    def __str__(self):
+        return '%s: %s' % (str(self.parser), self.start)
 
 class GrammarError(Exception):
     """Raised in response to errors detected in the grammar."""
