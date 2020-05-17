@@ -125,25 +125,32 @@ def test_repetition_str():
     parser = Repetition(Repeat(1, 2), Literal('a'))
     assert str(parser) == "Repetition(Repeat(1, 2), Literal('a'))"
 
-@pytest.mark.parametrize("src", ['bc', 'a', pytest.param('ac', marks=pytest.mark.xfail)])
+# concatenation has higher precedence than alternation; the next few tests confirm this.
+@pytest.mark.parametrize("src", ['bc', 'a'])
 def test_operator_precedence(src):
     grammar_src = '"a" / "b" "c"'
     node, start = ABNFGrammarRule('alternation').parse(grammar_src, 0)
     visitor = ABNFGrammarRuleNodeVisitor(ABNFGrammarRule)
     parser = visitor.visit_alternation(node)
     node, start = parser.parse(src, 0)
-    print(node)
     assert ''.join(x.value for x in flatten(node)) == src
 
+@pytest.mark.parametrize("src", ['ac'])
+def test_operator_precedence_1(src):
+    grammar_src = '"a" / "b" "c"'
+    node, start = ABNFGrammarRule('alternation').parse(grammar_src, 0)
+    visitor = ABNFGrammarRuleNodeVisitor(ABNFGrammarRule)
+    parser = visitor.visit_alternation(node)
+    node, start = parser.parse(src, 0)
+    assert node.value == 'a'
 
 @pytest.mark.parametrize("src", ['ac', 'bc'])
-def test_operator_precedence_1(src):
+def test_operator_precedence_2(src):
     grammar_src = '("a" / "b") "c"'
     node, start = ABNFGrammarRule('concatenation').parse(grammar_src, 0)
     visitor = ABNFGrammarRuleNodeVisitor(ABNFGrammarRule)
     parser = visitor.visit_concatenation(node)
     node, start = parser.parse(src, 0)
-    print(node)
     assert ''.join(x.value for x in node) == src
 
 def test_node_str():
@@ -155,6 +162,12 @@ def test_node_str():
 def test_node_eq():
     assert Node('foo') == Node('foo')
     
+    
+def test_literal_node_str():
+    # test just exercises Node.__str__.
+    node = LiteralNode('a', 1, 2)
+    assert str(node)
+
 def test_literal_node_children():
     node = LiteralNode('', 0, 0)
     assert node.children == []
