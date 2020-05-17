@@ -311,26 +311,23 @@ class Rule:
             non-terminal in the grammar is not defined or imported.
         """
         try:
-            # ensure that rule has been defined.
-            getattr(self, "definition")
-        except AttributeError as e:
-            raise GrammarError('Undefined rule "%s".' % self.name) from e
-        else:
             try:
                 node, new_start = self.definition.parse(source, start)
-                if self.exclude is not None:
-                    try:
-                        print(''.join(node.value for node in flatten(node)))
-                        self.exclude.parse_all(''.join(node.value for node in flatten(node)))
-                    except ParseError:
-                        pass
-                    else:
-                        raise ParseError(self.exclude, start)
-            except ParseError as e:
-                raise ParseError(self, start) from e
-            else:
-                rule_node = Node(self.name, *flatten(node))
-                return rule_node, new_start
+            except AttributeError as e:
+                raise GrammarError('Undefined rule "%s".' % self.name) from e
+            nodes = flatten(node)
+            if self.exclude is not None:
+                try:
+                    self.exclude.parse_all(''.join(node.value for node in nodes))
+                except ParseError:
+                    pass
+                else:
+                    raise ParseError(self.exclude, start)
+        except ParseError as e:
+            raise ParseError(self, start) from e
+        else:
+            rule_node = Node(self.name, *nodes)
+            return rule_node, new_start
 
     def parse_all(self, source):
         """
@@ -498,13 +495,16 @@ class NodeVisitor:  # pylint: disable=too-few-public-methods
 
 class ParseError(Exception):
     """Raised in response to errors during parsing."""
-    def __init__(self, parser, start: int, *args):
+    def __init__(self, parser, start: int, *args): # pylint: disable=super-init-not-called
         if parser is None:
             raise ValueError('parser must not be None')
         if start is None:
             raise ValueError('start must not be None')
 
-        super().__init__(self, args)
+        # it turns out that calling super().__init__(*args) is quite slow.  Because
+        # ParseError objects are created so often, the slowness adds up.  So we
+        # just set self.args directly, which is all that Exception.__init__ does.
+        self.args = args
         self.parser = parser
         self.start = start
 
