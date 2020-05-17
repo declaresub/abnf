@@ -270,6 +270,17 @@ def test_alternation_first_match(first_match, value):
     node, start = parser.parse(src, 0)
     assert node.value == value
 
+def test_alternation_first_match1():
+    src = 'bar'
+    parser = Alternation(Literal('foo'), Literal('bar'), first_match=True)
+    node, start = parser.parse(src, 0)
+    assert node.value == src
+
+def test_alternation_first_match_fail():
+    src = 'moof'
+    parser = Alternation(Literal('foo'), Literal('bar'), first_match=True)
+    with pytest.raises(ParseError):
+        parser.parse(src, 0)
 
 def test_exclude_rule_identifier():
     class ExcludeRule(Rule):
@@ -299,7 +310,13 @@ def test_exclude_rule_keyword():
     with pytest.raises(ParseError):
         identifier.parse(src, 0)
 
+@pytest.mark.parametrize("args", [(None, 1), (Literal('a'), None)])
+def test_parseerror_bad_args(args):
+    with pytest.raises(ValueError):
+        ParseError(*args)
 
-
+def test_parseerror_str():
+    # I'm not checking the output, just exercising ParseError.__str__ .
+    assert str(ParseError(Literal('a'), 1))
 
 

@@ -19,8 +19,27 @@ class Alternation:  # pylint: disable=too-few-public-methods
     def __init__(self, *parsers, first_match=False):
         self.parsers = list(parsers)
         self.first_match = first_match
+        self.parse = self._parse_first_match if first_match else self._parse_longest_match
 
-    def parse(self, source, start):
+    def _parse_first_match(self, source, start):
+        """
+        :param source: source data
+        :type source: str
+        :param start: offset at which to begin parsing.
+        :type start: int
+        :return: parse tree, new offset at which to continue parsing
+        :rtype: (Node, int)
+        :raises ParseError: if none of the alternation arguments can parse source
+        """
+
+        for parser in self.parsers:
+            try:
+                return parser.parse(source, start)
+            except ParseError:
+                continue
+        raise ParseError(self, start)
+
+    def _parse_longest_match(self, source, start):
         """
         :param source: source data
         :type source: str
@@ -34,11 +53,7 @@ class Alternation:  # pylint: disable=too-few-public-methods
         matches = []
         for parser in self.parsers:
             try:
-                match = parser.parse(source, start)
-                if self.first_match: #pylint: disable=no-else-return
-                    return match
-                else:
-                    matches.append(match)
+                matches.append(parser.parse(source, start))
             except ParseError:
                 continue
 
@@ -145,40 +160,6 @@ class Literal:  # pylint: disable=too-few-public-methods
                 raise ParseError(self, start)
         else:
             raise ParseError(self, start)
-
-
-    def x_parse(self, source, start):  # pylint: disable=inconsistent-return-statements
-        """Parses source starting at offset start, looking for a literal string. A ParseError
-        is raised if no match is found.
-
-        :param source: source text for parsing
-        :param start: offset at which to begin parsing
-        :returns: LiteralNode
-        :raises: ParseError
-        """
-        if isinstance(self.value, tuple):
-            # ranges are always case-sensitive
-            try:
-                if (  # pylint: disable=no-else-return
-                    self.value[0] <= source[start] and source[start] <= self.value[1]
-                ):
-                    return LiteralNode(source[start], start, 1), start + 1
-                else:
-                    raise ParseError(self, start)
-            except IndexError as e:
-                raise ParseError(self, start) from e
-        else:
-            # we check position to ensure that the case pattern = '' and start >= len(source)
-            # is handled correctly.
-            if start < len(source):  # pylint: disable=no-else-return
-                src = source[start : start + len(self.value)]
-                match = src if self.case_sensitive else src.casefold()
-                if match == self.pattern:  # pylint: disable=no-else-return
-                    return LiteralNode(src, start, len(src)), start + len(src)
-                else:
-                    raise ParseError(self, start)
-            else:
-                raise ParseError(self, start)
 
     def __str__(self):
         # str(self.value) handles the case value == tuple.
