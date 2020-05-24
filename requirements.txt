@@ -8,6 +8,7 @@ pep517
 pylint
 pytest
 pytest-cov
+setuptools_scm
 tox
 tox-pyenv
 twine

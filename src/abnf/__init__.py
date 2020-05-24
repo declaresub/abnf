@@ -1,11 +1,14 @@
 """Parser generator for ABNF grammars."""
 
+try:
+    from importlib.metadata import metadata, PackageNotFoundError
+except ImportError:
+    from importlib_metadata import metadata, PackageNotFoundError
+
 from .parser import Rule, Node, LiteralNode, NodeVisitor, ParseError, GrammarError
 
-
-__version__ = "1.0.1"
-__author__ = "Charles Yeomans"
-__author_email__ = "charles@declaresub.com"
-__project_url__ = "https://github.com/declaresub/abnf"
-__license__ = "MIT"
-__copyright__ = "Copyright (c)2020 Charles Yeomans"
+try:
+    __version__ = metadata(__name__)['version']
+except PackageNotFoundError:
+    # package is not installed
+    __version__ = ''
