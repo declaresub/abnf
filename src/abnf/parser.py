@@ -19,7 +19,9 @@ class Alternation:  # pylint: disable=too-few-public-methods
     def __init__(self, *parsers, first_match=False):
         self.parsers = list(parsers)
         self.first_match = first_match
-        self.parse = self._parse_first_match if first_match else self._parse_longest_match
+        self.parse = (
+            self._parse_first_match if first_match else self._parse_longest_match
+        )
 
     def _parse_first_match(self, source, start):
         """
@@ -283,7 +285,7 @@ class Rule:
             self.definition = definition
         self.exclude = None
 
-    def exclude_rule(self, rule: 'Rule') -> None:
+    def exclude_rule(self, rule: "Rule") -> None:
         """
         Exclude values which match rule.  For example, suppose we have the following
         grammar.
@@ -318,7 +320,7 @@ class Rule:
             nodes = flatten(node)
             if self.exclude is not None:
                 try:
-                    self.exclude.parse_all(''.join(node.value for node in nodes))
+                    self.exclude.parse_all("".join(node.value for node in nodes))
                 except ParseError:
                     pass
                 else:
@@ -376,8 +378,12 @@ class Rule:
         """Loads the contents of path and attempts to parse it as a rulelist. If successful,
         cls is populated with the rules in the rulelist."""
 
-        crlf = '\r\n'
-        with (open(path, 'r', newline=crlf) if isinstance(path, str) else path.open('r', newline=crlf)) as f: # pylint: disable=invalid-name
+        crlf = "\r\n"
+        with (
+            open(path, "r", newline=crlf)
+            if isinstance(path, str)
+            else path.open("r", newline=crlf)
+        ) as f:  # pylint: disable=invalid-name
             src = f.read()
 
         node = ABNFGrammarRule("rulelist").parse_all(src)
@@ -498,11 +504,14 @@ class NodeVisitor:  # pylint: disable=too-few-public-methods
 
 class ParseError(Exception):
     """Raised in response to errors during parsing."""
-    def __init__(self, parser, start: int, *args): # pylint: disable=super-init-not-called
+
+    def __init__(
+        self, parser, start: int, *args
+    ):  # pylint: disable=super-init-not-called
         if parser is None:
-            raise ValueError('parser must not be None')
+            raise ValueError("parser must not be None")
         if start is None:
-            raise ValueError('start must not be None')
+            raise ValueError("start must not be None")
 
         # it turns out that calling super().__init__(*args) is quite slow.  Because
         # ParseError objects are created so often, the slowness adds up.  So we
@@ -512,7 +521,8 @@ class ParseError(Exception):
         self.start = start
 
     def __str__(self):
-        return '%s: %s' % (str(self.parser), self.start)
+        return "%s: %s" % (str(self.parser), self.start)
+
 
 class GrammarError(Exception):
     """Raised in response to errors detected in the grammar."""
@@ -794,7 +804,17 @@ for grammar_rule_def in [
             ),
         ),
     ),
-    ("prose-val", Concatenation(Literal('<'), Repetition(Repeat(), Alternation(Literal(("\x20", "\x3D")), Literal(("\x3F", "\x7E")))), Literal('>'))),
+    (
+        "prose-val",
+        Concatenation(
+            Literal("<"),
+            Repetition(
+                Repeat(),
+                Alternation(Literal(("\x20", "\x3D")), Literal(("\x3F", "\x7E"))),
+            ),
+            Literal(">"),
+        ),
+    ),
     # definitions from RFC 7405
     (
         "char-val",
@@ -925,7 +945,11 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
         """Creates an Alternation object from alternation node."""
         assert node.name == "alternation"
         args = list(filter(None, map(self.visit, node.children)))
-        return Alternation(*args, first_match=self.rule_cls.first_match_alternation) if len(args) > 1 else args[0]
+        return (
+            Alternation(*args, first_match=self.rule_cls.first_match_alternation)
+            if len(args) > 1
+            else args[0]
+        )
 
     def visit_concatenation(self, node):
         """Creates a Concatention object from concatenation node."""
@@ -958,7 +982,7 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
     @staticmethod
     def visit_prose_val(node):
         """Raises a GrammarError if a prose-val is encountered."""
-        raise GrammarError('Grammar contains a prose-val.')
+        raise GrammarError("Grammar contains a prose-val.")
 
     @staticmethod
     def visit_repeat(node):
@@ -983,7 +1007,8 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
             max_src = min_src
 
         return Repeat(
-            min=int(min_src, base=10) if min_src else 0, max=int(max_src, base=10) if max_src else None
+            min=int(min_src, base=10) if min_src else 0,
+            max=int(max_src, base=10) if max_src else None,
         )
 
     def visit_repetition(self, node):
@@ -1000,7 +1025,9 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
     def visit_rule(self, node):
         """Visits a rule node, returning a Rule object."""
         rule, defined_as, elements = filter(None, map(self.visit, node.children))
-        rule.definition = elements if defined_as == "=" else Alternation(rule.definition, elements)
+        rule.definition = (
+            elements if defined_as == "=" else Alternation(rule.definition, elements)
+        )
         return rule
 
     def visit_rulelist(self, node):
