@@ -3,7 +3,8 @@
 ![abnf-tox](https://github.com/declaresub/abnf/workflows/abnf-tox/badge.svg)
 
 
-ABNF is a package that generates parsers from ABNF grammars.  The main purpose of this
+ABNF is a package that generates parsers from ABNF grammars as described in [RFC 5234](https://tools.ietf.org/html/rfc5234)
+and [RFC7405](https://tools.ietf.org/html/rfc7405).  The main purpose of this
 package is to parse data as specified in RFCs.  But it should be able to handle any ABNF 
 grammar.
 
@@ -172,15 +173,25 @@ The modules in `abnf.grammars` may serve as an example for writing other Rule su
 In particular, some of the RFC grammars incorporate rules by reference from other RFC. 
 `abnf.grammars.rfc7230` shows a way to import rules from another Rule subclass.
 
-ABNF uses CRLF as a delimiter for rules.  Because many text editors (e.g. BBEdit) substitute line endings 
-without telling the user, ABNF expects preprocessing of grammars into python lists of rules as 
-in `abnf.grammars`.
+You can also load a grammar from a text file using Rule.from_file.  This class function
+accepts either a str or pathlib.Path. The text file must contain an ABNF rulelist.
+
+
+    class FromFileRule(Rule):
+        pass
+        
+    FromFileRule.from_file('/path/to/grammar.abnf')
+
+
+ABNF uses CRLF as a delimiter for rules in a rulelist.  Beware that many text editors (e.g. BBEdit) 
+substitute line endings without telling the user.
 
 ### Errors
 
 abnf implements two exception subclasses, ParseError and GrammarError.  
 
-A GrammarError is raised when parsing encounters an undefined rule.  
+A GrammarError is raised when parsing encounters an undefined rule, or a prose-value in
+a grammar.  
 
 A ParseError is raised when parsing fails for some reason.  Error reporting is nothing
 more than a stack trace, but that usually allows one to get to the source of the problem.
@@ -272,13 +283,20 @@ For example, Alternation(Literal('foo'), Literal('bar')) returns a parser that i
 ABNF expression 
 
     "foo" / "bar"
- 
-Alternation is implemented to do longest match. In the event of a tie, the first
-match is returned.
-   
+
 The whole mess is bootstrapped by writing out the parsers for the grammar and core rules 
 by hand.  The ABNFGrammarRule class represents the ABNF grammar, and is used to parse other
 grammars.  It is also capable of parsing its own grammar.
+ 
+### Alternation
+
+RFC 5234 does not specify the precise behavior of alternation.  The ABNF definition of 
+ABNF appears to assume longest match.  But other grammars expect first match alternation 
+(e.g. [dhall](https://dhall-lang.org)).  So this behavior is configurable. A class attribute Rule.first_match_alternation
+allows one to choose a behavior for a particular grammar (as represented by a Rule subclass).
+When first_match_alternation is False, alternation returns the longest match;in the event of a tie, 
+the first match is returned. When first_match_alternation is True, the first match is 
+returned.
 
         
 ## Development, Testing, etc.

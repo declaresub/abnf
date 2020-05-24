@@ -19,8 +19,29 @@ class Alternation:  # pylint: disable=too-few-public-methods
     def __init__(self, *parsers, first_match=False):
         self.parsers = list(parsers)
         self.first_match = first_match
+        self.parse = (
+            self._parse_first_match if first_match else self._parse_longest_match
+        )
 
-    def parse(self, source, start):
+    def _parse_first_match(self, source, start):
+        """
+        :param source: source data
+        :type source: str
+        :param start: offset at which to begin parsing.
+        :type start: int
+        :return: parse tree, new offset at which to continue parsing
+        :rtype: (Node, int)
+        :raises ParseError: if none of the alternation arguments can parse source
+        """
+
+        for parser in self.parsers:
+            try:
+                return parser.parse(source, start)
+            except ParseError:
+                continue
+        raise ParseError(self, start)
+
+    def _parse_longest_match(self, source, start):
         """
         :param source: source data
         :type source: str
@@ -34,11 +55,7 @@ class Alternation:  # pylint: disable=too-few-public-methods
         matches = []
         for parser in self.parsers:
             try:
-                match = parser.parse(source, start)
-                if self.first_match: #pylint: disable=no-else-return
-                    return match
-                else:
-                    matches.append(match)
+                matches.append(parser.parse(source, start))
             except ParseError:
                 continue
 
@@ -49,7 +66,7 @@ class Alternation:  # pylint: disable=too-few-public-methods
                     longest_match = match
             return longest_match
         else:
-            raise ParseError("Error parsing %s at offset %s." % (str(self), start))
+            raise ParseError(self, start)
 
     def __str__(self):
         return self.str_template % ", ".join(map(str, self.parsers))
@@ -81,9 +98,7 @@ class Concatenation:  # pylint: disable=too-few-public-methods
             try:
                 node, new_start = parser.parse(source, new_start)
             except ParseError as e:
-                raise ParseError(
-                    "Error parsing %s at offset %s." % (str(self), start)
-                ) from e
+                raise ParseError(self, start) from e
             else:
                 nodes.append(node)
 
@@ -119,44 +134,34 @@ class Literal:  # pylint: disable=too-few-public-methods
             value if isinstance(value, tuple) or case_sensitive else value.casefold()
         )
 
-    def parse(self, source, start):  # pylint: disable=inconsistent-return-statements
-        """Parses source starting at offset start, looking for a literal string. A ParseError
-        is raised if no match is found.
+        self.parse = self._parse_range if isinstance(value, tuple) else self._parse
 
-        :param source: source text for parsing
-        :param start: offset at which to begin parsing
-        :returns: LiteralNode
-        :raises: ParseError
-        """
-        if isinstance(self.value, tuple):
-            # ranges are always case-sensitive
-            try:
-                if (  # pylint: disable=no-else-return
-                    self.value[0] <= source[start] and source[start] <= self.value[1]
-                ):
-                    return LiteralNode(source[start], start, 1), start + 1
-                else:
-                    raise ParseError(
-                        "Error parsing %s at offset %s." % (str(self), start)
-                    )
-            except IndexError as e:
-                raise ParseError(
-                    "Error parsing %s at offset %s." % (str(self), start)
-                ) from e
-        else:
-            # we check position to ensure that the case pattern = '' and start >= len(source)
-            # is handled correctly.
-            if start < len(source):  # pylint: disable=no-else-return
-                src = source[start : start + len(self.value)]
-                match = src if self.case_sensitive else src.casefold()
-                if match == self.pattern:  # pylint: disable=no-else-return
-                    return LiteralNode(src, start, len(src)), start + len(src)
-                else:
-                    raise ParseError(
-                        "Error parsing %s at offset %s." % (str(self), start)
-                    )
+    def _parse_range(self, source, start):
+        """Parse source when self.value represents a range."""
+        # ranges are always case-sensitive
+        try:
+            if (  # pylint: disable=no-else-return
+                self.value[0] <= source[start] and source[start] <= self.value[1]
+            ):
+                return LiteralNode(source[start], start, 1), start + 1
             else:
-                raise ParseError("Error parsing %s at offset %s." % (str(self), start))
+                raise ParseError(self, start)
+        except IndexError as e:
+            raise ParseError(self, start) from e
+
+    def _parse(self, source, start):
+        """Parse source when self.value represents a literal."""
+        # we check position to ensure that the case pattern = '' and start >= len(source)
+        # is handled correctly.
+        if start < len(source):  # pylint: disable=no-else-return
+            src = source[start : start + len(self.value)]
+            match = src if self.case_sensitive else src.casefold()
+            if match == self.pattern:  # pylint: disable=no-else-return
+                return LiteralNode(src, start, len(src)), start + len(src)
+            else:
+                raise ParseError(self, start)
+        else:
+            raise ParseError(self, start)
 
     def __str__(self):
         # str(self.value) handles the case value == tuple.
@@ -246,7 +251,7 @@ class Repetition:  # pylint: disable=too-few-public-methods
         if len(nodes) >= self.repeat.min:  # pylint: disable=no-else-return
             return flatten(nodes), new_start
         else:
-            raise ParseError("Error parsing %s at offset %s." % (self, start))
+            raise ParseError(self, start)
 
     def __str__(self):
         return "Repetition(%s, %s)" % (self.repeat, self.element)
@@ -280,7 +285,7 @@ class Rule:
             self.definition = definition
         self.exclude = None
 
-    def exclude_rule(self, rule: 'Rule') -> None:
+    def exclude_rule(self, rule: "Rule") -> None:
         """
         Exclude values which match rule.  For example, suppose we have the following
         grammar.
@@ -308,27 +313,23 @@ class Rule:
             non-terminal in the grammar is not defined or imported.
         """
         try:
-            # ensure that rule has been defined.
-            getattr(self, "definition")
-        except AttributeError as e:
-            raise GrammarError('Undefined rule "%s".' % self.name) from e
-        else:
             try:
                 node, new_start = self.definition.parse(source, start)
-                if self.exclude is not None:
-                    try:
-                        self.exclude.parse_all(''.join(node.value for node in flatten(node)))
-                    except ParseError:
-                        pass
-                    else:
-                        raise ParseError
-            except ParseError as e:
-                raise ParseError(
-                    "Error parsing %s at offset %s." % (str(self), start)
-                ) from e
-            else:
-                rule_node = Node(self.name, *flatten(node))
-                return rule_node, new_start
+            except AttributeError as e:
+                raise GrammarError('Undefined rule "%s".' % self.name) from e
+            nodes = flatten(node)
+            if self.exclude is not None:
+                try:
+                    self.exclude.parse_all("".join(node.value for node in nodes))
+                except ParseError:
+                    pass
+                else:
+                    raise ParseError(self.exclude, start)
+        except ParseError as e:
+            raise ParseError(self, start) from e
+        else:
+            rule_node = Node(self.name, *nodes)
+            return rule_node, new_start
 
     def parse_all(self, source):
         """
@@ -347,10 +348,7 @@ class Rule:
 
         node, start = self.parse(source, 0)
         if start < len(source):
-            raise ParseError(
-                "%s.parse_all failed.  Unconsumed source begins at offset %s."
-                % (str(self), start)
-            )
+            raise ParseError(self, start)
         return node
 
     def __str__(self):
@@ -372,7 +370,7 @@ class Rule:
         if rule_source[-2:] != "\r\n":
             rule_source = rule_source + "\r\n"
         parse_tree, start = ABNFGrammarRule("rule").parse(rule_source, start)
-        visitor = ABNFGrammarRuleNodeVisitor(cls)
+        visitor = ABNFGrammarNodeVisitor(cls)
         return visitor.visit(parse_tree)
 
     @classmethod
@@ -380,12 +378,16 @@ class Rule:
         """Loads the contents of path and attempts to parse it as a rulelist. If successful,
         cls is populated with the rules in the rulelist."""
 
-        crlf = '\r\n'
-        with (open(path, 'r', newline=crlf) if isinstance(path, str) else path.open('r', newline=crlf)) as f: # pylint: disable=invalid-name
+        crlf = "\r\n"
+        with (
+            open(path, "r", newline=crlf)
+            if isinstance(path, str)
+            else path.open("r", newline=crlf)
+        ) as f:  # pylint: disable=invalid-name
             src = f.read()
 
         node = ABNFGrammarRule("rulelist").parse_all(src)
-        visitor = ABNFGrammarRulelistNodeVisitor(rule_cls=cls)
+        visitor = ABNFGrammarNodeVisitor(rule_cls=cls)
         visitor.visit(node)
 
     @classmethod
@@ -469,6 +471,9 @@ class NodeVisitor:  # pylint: disable=too-few-public-methods
     def __init__(self):
         self._node_method_cache = {}
 
+    def __call__(self, node):
+        return self.visit(node)
+
     def visit(self, node):
         """Visit node.  This method invokes the appropriate method for the node type."""
         return self._node_method(node)(node)
@@ -499,6 +504,24 @@ class NodeVisitor:  # pylint: disable=too-few-public-methods
 
 class ParseError(Exception):
     """Raised in response to errors during parsing."""
+
+    def __init__(
+        self, parser, start: int, *args
+    ):  # pylint: disable=super-init-not-called
+        if parser is None:
+            raise ValueError("parser must not be None")
+        if start is None:
+            raise ValueError("start must not be None")
+
+        # it turns out that calling super().__init__(*args) is quite slow.  Because
+        # ParseError objects are created so often, the slowness adds up.  So we
+        # just set self.args directly, which is all that Exception.__init__ does.
+        self.args = args
+        self.parser = parser
+        self.start = start
+
+    def __str__(self):
+        return "%s: %s" % (str(self.parser), self.start)
 
 
 class GrammarError(Exception):
@@ -683,8 +706,9 @@ for grammar_rule_def in [
             ABNFGrammarRule("option"),
             ABNFGrammarRule("char-val"),
             ABNFGrammarRule("num-val"),
+            ABNFGrammarRule("prose-val"),
         ),
-    ),  # prose-val omitted for now.
+    ),
     (
         "group",
         Concatenation(
@@ -780,6 +804,17 @@ for grammar_rule_def in [
             ),
         ),
     ),
+    (
+        "prose-val",
+        Concatenation(
+            Literal("<"),
+            Repetition(
+                Repeat(),
+                Alternation(Literal(("\x20", "\x3D")), Literal(("\x3F", "\x7E"))),
+            ),
+            Literal(">"),
+        ),
+    ),
     # definitions from RFC 7405
     (
         "char-val",
@@ -810,219 +845,54 @@ for grammar_rule_def in [
 ]:
     ABNFGrammarRule(*grammar_rule_def)
 
-class ABNFGrammarRulelistNodeVisitor(NodeVisitor):
-    """Visitor for a node generated by parsing a rulelist."""
-
-    def __init__(self, rule_cls, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.rule_visitor = ABNFGrammarRuleNodeVisitor(rule_cls)
-
-    def visit_rulelist(self, node: Node)-> [Rule]: # pylint: disable=missing-function-docstring
-        return list(filter(None, map(self.visit, node.children)))
-
-    def visit_rule(self, node: Node) -> Rule: # pylint: disable=missing-function-docstring
-        return self.rule_visitor.visit(node)
-
-class ABNFGrammarRuleNodeVisitor(NodeVisitor):
-    """Visitor for visiting nodes generated from ABNFGrammarRules.  The result of
-    a visit is a Rule object - a parser for the rule."""
-
-    def __init__(self, rule_cls, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.rule_cls = rule_cls
-
-    def visit_alternation(self, node):
-        """Creates an Alternation object from alternation node."""
-        assert node.name == "alternation"
-        args = [
-            self.visit_concatenation(child)
-            for child in node.children
-            if child.name == "concatenation"
-        ]
-        return Alternation(*args, first_match=self.rule_cls.first_match_alternation) if len(args) > 1 else args[0]
-
-    @staticmethod
-    def visit_char_val(node):
-        """Creates a Literal object from char-val node."""
-        visitor = CharValNodeVisitor()
-        visitor.visit(node)
-        return Literal(visitor.value, visitor.case_sensitive)
-
-    def visit_concatenation(self, node):
-        """Creates a Concatention object from concatenation node."""
-        assert node.name == "concatenation"
-        args = [
-            self.visit_repetition(child)
-            for child in node.children
-            if child.name == "repetition"
-        ]
-        return Concatenation(*args) if len(args) > 1 else args[0]
-
-    def visit_element(self, node):
-        """Creates a parser object from element node."""
-
-        return self.visit(node.children[0])
-
-    def visit_elements(self, node):
-        """Creates an Alternation object from elements node."""
-
-        assert node.children[0].name == "alternation"
-        return self.visit_alternation(node.children[0])
-
-    def visit_group(self, node):
-        """Creates an Alternation object from group node."""
-
-        for child in node.children:
-            if child.name == "alternation":
-                parser = self.visit_alternation(child)
-                break
-        else:
-            assert False, "group node has no alternation child node"
-        return parser
-
-    @staticmethod
-    def visit_num_val(node):
-        """Creates a NumVal object from num-val node."""
-        visitor = NumValVisitor()
-        visitor.visit(node)
-        return Literal(visitor.value, visitor.case_sensitive)
-
-    def visit_option(self, node):
-        """Creates an Option object from option node."""
-
-        for child in node.children:
-            if child.name == "alternation":
-                parser = self.visit_alternation(child)
-                break
-        else:
-            assert False, "option node has no alternation child node"
-        return Option(parser)
-
-    @staticmethod
-    def visit_repeat(node):
-        """Creates a Repeat object from repeat node."""
-        repeat_op = "*"
-        min_src = "0"
-        max_src = ""
-        iter_child = iter(node.children)
-
-        child = None
-        for child in iter_child:
-            if child.name == "DIGIT":
-                min_src = min_src + child.value
-            else:
-                break
-
-        if child.value == repeat_op:
-            max_src = ""
-            for child in iter_child:
-                max_src = max_src + child.value
-        else:
-            max_src = min_src
-
-        return Repeat(
-            min=int(min_src, base=10), max=int(max_src, base=10) if max_src else None
-        )
-
-    def visit_repetition(self, node):
-        """Creates a Repetition object from repetition node."""
-        if node.children[0].name == "repeat":  # pylint: disable=no-else-return
-            return Repetition(
-                self.visit_repeat(node.children[0]),
-                self.visit_element(node.children[1]),
-            )
-        else:
-            assert node.children[0].name == "element"
-            return self.visit_element(node.children[0])
-
-    def visit_rule(self, node):
-        """Creates a Rule object from rule node."""
-        assert node.children[0].name == "rulename"
-        rule = self.visit_rulename(node.children[0])
-        assert node.children[1].name == "defined-as"
-        for child in node.children[1].children:
-            if child.name == "literal":
-                defined_as = child.value
-                break
-        assert node.children[2].name == "elements"
-        elements = self.visit_elements(node.children[2])
-
-        assert defined_as in ["=", "=/"], (
-            "Node 'defined-as' returned unexpected value %s." % defined_as
-        )
-        rule.definition = (
-            elements if defined_as == "=" else Alternation(rule.definition, elements)
-        )
-        return rule
-
-    def visit_rulename(self, node):
-        """Returns a Rule object using value of rulename node."""
-        return self.rule_cls(node.value)
-
 
 class CharValNodeVisitor(NodeVisitor):
     """CharVal node visitor."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.case_sensitive = None
-        self.value = None
-
     def visit_char_val(self, node):
         """Visit a char-val node."""
-        for child in node.children:
-            self.visit(child)
+        return self.visit(node.children[0])
 
     def visit_case_insensitive_string(self, node):
         """Visit a case-insensitive-string node."""
-        self.case_sensitive = False
-        for child in node.children:
-            self.visit(child)
+        value = next(filter(None, map(self.visit, node.children)))
+        return Literal(value, False)
 
     def visit_case_sensitive_string(self, node):
         """Visit a case-sensitive-string node."""
-        self.case_sensitive = True
-        for child in node.children:
-            self.visit(child)
+        value = next(filter(None, map(self.visit, node.children)))
+        return Literal(value, True)
 
-    def visit_quoted_string(self, node):
+    @staticmethod
+    def visit_quoted_string(node):
         """Visit a quoted-string node."""
-        self.value = node.value[1:-1]
+        return node.value[1:-1]
 
 
 class NumValVisitor(NodeVisitor):
     """Visitor of num-val nodes."""
 
-    range_op = "-"
-    concat_op = "."
-    encoding = "iso-8859-1"
-    """encoding used to decode byte data to str."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.case_sensitive = True
-        self.value = None
-
     def visit_num_val(self, node):  # pylint:disable=missing-function-docstring
-        # first child node should be a marker literal "%".
-        return self.visit(node.children[1])
+        """Visit a num-val, returning (value, case_sensitive)."""
+        return next(filter(None, map(self.visit, node.children)))
 
     def visit_bin_val(self, node):  # pylint:disable=missing-function-docstring
         # first child node is marker literal "b"
-        self.value = self._read_value(node.children[1:], "BIT", 2)
+        return Literal(self._read_value(node.children[1:], "BIT", 2), True)
 
     def visit_dec_val(self, node):  # pylint:disable=missing-function-docstring
         # first child node is marker literal "b"
-        self.value = self._read_value(node.children[1:], "DIGIT", 10)
+        return Literal(self._read_value(node.children[1:], "DIGIT", 10), True)
 
     def visit_hex_val(self, node):  # pylint:disable=missing-function-docstring
         # first child node is marker literal "x"
-        self.value = self._read_value(node.children[1:], "HEXDIG", 16)
+        return Literal(self._read_value(node.children[1:], "HEXDIG", 16), True)
 
     def _read_value(self, digit_nodes, digit_node_name, base):
         """Reads the character from the child nodes of the num-val node.
         Returns either a string, or a tuple representing a character range."""
 
+        range_op = "-"
         buffer = ""
         iter_nodes = iter(digit_nodes)
         child_node = None
@@ -1032,7 +902,7 @@ class NumValVisitor(NodeVisitor):
             else:
                 break
 
-        if child_node.value == self.range_op:
+        if child_node.value == range_op:
             first_char = self._decode_bytes(buffer, base)
             buffer = ""
             for child_node in iter_nodes:
@@ -1060,3 +930,110 @@ class NumValVisitor(NodeVisitor):
     def _decode_bytes(data, base):
         """Decodes num-val byte data. Intended to be private."""
         return chr(int(data, base=base))
+
+
+class ABNFGrammarNodeVisitor(NodeVisitor):
+    """Visitor for visiting nodes generated from ABNFGrammarRules.  """
+
+    def __init__(self, rule_cls, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.rule_cls = rule_cls
+        self.visit_char_val = CharValNodeVisitor()
+        self.visit_num_val = NumValVisitor()
+
+    def visit_alternation(self, node):
+        """Creates an Alternation object from alternation node."""
+        assert node.name == "alternation"
+        args = list(filter(None, map(self.visit, node.children)))
+        return (
+            Alternation(*args, first_match=self.rule_cls.first_match_alternation)
+            if len(args) > 1
+            else args[0]
+        )
+
+    def visit_concatenation(self, node):
+        """Creates a Concatention object from concatenation node."""
+        assert node.name == "concatenation"
+        args = list(filter(None, map(self.visit, node.children)))
+        return Concatenation(*args) if len(args) > 1 else args[0]
+
+    @staticmethod
+    def visit_defined_as(node):
+        """Returns defined-as operator."""
+        return node.value.strip()
+
+    def visit_element(self, node):
+        """Creates a parser object from element node."""
+        return self.visit(node.children[0])
+
+    def visit_elements(self, node):
+        """Creates an Alternation object from elements node."""
+        return next(filter(None, map(self.visit, node.children)))
+
+    def visit_group(self, node):
+        """Returns an Alternation object from group node."""
+        return next(filter(None, map(self.visit, node.children)))
+
+    def visit_option(self, node):
+        """Creates an Option object from option node."""
+        parser = next(filter(None, map(self.visit, node.children)))
+        return Option(parser)
+
+    @staticmethod
+    def visit_prose_val(node):
+        """Raises a GrammarError if a prose-val is encountered."""
+        raise GrammarError("Grammar contains a prose-val.")
+
+    @staticmethod
+    def visit_repeat(node):
+        """Creates a Repeat object from repeat node."""
+        repeat_op = "*"
+        min_src = ""
+        max_src = ""
+        iter_child = iter(node.children)
+
+        child = None
+        for child in iter_child:
+            if child.name == "DIGIT":
+                min_src = min_src + child.value
+            else:
+                break
+
+        if child.value == repeat_op:
+            max_src = ""
+            for child in iter_child:
+                max_src = max_src + child.value
+        else:
+            max_src = min_src
+
+        return Repeat(
+            min=int(min_src, base=10) if min_src else 0,
+            max=int(max_src, base=10) if max_src else None,
+        )
+
+    def visit_repetition(self, node):
+        """Creates a Repetition object from repetition node."""
+        if node.children[0].name == "repeat":  # pylint: disable=no-else-return
+            return Repetition(
+                self.visit_repeat(node.children[0]),
+                self.visit_element(node.children[1]),
+            )
+        else:
+            assert node.children[0].name == "element"
+            return self.visit_element(node.children[0])
+
+    def visit_rule(self, node):
+        """Visits a rule node, returning a Rule object."""
+        rule, defined_as, elements = filter(None, map(self.visit, node.children))
+        rule.definition = (
+            elements if defined_as == "=" else Alternation(rule.definition, elements)
+        )
+        return rule
+
+    def visit_rulelist(self, node):
+        """Visits a rulelist node, returning a list of Rule objects."""
+        return list(filter(None, map(self.visit, node.children)))
+
+    def visit_rulename(self, node):
+        """Visits a rulename node, looks up the Rule object for rulename, and returns it."""
+        return self.rule_cls(node.value)
