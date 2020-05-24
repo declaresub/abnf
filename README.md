@@ -172,15 +172,25 @@ The modules in `abnf.grammars` may serve as an example for writing other Rule su
 In particular, some of the RFC grammars incorporate rules by reference from other RFC. 
 `abnf.grammars.rfc7230` shows a way to import rules from another Rule subclass.
 
-ABNF uses CRLF as a delimiter for rules.  Because many text editors (e.g. BBEdit) substitute line endings 
-without telling the user, ABNF expects preprocessing of grammars into python lists of rules as 
-in `abnf.grammars`.
+You can also load a grammar from a text file using Rule.from_file.  This class function
+accepts either a str or pathlib.Path. The text file must contain an ABNF rulelist.
+
+
+    class FromFileRule(Rule):
+        pass
+        
+    FromFileRule.from_file('/path/to/grammar.abnf')
+
+
+ABNF uses CRLF as a delimiter for rules in a rulelist.  Beware that many text editors (e.g. BBEdit) 
+substitute line endings without telling the user.
 
 ### Errors
 
 abnf implements two exception subclasses, ParseError and GrammarError.  
 
-A GrammarError is raised when parsing encounters an undefined rule.  
+A GrammarError is raised when parsing encounters an undefined rule, or a prose-value in
+a grammar.  
 
 A ParseError is raised when parsing fails for some reason.  Error reporting is nothing
 more than a stack trace, but that usually allows one to get to the source of the problem.
