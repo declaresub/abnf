@@ -1,8 +1,5 @@
 import pytest
-from abnf.parser import (Node, LiteralNode, Literal, ABNFGrammarRule, 
-ABNFGrammarRuleNodeVisitor, Rule, ParseError, Alternation, NumValVisitor,
-    Concatenation, Repeat, Repetition, Option, GrammarError, flatten)
-
+from abnf.parser import *
 
 def test_empty_literal():
     parser = Literal('')
@@ -49,7 +46,7 @@ def test_literal_case_insensitive(value, src):
 @pytest.mark.parametrize("src", ['moof', 'MOOF', 'mOOf', 'mOoF'])
 def test_char_val(src):
     node, start = ABNFGrammarRule('char-val').parse('"moof"', 0)
-    visitor = ABNFGrammarRuleNodeVisitor(None)
+    visitor = CharValNodeVisitor()
     parser = visitor.visit_char_val(node)
     char_node, start = parser.parse(src, 0)
     assert char_node and char_node.value == src
@@ -57,20 +54,14 @@ def test_char_val(src):
 @pytest.mark.parametrize("src", ['moof', 'MOOF', 'mOOf', 'mOoF'])
 def test_char_val_case_insensitive(src):
     node, start = ABNFGrammarRule('char-val').parse('%i"moof"', 0)
-    visitor = ABNFGrammarRuleNodeVisitor(None)
+    visitor = CharValNodeVisitor()
     parser = visitor.visit_char_val(node)
     char_node, start = parser.parse(src, 0)
     assert char_node and char_node.value.casefold() == 'moof'
 
-def test_CharVal_case_sensitive():
-    node, start = ABNFGrammarRule('char-val').parse('%s"MOOF"', 0)
-    visitor = ABNFGrammarRuleNodeVisitor(None)
-    parser = visitor.visit_char_val(node)
-    assert parser.case_sensitive
-
 def test_char_val_case_sensitive():
     node, start = ABNFGrammarRule('char-val').parse('%s"MOOF"', 0)
-    visitor = ABNFGrammarRuleNodeVisitor(None)
+    visitor = CharValNodeVisitor()
     parser = visitor.visit_char_val(node)
     src = 'MOOF'
     char_node, start = parser.parse(src, 0)
@@ -79,7 +70,7 @@ def test_char_val_case_sensitive():
 @pytest.mark.parametrize("src", ['MOOF', 'mOOf', 'mOoF'])
 def test_char_val_case_sensitive_fail(src):
     node, start = ABNFGrammarRule('char-val').parse('%s"moof"', 0)
-    visitor = ABNFGrammarRuleNodeVisitor(None)
+    visitor = CharValNodeVisitor()
     parser = visitor.visit_char_val(node)
     with pytest.raises(ParseError):
         parser.parse(src, 0)
@@ -88,8 +79,8 @@ def test_bin_val():
     src = "b01111000"
     node = ABNFGrammarRule('bin-val').parse_all(src)
     visitor = NumValVisitor()
-    visitor.visit(node)
-    assert visitor.value == 'x'
+    parser = visitor.visit(node)
+    assert parser.value == 'x'
 
 @pytest.mark.parametrize("src", ['A', 'B', 'Z'])
 def test_literal_range(src):
@@ -112,7 +103,7 @@ def test_alternation(src):
     ])
 def test_rule_repeat(src, expected):
     node, start = ABNFGrammarRule('repeat').parse(src, 0)
-    visitor = ABNFGrammarRuleNodeVisitor(None)
+    visitor = ABNFGrammarNodeVisitor(ABNFGrammarRule)
     parser = visitor.visit_repeat(node)
     assert (parser.min, parser.max) == expected
 
@@ -130,7 +121,7 @@ def test_repetition_str():
 def test_operator_precedence(src):
     grammar_src = '"a" / "b" "c"'
     node, start = ABNFGrammarRule('alternation').parse(grammar_src, 0)
-    visitor = ABNFGrammarRuleNodeVisitor(ABNFGrammarRule)
+    visitor = ABNFGrammarNodeVisitor(ABNFGrammarRule)
     parser = visitor.visit_alternation(node)
     node, start = parser.parse(src, 0)
     assert ''.join(x.value for x in flatten(node)) == src
@@ -139,7 +130,7 @@ def test_operator_precedence(src):
 def test_operator_precedence_1(src):
     grammar_src = '"a" / "b" "c"'
     node, start = ABNFGrammarRule('alternation').parse(grammar_src, 0)
-    visitor = ABNFGrammarRuleNodeVisitor(ABNFGrammarRule)
+    visitor = ABNFGrammarNodeVisitor(ABNFGrammarRule)
     parser = visitor.visit_alternation(node)
     node, start = parser.parse(src, 0)
     assert node.value == 'a'
@@ -148,7 +139,7 @@ def test_operator_precedence_1(src):
 def test_operator_precedence_2(src):
     grammar_src = '("a" / "b") "c"'
     node, start = ABNFGrammarRule('concatenation').parse(grammar_src, 0)
-    visitor = ABNFGrammarRuleNodeVisitor(ABNFGrammarRule)
+    visitor = ABNFGrammarNodeVisitor(ABNFGrammarRule)
     parser = visitor.visit_concatenation(node)
     node, start = parser.parse(src, 0)
     assert ''.join(x.value for x in node) == src
@@ -171,18 +162,6 @@ def test_literal_node_str():
 def test_literal_node_children():
     node = LiteralNode('', 0, 0)
     assert node.children == []
-    
-def test_visit_option_bad_node():
-    node = Node('foo')
-    visitor = ABNFGrammarRuleNodeVisitor(None)
-    with pytest.raises(AssertionError):
-        parser = visitor.visit_option(node)
-
-def test_visit_group_bad_node():
-    node = Node('foo')
-    visitor = ABNFGrammarRuleNodeVisitor(None)
-    with pytest.raises(AssertionError):
-        parser = visitor.visit_group(node)
 
 def test_Alternation_str():
     parser = Alternation(Literal('foo'), Literal('bar'))
@@ -214,12 +193,6 @@ def test_rule_def_alternation(src):
 
     node, start = TestRule('moof').parse(src, 0)
     assert node and node.value == src
-
-def test_rule_bad_defined_as():
-    node = Node('rule', *[Node('rulename', *[Node('ALPHA', *[LiteralNode('a', 0, 1)])]), Node('defined-as', *[LiteralNode("=\\", 1, 2)]), Node('elements', *[Node('alternation', *[Node('concatenation', *[Node('repetition', *[Node('element', *[Node('rulename', *[Node('ALPHA', *[LiteralNode('b', 3, 1)])])])])])])]), Node('c-nl', *[Node('CRLF', *[Node('CR', *[LiteralNode('\r', 4, 1)]), Node('LF', *[LiteralNode('\n', 5, 1)])])])])
-    with pytest.raises(AssertionError):
-        visitor = ABNFGrammarRuleNodeVisitor(ABNFGrammarRule)
-        visitor.visit_rule(node)
 
 class XRule(Rule):
     pass
@@ -263,7 +236,9 @@ def test_unicode_hex_val_concat():
     value = 'Я́блоко'
     rule = 'apple = %x42f.301.431.43b.43e.43a.43e'
     combine = TestRule.create(rule)
+    print(str(combine.definition))
     node = combine.parse_all(value)
+
     assert node.value == value
 
 def test_from_file(tmp_path):
@@ -333,3 +308,10 @@ def test_parseerror_str():
     assert str(ParseError(Literal('a'), 1))
 
 
+def test_prose_val():
+    class TestRule(Rule):
+        pass
+        
+    rule = 'test-prose-val = <blah blah>'
+    with pytest.raises(GrammarError):
+        TestRule.create(rule)
