@@ -3,7 +3,8 @@
 ![abnf-tox](https://github.com/declaresub/abnf/workflows/abnf-tox/badge.svg)
 
 
-ABNF is a package that generates parsers from ABNF grammars.  The main purpose of this
+ABNF is a package that generates parsers from ABNF grammars as described in [RFC 5234](https://tools.ietf.org/html/rfc5234)
+and [RFC7405](https://tools.ietf.org/html/rfc7405).  The main purpose of this
 package is to parse data as specified in RFCs.  But it should be able to handle any ABNF 
 grammar.
 
@@ -282,13 +283,20 @@ For example, Alternation(Literal('foo'), Literal('bar')) returns a parser that i
 ABNF expression 
 
     "foo" / "bar"
- 
-Alternation is implemented to do longest match. In the event of a tie, the first
-match is returned.
-   
+
 The whole mess is bootstrapped by writing out the parsers for the grammar and core rules 
 by hand.  The ABNFGrammarRule class represents the ABNF grammar, and is used to parse other
 grammars.  It is also capable of parsing its own grammar.
+ 
+### Alternation
+
+RFC 5234 does not specify the precise behavior of alternation.  The ABNF definition of 
+ABNF appears to assume longest match.  But other grammars expect first match alternation 
+(e.g. [dhall](https://dhall-lang.org)).  So this behavior is configurable. A class attribute Rule.first_match_alternation
+allows one to choose a behavior for a particular grammar (as represented by a Rule subclass).
+When first_match_alternation is False, alternation returns the longest match;in the event of a tie, 
+the first match is returned. When first_match_alternation is True, the first match is 
+returned.
 
         
 ## Development, Testing, etc.
