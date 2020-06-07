@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.1
+
+* Imported rules are now created using the source rule's definition, instead of setting the
+target rule definition to the source rule.  This was resulting in parse node trees with
+unexpected structure.
+
+* RFC 2735 credentials, challenge rules have been restored to their original definitions
+now that longest match alternation is the default.
+
 ## 1.1.0
 
 * Added class method Rule.from_file which loads a grammar from an ABNF rulelist in a file. https://github.com/declaresub/abnf/issues/2
