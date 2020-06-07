@@ -18,4 +18,4 @@ class Rule(_Rule):
     grammar = []
 
 def test_misc_load_grammar_rules_import():
-    assert Rule('test').definition == ImportRule('test')
+    assert Rule('test').definition == ImportRule('test').definition
