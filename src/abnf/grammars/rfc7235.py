@@ -37,16 +37,8 @@ class Rule(_Rule):
         'WWW-Authenticate = *( "," OWS ) challenge *( OWS ("," / challenge) )',
         'auth-param = token BWS "=" BWS ( token / quoted-string )',
         "auth-scheme = token",
-        # the definition of challenge doesn't work with this parser.  Given a challenge like
-        # 'Basic realm="/"', the substring 'realm=' is matched by the token68 rule.  Then
-        # what's left is not matched.  So we swap the alternation arguments.  But this is
-        # still not enough, as the new first argument is wrapped in an Optional Sequence.
-        # So, finally, we remove the [].
-        # The credentials rule is similarly modified.
-        #'challenge = auth-scheme [ 1*SP ( token68 / [ ( "," / auth-param ) *(OWS "," [ OWS auth-param ] ) ] ) ]',
-        'challenge = auth-scheme [ 1*SP ( ( "," / auth-param ) *(OWS "," [ OWS auth-param ] )  / token68 ) ]',
-        #'credentials = auth-scheme [ 1*SP ( token68 / [ ( "," / auth-param ) *( OWS "," [ OWS auth-param ] ) ] ) ]',
-        'credentials = auth-scheme [ 1*SP ( ( "," / auth-param ) *(OWS "," [ OWS auth-param ] )  / token68 ) ]',
+        'challenge = auth-scheme [ 1*SP ( token68 / [ ( "," / auth-param ) *(OWS "," [ OWS auth-param ] ) ] ) ]',
+        'credentials = auth-scheme [ 1*SP ( token68 / [ ( "," / auth-param ) *( OWS "," [ OWS auth-param ] ) ] ) ]',
         # quoted-string = <quoted-string, see [RFC7230], Section 3.2.6>',
         # token = <token, see [RFC7230], Section 3.2.6>',
         'token68 = 1*( ALPHA / DIGIT / "-" / "." / "_" / "~" / "+" / "/" ) *"="',
