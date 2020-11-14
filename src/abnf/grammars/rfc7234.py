@@ -21,7 +21,7 @@ from .misc import load_grammar_rules
     ]
 )
 class Rule(_Rule):
-    """Rules from RFC 7235."""
+    """Rules from RFC 7234."""
 
     grammar = [
         "Age = delta-seconds",
