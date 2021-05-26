@@ -297,7 +297,7 @@ class Rule:
         We don't want to allow a keyword to be an identifier.  To do this,
         Rule('identifier').exclude_rule(Rule('keyword'))
 
-        Then attempting to use "foo" as a keyword would result in a ParseError.
+        Then attempting to use "foo" as an identifier would result in a ParseError.
         """
         self.exclude = rule
 
