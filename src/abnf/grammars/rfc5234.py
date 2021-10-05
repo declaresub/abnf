@@ -11,7 +11,7 @@ from .misc import load_grammar_rules
 
 @load_grammar_rules()
 class Rule(_Rule):
-    """Rule objects generated from ABNF in RFC 4647."""
+    """Rule objects generated from ABNF in RFC 5234."""
 
     grammar = [
         "rulelist = 1*( rule / (*c-wsp c-nl) )",
