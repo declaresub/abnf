@@ -328,3 +328,11 @@ The code is formatted using black.
 
     black src/abnf
 
+
+
+## Third-Party Packages
+
+
+### [abnf-to-regexp](https://pypi.org/project/abnf-to-regexp/1.0.0/)
+
+The program abnf-to-regexp converts augmented Backus-Naur form (ABNF) to a regular expression.
