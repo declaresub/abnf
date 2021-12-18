@@ -470,34 +470,21 @@ class NodeVisitor:  # pylint: disable=too-few-public-methods
 
     def __init__(self):
         self._node_method_cache = {}
-
+        method_prefix = 'visit_'
+        name_start = len(method_prefix)
+        self._node_method_cache = {attr[name_start:]: getattr(self, attr) for attr in dir(self) if attr.startswith(method_prefix)}
+        
     def __call__(self, node):
         return self.visit(node)
 
     def visit(self, node):
         """Visit node.  This method invokes the appropriate method for the node type."""
-        return self._node_method(node)(node)
+        return self._node_method_cache.get(node.name.replace("-", "_").casefold(), self._skip_visit)(node)
 
     @staticmethod
-    def _dont_visit(node):  # pylint: disable=unused-argument
+    def _skip_visit(node):  # pylint: disable=unused-argument
         """ Skip node visit."""
         return None
-
-    def _node_method(self, node):
-        """Looks up method for node using node.name."""
-        node_name = node.name.casefold()
-        try:
-            node_method = self._node_method_cache[node_name]
-        except KeyError:
-            try:
-                node_method = getattr(self, "visit_%s" % node_name.replace("-", "_"))
-            except AttributeError:
-                node_method = self._dont_visit
-
-            self._node_method_cache[node_name] = node_method
-
-        return node_method
-
 
 #### Exception classes ####
 
@@ -936,10 +923,13 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
     """Visitor for visiting nodes generated from ABNFGrammarRules.  """
 
     def __init__(self, rule_cls, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        
         self.rule_cls = rule_cls
         self.visit_char_val = CharValNodeVisitor()
         self.visit_num_val = NumValVisitor()
+        # superclass init needs to happen here so that it will
+        # find these two methods added at runtime.
+        super().__init__(*args, **kwargs)
 
     def visit_alternation(self, node):
         """Creates an Alternation object from alternation node."""
