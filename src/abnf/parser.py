@@ -140,10 +140,11 @@ class Literal:  # pylint: disable=too-few-public-methods
         """Parse source when self.value represents a range."""
         # ranges are always case-sensitive
         try:
+            src = source[start]
             if (  # pylint: disable=no-else-return
-                self.value[0] <= source[start] and source[start] <= self.value[1]
+                self.value[0] <= src <= self.value[1]
             ):
-                return LiteralNode(source[start], start, 1), start + 1
+                return LiteralNode(src, start, 1), start + 1
             else:
                 raise ParseError(self, start)
         except IndexError as e:
