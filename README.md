@@ -1,6 +1,7 @@
 # ABNF
 
 ![abnf-tox](https://github.com/declaresub/abnf/workflows/abnf-tox/badge.svg)
+[![CodeQL](https://github.com/declaresub/abnf/actions/workflows/codeql-analysis.yml/badge.svg?branch=master)](https://github.com/declaresub/abnf/actions/workflows/codeql-analysis.yml)
 
 
 ABNF is a package that generates parsers from ABNF grammars as described in [RFC 5234](https://tools.ietf.org/html/rfc5234)
