@@ -474,7 +474,7 @@ class NodeVisitor:  # pylint: disable=too-few-public-methods
         method_prefix = 'visit_'
         name_start = len(method_prefix)
         self._node_method_cache = {attr[name_start:]: getattr(self, attr) for attr in dir(self) if attr.startswith(method_prefix)}
-        
+
     def __call__(self, node):
         return self.visit(node)
 
@@ -924,7 +924,7 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
     """Visitor for visiting nodes generated from ABNFGrammarRules.  """
 
     def __init__(self, rule_cls, *args, **kwargs):
-        
+
         self.rule_cls = rule_cls
         self.visit_char_val = CharValNodeVisitor()
         self.visit_num_val = NumValVisitor()
