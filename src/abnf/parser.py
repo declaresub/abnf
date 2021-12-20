@@ -168,11 +168,11 @@ class Literal:  # pylint: disable=too-few-public-methods
         # str(self.value) handles the case value == tuple.
         non_printable_chars = set(map(chr, range(0x00, 0x20)))
         value = tuple(
-            [r"\x%02x" % ord(x) if x in non_printable_chars else x for x in self.value]
+            (r"\x%02x" % ord(x) if x in non_printable_chars else x for x in self.value) # pylint: disable=consider-using-f-string
         )
 
         return (
-            "Literal(%s)" % str(value)
+            f"Literal({value})"
             if isinstance(self.value, tuple)
             else "Literal('%s'%s)"
             % ("".join(value), ", case_sensitive" if self.case_sensitive else "")
@@ -381,9 +381,9 @@ class Rule:
 
         crlf = "\r\n"
         with (
-            open(path, "r", newline=crlf)
+            open(path, "r", newline=crlf, encoding='ascii')
             if isinstance(path, str)
-            else path.open("r", newline=crlf)
+            else path.open("r", newline=crlf, encoding='ascii')
         ) as f:  # pylint: disable=invalid-name
             src = f.read()
 
@@ -420,7 +420,7 @@ class Node:  # pylint: disable=too-few-public-methods
     """Node objects are used to build parse trees."""
 
     def __init__(self, name: str, *children: "Node") -> None:
-        super(Node, self).__init__()
+        super().__init__()
         self.name = name
         self.children = children
 
@@ -444,7 +444,7 @@ class LiteralNode:  # pylint: disable=too-few-public-methods
     """LiteralNode objects are used to build parse trees."""
 
     def __init__(self, value, offset, length):
-        super(LiteralNode, self).__init__()
+        super().__init__()
         self.name = "literal"
         self.value = value
         self.offset = offset
