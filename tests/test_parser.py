@@ -110,7 +110,8 @@ def test_rule_repeat(src, expected):
 def test_repetition():
     parser = Repetition(Repeat(1, 2), Literal('a'))
     node, start = parser.parse('aa', 0)
-    assert [x for x in flatten(node)] == [LiteralNode('a', x, 1) for x in range(0, 2)]
+    nodes = node if isinstance(node, list) else [node]
+    assert [x for x in nodes] == [LiteralNode('a', x, 1) for x in range(0, 2)]
 
 def test_repetition_str():
     parser = Repetition(Repeat(1, 2), Literal('a'))
@@ -124,7 +125,8 @@ def test_operator_precedence(src):
     visitor = ABNFGrammarNodeVisitor(ABNFGrammarRule)
     parser = visitor.visit_alternation(node)
     node, start = parser.parse(src, 0)
-    assert ''.join(x.value for x in flatten(node)) == src
+    nodes = node if isinstance(node, list) else [node]
+    assert ''.join(x.value for x in nodes) == src
 
 @pytest.mark.parametrize("src", ['ac'])
 def test_operator_precedence_1(src):

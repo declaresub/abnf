@@ -8,6 +8,19 @@
 import pathlib
 import typing
 
+from .typing import Protocol
+
+
+Source = str
+Nodes = typing.Union["Node", typing.List["Node"]]
+
+
+class Parser(Protocol):
+    def parse(
+        self, source: str, start: int
+    ) -> typing.Tuple[Nodes, int]:  # pragma: no cover
+        ...
+
 
 class Alternation:  # pylint: disable=too-few-public-methods
     """Implements the ABNF alternation operator. -- Alternation(parser1, parser2, ...)
@@ -16,14 +29,14 @@ class Alternation:  # pylint: disable=too-few-public-methods
 
     str_template = "Alternation(%s)"
 
-    def __init__(self, *parsers, first_match=False):
+    def __init__(self, *parsers: Parser, first_match: bool = False):
         self.parsers = list(parsers)
         self.first_match = first_match
         self.parse = (
             self._parse_first_match if first_match else self._parse_longest_match
         )
 
-    def _parse_first_match(self, source, start):
+    def _parse_first_match(self, source: str, start: int) -> typing.Tuple[Nodes, int]:
         """
         :param source: source data
         :type source: str
@@ -41,7 +54,7 @@ class Alternation:  # pylint: disable=too-few-public-methods
                 continue
         raise ParseError(self, start)
 
-    def _parse_longest_match(self, source, start):
+    def _parse_longest_match(self, source: str, start: int) -> typing.Tuple[Nodes, int]:
         """
         :param source: source data
         :type source: str
@@ -52,7 +65,7 @@ class Alternation:  # pylint: disable=too-few-public-methods
         :raises ParseError: if none of the alternation arguments can parse source
         """
 
-        matches = []
+        matches: typing.List[typing.Tuple[Nodes, int]] = []
         for parser in self.parsers:
             try:
                 matches.append(parser.parse(source, start))
@@ -80,10 +93,10 @@ class Concatenation:  # pylint: disable=too-few-public-methods
 
     str_template = "Concatenation(%s)"
 
-    def __init__(self, *parsers):
+    def __init__(self, *parsers: Parser):
         self.parsers = parsers
 
-    def parse(self, source, start):
+    def parse(self, source: str, start: int) -> typing.Tuple[Nodes, int]:
         """
         :param source: source data
         :type str:
@@ -92,7 +105,7 @@ class Concatenation:  # pylint: disable=too-few-public-methods
         :rtype: List, int
         :raises ParseError: if one of the concatenation arguments fails to parse source
         """
-        nodes = []
+        nodes: typing.List[Node] = []
         new_start = start
         for parser in self.parsers:
             try:
@@ -100,9 +113,9 @@ class Concatenation:  # pylint: disable=too-few-public-methods
             except ParseError as e:
                 raise ParseError(self, start) from e
             else:
-                nodes.append(node)
+                nodes.extend(node if isinstance(node, list) else [node])
 
-        return flatten(nodes), new_start
+        return nodes, new_start
 
     def __str__(self):
         return self.str_template % ", ".join(map(str, self.parsers))
@@ -111,7 +124,11 @@ class Concatenation:  # pylint: disable=too-few-public-methods
 class Literal:  # pylint: disable=too-few-public-methods
     """Represents a terminal literal value."""
 
-    def __init__(self, value, case_sensitive=False):
+    def __init__(
+        self,
+        value: typing.Union[str, typing.Tuple[str, str]],
+        case_sensitive: bool = False,
+    ):
         """
         value is either a string to be matched, or a two-element tuple representing an
         inclusive range; e.g. ('a', 'z') matches all letters a-z.
@@ -120,10 +137,10 @@ class Literal:  # pylint: disable=too-few-public-methods
         if not (
             isinstance(value, str)
             or (
-                isinstance(value, tuple)
+                isinstance(value, tuple)  # type: ignore
                 and len(value) == 2
-                and isinstance(value[0], str)
-                and isinstance(value[1], str)
+                and isinstance(value[0], str)  # type: ignore
+                and isinstance(value[1], str)  # type: ignore
             )
         ):
             raise TypeError("value argument must be a string or a 2-tuple of strings.")
@@ -134,23 +151,23 @@ class Literal:  # pylint: disable=too-few-public-methods
             value if isinstance(value, tuple) or case_sensitive else value.casefold()
         )
 
-        self.parse = self._parse_range if isinstance(value, tuple) else self._parse
+        self.parse = (
+            self._parse_range if isinstance(value, tuple) else self._parse_value
+        )
 
-    def _parse_range(self, source, start):
+    def _parse_range(self, source: str, start: int) -> typing.Tuple[Nodes, int]:
         """Parse source when self.value represents a range."""
         # ranges are always case-sensitive
         try:
             src = source[start]
-            if (  # pylint: disable=no-else-return
-                self.value[0] <= src <= self.value[1]
-            ):
-                return LiteralNode(src, start, 1), start + 1
+            if self.value[0] <= src <= self.value[1]:  # pylint: disable=no-else-return
+                return typing.cast(Node, LiteralNode(src, start, 1)), start + 1
             else:
                 raise ParseError(self, start)
         except IndexError as e:
             raise ParseError(self, start) from e
 
-    def _parse(self, source, start):
+    def _parse_value(self, source: str, start: int) -> typing.Tuple[Nodes, int]:
         """Parse source when self.value represents a literal."""
         # we check position to ensure that the case pattern = '' and start >= len(source)
         # is handled correctly.
@@ -158,7 +175,9 @@ class Literal:  # pylint: disable=too-few-public-methods
             src = source[start : start + len(self.value)]
             match = src if self.case_sensitive else src.casefold()
             if match == self.pattern:  # pylint: disable=no-else-return
-                return LiteralNode(src, start, len(src)), start + len(src)
+                return typing.cast(
+                    Node, LiteralNode(src, start, len(src))
+                ), start + len(src)
             else:
                 raise ParseError(self, start)
         else:
@@ -168,7 +187,10 @@ class Literal:  # pylint: disable=too-few-public-methods
         # str(self.value) handles the case value == tuple.
         non_printable_chars = set(map(chr, range(0x00, 0x20)))
         value = tuple(
-            (r"\x%02x" % ord(x) if x in non_printable_chars else x for x in self.value) # pylint: disable=consider-using-f-string
+            (
+                r"\x%02x" % ord(x) if x in non_printable_chars else x
+                for x in self.value
+            )  # pylint: disable=consider-using-f-string
         )
 
         return (
@@ -184,10 +206,10 @@ class Option:  # pylint: disable=too-few-public-methods
 
     str_template = "Option(%s)"
 
-    def __init__(self, alternation):
+    def __init__(self, alternation: Parser):
         self.alternation = alternation
 
-    def parse(self, source, start):
+    def parse(self, source: str, start: int) -> typing.Tuple[Nodes, int]:
         """
         :param source: source data
         :type str:
@@ -210,7 +232,9 @@ class Option:  # pylint: disable=too-few-public-methods
 class Repeat:  # pylint: disable=too-few-public-methods
     """Implements the ABNF Repeat operator for Repetition."""
 
-    def __init__(self, min=0, max=None):  # pylint: disable=redefined-builtin
+    def __init__(
+        self, min: int = 0, max: typing.Optional[int] = None
+    ):  # pylint: disable=redefined-builtin
         self.min = min
         self.max = max
 
@@ -221,11 +245,11 @@ class Repeat:  # pylint: disable=too-few-public-methods
 class Repetition:  # pylint: disable=too-few-public-methods
     """Implements the ABNF Repetition operation."""
 
-    def __init__(self, repeat, element):
+    def __init__(self, repeat: Repeat, element: Parser):
         self.repeat = repeat
         self.element = element
 
-    def parse(self, source, start):
+    def parse(self, source: str, start: int) -> typing.Tuple[Nodes, int]:
         """
         :param source: source data
         :type str:
@@ -235,7 +259,7 @@ class Repetition:  # pylint: disable=too-few-public-methods
         :raises ParseError:
         """
         new_start = start
-        nodes = []
+        nodes: typing.List[Node] = []
         end_of_source = len(source)
         while new_start < end_of_source:
             try:
@@ -243,20 +267,22 @@ class Repetition:  # pylint: disable=too-few-public-methods
             except ParseError:
                 break
             else:
-                nodes.append(node)
+                nodes.extend(node if isinstance(node, list) else [node])
                 if self.repeat.max and len(nodes) == self.repeat.max:
                     break
 
         # should write something explicit about behavior when self.element.parse returns
         # a zero-length match  -- [].
         if len(nodes) >= self.repeat.min:  # pylint: disable=no-else-return
-            return flatten(nodes), new_start
+            return nodes, new_start
         else:
             raise ParseError(self, start)
 
     def __str__(self):
         return "Repetition(%s, %s)" % (self.repeat, self.element)
 
+
+T = typing.TypeVar("T", bound="Rule")
 
 class Rule:
     """A parser generated from an ABNF rule.
@@ -267,16 +293,22 @@ class Rule:
     """
 
     first_match_alternation = False
+    grammar: typing.List[str] = []
 
-    _obj_map = {}  # type: dict
+    _obj_map: typing.Dict[
+        typing.Tuple[typing.Type["Rule"], str], "Rule"
+    ] = {}
 
-    def __new__(cls, name, definition=None):  # pylint: disable=unused-argument
-        """Overrides super().__new__ to implement a symbol table via object caching.
-        """
+    def __new__(
+        cls: typing.Type[T], name: str, definition: typing.Optional[Parser] = None
+    ) -> 'Rule':  # pylint: disable=unused-argument
+        """Overrides super().__new__ to implement a symbol table via object caching."""
 
-        return cls.get(name, super(Rule, cls).__new__(cls))
+        rule = cls.get(name, super().__new__(cls))
+        assert rule is not None
+        return rule
 
-    def __init__(self, name, definition=None):
+    def __init__(self, name: str, definition: typing.Optional[Parser] = None):
         obj_key = (self.__class__, name.casefold())
         if obj_key not in self._obj_map:
             self._obj_map[obj_key] = self
@@ -284,7 +316,7 @@ class Rule:
         if definition is not None:
             # when defined-as = '=/', we'll need to overwrite existing definition.
             self.definition = definition
-        self.exclude = None
+        self.exclude: typing.Optional[Rule] = None
 
     def exclude_rule(self, rule: "Rule") -> None:
         """
@@ -302,7 +334,7 @@ class Rule:
         """
         self.exclude = rule
 
-    def parse(self, source, start=0):
+    def parse(self, source: str, start: int) -> typing.Tuple["Node", int]:
         """
         :param source: source data
         :type str:
@@ -318,10 +350,10 @@ class Rule:
                 node, new_start = self.definition.parse(source, start)
             except AttributeError as e:
                 raise GrammarError('Undefined rule "%s".' % self.name) from e
-            nodes = flatten(node)
+            nodes = node if isinstance(node, list) else [node]
             if self.exclude is not None:
                 try:
-                    self.exclude.parse_all("".join(node.value for node in nodes))
+                    self.exclude.parse_all("".join(item.value for item in nodes))
                 except ParseError:
                     pass
                 else:
@@ -332,7 +364,7 @@ class Rule:
             rule_node = Node(self.name, *nodes)
             return rule_node, new_start
 
-    def parse_all(self, source):
+    def parse_all(self, source: str):
         """
         Parses the source from beginning to end.  If not all of the source is consumed, a
         ParseError is raised.
@@ -356,7 +388,7 @@ class Rule:
         return "%s('%s')" % (self.__class__.__name__, self.name)
 
     @classmethod
-    def create(cls, rule_source, start=0):
+    def create(cls, rule_source: str, start: int = 0):
         """Creates a Rule object from ABNF source.  A terminating CRLF will be appended to
         rule_source if needed to satisfy the ABNF grammar rule for "rule".
 
@@ -381,9 +413,9 @@ class Rule:
 
         crlf = "\r\n"
         with (
-            open(path, "r", newline=crlf, encoding='ascii')
+            open(path, "r", newline=crlf, encoding="ascii")
             if isinstance(path, str)
-            else path.open("r", newline=crlf, encoding='ascii')
+            else path.open("r", newline=crlf, encoding="ascii")
         ) as f:  # pylint: disable=invalid-name
             src = f.read()
 
@@ -392,10 +424,13 @@ class Rule:
         visitor.visit(node)
 
     @classmethod
-    def get(cls, name, default=None):
+    def get(
+        cls: typing.Type[T], name: str, default: typing.Optional[T] = None
+    ) -> typing.Optional['Rule']:
         """Retrieves Rule by name.  If a Rule object matching name is found, it is returned.
         Otherwise default is returned, and no Rule object is
-        created, as would be the case when invoking Rule(name)."""
+        created, as would be the case when invoking Rule(name).
+        Note that """
 
         _name = name.casefold()
         return cls._obj_map.get((cls, _name), cls._obj_map.get((Rule, _name), default))
@@ -407,7 +442,7 @@ class Rule:
         :returns: List
         """
 
-        return [v for k, v in cls._obj_map.items() if k[0] == cls]
+        return [v for k, v in cls._obj_map.items() if k[0] is cls]
 
 
 #### Node classes ####
@@ -422,7 +457,7 @@ class Node:  # pylint: disable=too-few-public-methods
     def __init__(self, name: str, *children: "Node") -> None:
         super().__init__()
         self.name = name
-        self.children = children
+        self.children = list(children)
 
     @property
     def value(self) -> str:
@@ -436,14 +471,14 @@ class Node:  # pylint: disable=too-few-public-methods
             ", ".join(x.__str__() for x in self.children),
         )
 
-    def __eq__(self, other):
+    def __eq__(self, other: typing.Any):
         return self.__class__ == other.__class__ and self.__dict__ == other.__dict__
 
 
 class LiteralNode:  # pylint: disable=too-few-public-methods
     """LiteralNode objects are used to build parse trees."""
 
-    def __init__(self, value, offset, length):
+    def __init__(self, value: str, offset: int, length: int):
         super().__init__()
         self.name = "literal"
         self.value = value
@@ -451,7 +486,7 @@ class LiteralNode:  # pylint: disable=too-few-public-methods
         self.length = length
 
     @property
-    def children(self):
+    def children(self) -> typing.List[Node]:
         """Returns an empty list of children, since LiteralNodes are terminal."""
         return []
 
@@ -462,7 +497,7 @@ class LiteralNode:  # pylint: disable=too-few-public-methods
             self.value.replace("\r", r"\r").replace("\n", r"\n"),
         )
 
-    def __eq__(self, other):
+    def __eq__(self, other: typing.Any):
         return self.__class__ == other.__class__ and self.__dict__ == other.__dict__
 
 
@@ -471,21 +506,28 @@ class NodeVisitor:  # pylint: disable=too-few-public-methods
 
     def __init__(self):
         self._node_method_cache = {}
-        method_prefix = 'visit_'
+        method_prefix = "visit_"
         name_start = len(method_prefix)
-        self._node_method_cache = {attr[name_start:]: getattr(self, attr) for attr in dir(self) if attr.startswith(method_prefix)}
+        self._node_method_cache = {
+            attr[name_start:]: getattr(self, attr)
+            for attr in dir(self)
+            if attr.startswith(method_prefix)
+        }
 
-    def __call__(self, node):
+    def __call__(self, node: Node):
         return self.visit(node)
 
-    def visit(self, node):
+    def visit(self, node: Node):
         """Visit node.  This method invokes the appropriate method for the node type."""
-        return self._node_method_cache.get(node.name.replace("-", "_").casefold(), self._skip_visit)(node)
+        return self._node_method_cache.get(
+            node.name.replace("-", "_").casefold(), self._skip_visit
+        )(node)
 
     @staticmethod
-    def _skip_visit(node):  # pylint: disable=unused-argument
-        """ Skip node visit."""
+    def _skip_visit(node: Node):  # pylint: disable=unused-argument
+        """Skip node visit."""
         return None
+
 
 #### Exception classes ####
 
@@ -494,7 +536,7 @@ class ParseError(Exception):
     """Raised in response to errors during parsing."""
 
     def __init__(
-        self, parser, start: int, *args
+        self, parser: Parser, start: int, *args: typing.Any
     ):  # pylint: disable=super-init-not-called
         if parser is None:
             raise ValueError("parser must not be None")
@@ -514,25 +556,6 @@ class ParseError(Exception):
 
 class GrammarError(Exception):
     """Raised in response to errors detected in the grammar."""
-
-
-#### Other code ####
-
-
-def flatten(*L):
-    """Takes an item, or a list of items, of which some items may be lists, and returns a list; e.g.
-    flatten(1) returns [1]
-    flatten([1] returns [1]
-    flatten([1, 2, 3], 4, [5]) returns [1, 2, 3, 4, 5].
-    """
-
-    flat_list = []
-    for item in L:
-        if isinstance(item, list):
-            flat_list.extend(flatten(*item))
-        else:
-            flat_list.append(item)
-    return flat_list
 
 
 #### Bootstrappery ####
@@ -576,11 +599,11 @@ for core_rule_def in [
     ("VCHAR", Literal(("\x21", "\x7E"))),
     ("WSP", Alternation(Rule("SP"), Rule("HTAB"))),
 ]:
-    Rule(*core_rule_def)
+    Rule(core_rule_def[0], typing.cast(Parser, core_rule_def[1]))
 
 
 class ABNFGrammarRule(Rule):
-    """Rules defining ABNF in ABNF. """
+    """Rules defining ABNF in ABNF."""
 
 
 for grammar_rule_def in [
@@ -831,28 +854,28 @@ for grammar_rule_def in [
         ),
     ),
 ]:
-    ABNFGrammarRule(*grammar_rule_def)
+    ABNFGrammarRule(grammar_rule_def[0], typing.cast(Parser, grammar_rule_def[1]))
 
 
 class CharValNodeVisitor(NodeVisitor):
     """CharVal node visitor."""
 
-    def visit_char_val(self, node):
+    def visit_char_val(self, node: Node):
         """Visit a char-val node."""
         return self.visit(node.children[0])
 
-    def visit_case_insensitive_string(self, node):
+    def visit_case_insensitive_string(self, node: Node):
         """Visit a case-insensitive-string node."""
-        value = next(filter(None, map(self.visit, node.children)))
+        value: str = next(filter(None, map(self.visit, node.children)))
         return Literal(value, False)
 
-    def visit_case_sensitive_string(self, node):
+    def visit_case_sensitive_string(self, node: Node):
         """Visit a case-sensitive-string node."""
-        value = next(filter(None, map(self.visit, node.children)))
+        value: str = next(filter(None, map(self.visit, node.children)))
         return Literal(value, True)
 
     @staticmethod
-    def visit_quoted_string(node):
+    def visit_quoted_string(node: Node) -> str:
         """Visit a quoted-string node."""
         return node.value[1:-1]
 
@@ -860,26 +883,30 @@ class CharValNodeVisitor(NodeVisitor):
 class NumValVisitor(NodeVisitor):
     """Visitor of num-val nodes."""
 
-    def visit_num_val(self, node):  # pylint:disable=missing-function-docstring
+    def visit_num_val(self, node: Node):  # pylint:disable=missing-function-docstring
         """Visit a num-val, returning (value, case_sensitive)."""
         return next(filter(None, map(self.visit, node.children)))
 
-    def visit_bin_val(self, node):  # pylint:disable=missing-function-docstring
+    def visit_bin_val(self, node: Node):  # pylint:disable=missing-function-docstring
         # first child node is marker literal "b"
         return Literal(self._read_value(node.children[1:], "BIT", 2), True)
 
-    def visit_dec_val(self, node):  # pylint:disable=missing-function-docstring
+    def visit_dec_val(self, node: Node):  # pylint:disable=missing-function-docstring
         # first child node is marker literal "b"
         return Literal(self._read_value(node.children[1:], "DIGIT", 10), True)
 
-    def visit_hex_val(self, node):  # pylint:disable=missing-function-docstring
+    def visit_hex_val(self, node: Node):  # pylint:disable=missing-function-docstring
         # first child node is marker literal "x"
         return Literal(self._read_value(node.children[1:], "HEXDIG", 16), True)
 
-    def _read_value(self, digit_nodes, digit_node_name, base):
+    def _read_value(
+        self, digit_nodes: typing.List[Node], digit_node_name: str, base: int
+    ) -> typing.Union[str, typing.Tuple[str, str]]:
         """Reads the character from the child nodes of the num-val node.
         Returns either a string, or a tuple representing a character range."""
 
+        # type specification needed for mypy to know that value can be either type.
+        value: typing.Union[str, typing.Tuple[str, str]]
         range_op = "-"
         buffer = ""
         iter_nodes = iter(digit_nodes)
@@ -889,7 +916,7 @@ class NumValVisitor(NodeVisitor):
                 buffer = buffer + child_node.value
             else:
                 break
-
+        assert child_node is not None
         if child_node.value == range_op:
             first_char = self._decode_bytes(buffer, base)
             buffer = ""
@@ -915,15 +942,15 @@ class NumValVisitor(NodeVisitor):
         return value
 
     @staticmethod
-    def _decode_bytes(data, base):
+    def _decode_bytes(data: str, base: int) -> str:
         """Decodes num-val byte data. Intended to be private."""
         return chr(int(data, base=base))
 
 
 class ABNFGrammarNodeVisitor(NodeVisitor):
-    """Visitor for visiting nodes generated from ABNFGrammarRules.  """
+    """Visitor for visiting nodes generated from ABNFGrammarRules."""
 
-    def __init__(self, rule_cls, *args, **kwargs):
+    def __init__(self, rule_cls: typing.Type[Rule], *args: typing.Any, **kwargs: typing.Any):
 
         self.rule_cls = rule_cls
         self.visit_char_val = CharValNodeVisitor()
@@ -932,51 +959,51 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
         # find these two methods added at runtime.
         super().__init__(*args, **kwargs)
 
-    def visit_alternation(self, node):
+    def visit_alternation(self, node: Node):
         """Creates an Alternation object from alternation node."""
         assert node.name == "alternation"
-        args = list(filter(None, map(self.visit, node.children)))
+        args: typing.List[Parser] = list(filter(None, map(self.visit, node.children)))
         return (
             Alternation(*args, first_match=self.rule_cls.first_match_alternation)
             if len(args) > 1
             else args[0]
         )
 
-    def visit_concatenation(self, node):
+    def visit_concatenation(self, node: Node):
         """Creates a Concatention object from concatenation node."""
         assert node.name == "concatenation"
-        args = list(filter(None, map(self.visit, node.children)))
+        args: typing.List[Parser] = list(filter(None, map(self.visit, node.children)))
         return Concatenation(*args) if len(args) > 1 else args[0]
 
     @staticmethod
-    def visit_defined_as(node):
+    def visit_defined_as(node: Node):
         """Returns defined-as operator."""
         return node.value.strip()
 
-    def visit_element(self, node):
+    def visit_element(self, node: Node):
         """Creates a parser object from element node."""
         return self.visit(node.children[0])
 
-    def visit_elements(self, node):
+    def visit_elements(self, node: Node):
         """Creates an Alternation object from elements node."""
         return next(filter(None, map(self.visit, node.children)))
 
-    def visit_group(self, node):
+    def visit_group(self, node: Node):
         """Returns an Alternation object from group node."""
         return next(filter(None, map(self.visit, node.children)))
 
-    def visit_option(self, node):
+    def visit_option(self, node: Node):
         """Creates an Option object from option node."""
-        parser = next(filter(None, map(self.visit, node.children)))
+        parser: Parser = next(filter(None, map(self.visit, node.children)))
         return Option(parser)
 
     @staticmethod
-    def visit_prose_val(node):
+    def visit_prose_val(node: Node):
         """Raises a GrammarError if a prose-val is encountered."""
         raise GrammarError("Grammar contains a prose-val.")
 
     @staticmethod
-    def visit_repeat(node):
+    def visit_repeat(node: Node):
         """Creates a Repeat object from repeat node."""
         repeat_op = "*"
         min_src = ""
@@ -990,6 +1017,7 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
             else:
                 break
 
+        assert child
         if child.value == repeat_op:
             max_src = ""
             for child in iter_child:
@@ -1002,7 +1030,7 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
             max=int(max_src, base=10) if max_src else None,
         )
 
-    def visit_repetition(self, node):
+    def visit_repetition(self, node: Node):
         """Creates a Repetition object from repetition node."""
         if node.children[0].name == "repeat":  # pylint: disable=no-else-return
             return Repetition(
@@ -1013,18 +1041,24 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
             assert node.children[0].name == "element"
             return self.visit_element(node.children[0])
 
-    def visit_rule(self, node):
+    def visit_rule(self, node: Node):
         """Visits a rule node, returning a Rule object."""
+        rule: Rule
+        defined_as: str
+        elements:Parser
         rule, defined_as, elements = filter(None, map(self.visit, node.children))
+        # this assertion tells mypy that rule should actually be an object. Without, mypy
+        # returns 'error: <nothing> has no attribute "definition"'
+        assert rule
         rule.definition = (
             elements if defined_as == "=" else Alternation(rule.definition, elements)
         )
         return rule
 
-    def visit_rulelist(self, node):
+    def visit_rulelist(self, node: Node):
         """Visits a rulelist node, returning a list of Rule objects."""
         return list(filter(None, map(self.visit, node.children)))
 
-    def visit_rulename(self, node):
+    def visit_rulename(self, node: Node):
         """Visits a rulename node, looks up the Rule object for rulename, and returns it."""
         return self.rule_cls(node.value)
