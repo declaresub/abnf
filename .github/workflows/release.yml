@@ -1,4 +1,4 @@
-name: Upload ahnf to pypi
+name: Upload abnf to pypi
 
 on:
   release:
