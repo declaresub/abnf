@@ -21,7 +21,7 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.ABNF_TEST_PYPI_PASSWORD }}
       run: |
         python -m build
-        twine upload upload --repository testpypi dist/*
+        twine upload --repository testpypi dist/*
         python -m venv test
         pip install --index-url https://test.pypi.org/simple/ --no-deps abnf-declaresub
         python -c "import abnf"
