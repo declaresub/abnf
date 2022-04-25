@@ -22,6 +22,6 @@ jobs:
       run: |
         python -m build
         twine upload --repository testpypi dist/*
-        python -m venv test
-        pip install --index-url https://test.pypi.org/simple/ --no-deps abnf-declaresub
+        rm -rf dist
+        pip install --index-url https://test.pypi.org/simple/ --no-deps abnf
         python -c "import abnf"
