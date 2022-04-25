@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0
+
+* Add type hints.
+
+* add RFC 7489 grammar (thanks to egobiah).
+
 ## 1.1.1
 
 * Imported rules are now created using the source rule's definition, instead of setting the
