@@ -1,5 +1,13 @@
 # Changelog
 
+
+## 1.2.1
+
+* Fix a bug in Repetition class.  Refactoring to remove the use of a flatten function meant that matches
+needed to be counted explicitly instead of using the size of the matched nodes list. https://github.com/declaresub/abnf/issues/10
+
+* Add more type hints, and a py.typed file.
+
 ## 1.2.0
 
 * Add type hints.
