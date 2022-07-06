@@ -5,6 +5,8 @@
 
 # pylint: disable=too-many-lines
 
+from __future__ import annotations
+
 import pathlib
 import typing
 
@@ -364,7 +366,7 @@ class Rule:
             rule_node = Node(self.name, *nodes)
             return rule_node, new_start
 
-    def parse_all(self, source: str):
+    def parse_all(self, source: str) -> Node:
         """
         Parses the source from beginning to end.  If not all of the source is consumed, a
         ParseError is raised.
@@ -517,7 +519,7 @@ class NodeVisitor:  # pylint: disable=too-few-public-methods
     def __call__(self, node: Node):
         return self.visit(node)
 
-    def visit(self, node: Node):
+    def visit(self, node: Node) -> typing.Any:
         """Visit node.  This method invokes the appropriate method for the node type."""
         return self._node_method_cache.get(
             node.name.replace("-", "_").casefold(), self._skip_visit
