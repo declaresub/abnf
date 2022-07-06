@@ -113,6 +113,13 @@ def test_repetition():
     nodes = node if isinstance(node, list) else [node]
     assert [x for x in nodes] == [LiteralNode('a', x, 1) for x in range(0, 2)]
 
+def test_repetition10():
+    # test added thanks to https://github.com/declaresub/abnf/issues/10.
+    parser = Repetition(Repeat(1, 1), Concatenation(Literal('a'), Literal(':')))
+    node, _ = parser.parse('a:a:a:a:a', 0)
+    assert isinstance(node, list)
+    assert ''.join(n.value for n in node) == "a:"
+
 def test_repetition_str():
     parser = Repetition(Repeat(1, 2), Literal('a'))
     assert str(parser) == "Repetition(Repeat(1, 2), Literal('a'))"

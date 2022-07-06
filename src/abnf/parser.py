@@ -263,19 +263,21 @@ class Repetition:  # pylint: disable=too-few-public-methods
         new_start = start
         nodes: typing.List[Node] = []
         end_of_source = len(source)
+        match_count = 0
         while new_start < end_of_source:
             try:
                 node, new_start = self.element.parse(source, new_start)
             except ParseError:
                 break
             else:
+                match_count = match_count + 1
                 nodes.extend(node if isinstance(node, list) else [node])
-                if self.repeat.max and len(nodes) == self.repeat.max:
+                if self.repeat.max and match_count == self.repeat.max:
                     break
 
         # should write something explicit about behavior when self.element.parse returns
         # a zero-length match  -- [].
-        if len(nodes) >= self.repeat.min:  # pylint: disable=no-else-return
+        if match_count >= self.repeat.min:  # pylint: disable=no-else-return
             return nodes, new_start
         else:
             raise ParseError(self, start)
