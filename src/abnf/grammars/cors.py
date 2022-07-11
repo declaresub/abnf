@@ -20,8 +20,6 @@ from .misc import load_grammar_rules
     ]
 )
 class Rule(_Rule):
-    """Rules from RFC 8187."""
-
     grammar = [
         "Origin = origin-or-null",
         "origin-or-null = origin / %x6E.75.6C.6C",
