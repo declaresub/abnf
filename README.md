@@ -338,3 +338,12 @@ The code is formatted using black.
 ### [abnf-to-regexp](https://pypi.org/project/abnf-to-regexp/1.0.0/)
 
 The program abnf-to-regexp converts augmented Backus-Naur form (ABNF) to a regular expression.
+
+
+
+## Package Verification
+
+I sign abnf packages with my GPG key (3A27290FD243BD83BC3F5BC886C057F96A41A77B), which you can retrieve from https://keys.openpgp.org.  
+You can verify a package by downloading it and its GPG signature file from pypi, then running gpg --verify.
+
+
