@@ -11,3 +11,13 @@ from abnf.grammars import rfc7231
 def test_accept_parse(src):
     accept = rfc7231.Rule('accept')
     assert accept.parse_all(src)
+
+
+@pytest.mark.parametrize("src", [
+'Wed, 21 Oct 2015 07:28:00 GMT',
+'Tuesday, 08-Feb-94 14:15:29 GMT',
+'Thu Feb  3 00:00:00 1994',
+])
+def test_date_parse(src: str):
+    date = rfc7231.Rule("Date")
+    assert date.parse_all(src)
