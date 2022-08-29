@@ -3,7 +3,7 @@ Collected rules from fetch standard
 https://fetch.spec.whatwg.org/#cors-protocol
 """
 
-from ..parser import Rule as _Rule
+from abnf.parser import Rule as _Rule
 from . import rfc3986, rfc7230, rfc7234
 from .misc import load_grammar_rules
 
