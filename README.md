@@ -15,7 +15,8 @@ The code herein has been in use in production here and there on the internet sin
 
 ## Requirements
 
-ABNF is tested with Python 3.7-10. The package has no other dependencies.
+ABNF is tested with Python 3.7-10. The package requires typing_extensions >=4, and for python 3.7, importlib_metadata.
+
 
 ## Installation
 
@@ -29,6 +30,7 @@ Install it in the usual way.
 
 The abnf package is signed with GPG.  The public key is available from [github](https://github.com/declaresub.gpg),
 or [OpenPGP](https://keys.openpgp.org/).  The key fingerprint is `3A27 290F D243 BD83 BC3F  5BC8 86C0 57F9 6A41 A77B`.
+
 
 Once you have imported the public key into GPG, you can check the signature by downloading
 the files and the signature files from [PyPI](https://pypi.org/project/abnf/).  No
@@ -295,9 +297,22 @@ RFC 5234 does not specify the precise behavior of alternation.  The ABNF definit
 ABNF appears to assume longest match.  But other grammars expect first match alternation 
 (e.g. [dhall](https://dhall-lang.org)).  So this behavior is configurable. A class attribute Rule.first_match_alternation
 allows one to choose a behavior for a particular grammar (as represented by a Rule subclass).
-When first_match_alternation is False, alternation returns the longest match;in the event of a tie, 
+When first_match_alternation is False, alternation returns the longest match; in the event of a tie, 
 the first match is returned. When first_match_alternation is True, the first match is 
 returned.
+
+
+### Backtracking
+
+ABNF implements backtracking as of version 2.0.0.  There were sufficient changes in behavior that this constituted a breaking change, 
+and so the major version has been bumped.
+
+As is well-known, naive implementations of backtracking typically have exponential worst-case behavior.  Here I attempt to reduce that 
+through the use of generators and some caching. In particular, Concatention and Repetition objects cache parse results.
+
+Version 2.0.0 uses a LRU cache, ParseCache.  The code comes wihout any max sizes set for caches, which will obviously result in long-term issues.  
+My hope is to get feedback from parser usage.  ParseCache has a class attribute max_cache_size: int | None that if set to a non-negative integer, will 
+limit cache size.
 
         
 ## Development, Testing, etc.
@@ -338,12 +353,3 @@ The code is formatted using black.
 ### [abnf-to-regexp](https://pypi.org/project/abnf-to-regexp/1.0.0/)
 
 The program abnf-to-regexp converts augmented Backus-Naur form (ABNF) to a regular expression.
-
-
-
-## Package Verification
-
-I sign abnf packages with my GPG key (3A27290FD243BD83BC3F5BC886C057F96A41A77B), which you can retrieve from https://keys.openpgp.org.  
-You can verify a package by downloading it and its GPG signature file from pypi, then running gpg --verify.
-
-
