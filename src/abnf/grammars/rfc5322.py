@@ -3,7 +3,7 @@ Collected rules from RFC 5322
 https://tools.ietf.org/html/rfc5322
 """
 
-from ..parser import Rule as _Rule
+from abnf.parser import Rule as _Rule
 from .misc import load_grammar_rules
 
 
@@ -98,7 +98,9 @@ class Rule(_Rule):
         "obs-utext = %d0 / obs-NO-WS-CTL / VCHAR",
         'obs-qp = "\\" (%d0 / obs-NO-WS-CTL / LF / CR)',
         "obs-body = *((*LF *CR *((%d0 / text) *LF *CR)) / CRLF)",
-        "obs-unstruct = *((*LF *CR *(obs-utext *LF *CR)) / FWS)",
+        # See https://www.rfc-editor.org/errata/eid1905.
+        #"obs-unstruct = *((*LF *CR *(obs-utext *LF *CR)) / FWS)",
+        "obs-unstruct = *( (*CR 1*(obs-utext / FWS)) / 1*LF ) *CR",
         'obs-phrase = word *(word / "." / CFWS)',
         'obs-phrase-list = [phrase / CFWS] *("," [phrase / CFWS])',
         "obs-FWS = 1*WSP *(CRLF 1*WSP)",
@@ -146,3 +148,6 @@ class Rule(_Rule):
         'obs-received = "Received" *WSP ":" *received-token CRLF',
         'obs-optional = field-name *WSP ":" unstructured CRLF',
     ]
+
+
+#Rule('unstructured').first_match_alternation = True

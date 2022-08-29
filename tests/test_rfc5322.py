@@ -3,7 +3,7 @@
 import pytest
 
 from abnf.grammars import rfc5322
-from abnf import ParseError
+from abnf.parser import ParseError
 
 @pytest.mark.parametrize("src", [
     r'simple@example.com', 
@@ -21,7 +21,7 @@ from abnf import ParseError
     r'mailhost!username@example.org',
     r'user%example.com@example.org',
     ])
-def test_address(src):
+def test_address(src: str):
     rfc5322.Rule('address').parse_all(src)
 
 @pytest.mark.parametrize("src", [
@@ -32,6 +32,18 @@ def test_address(src):
     r'this is"not\allowed@example.com', # (spaces, quotes, and backslashes may only exist when within quoted strings and preceded by a backslash)
     r'this\ still\"not\\allowed@example.com', # (even if escaped (preceded by a backslash), spaces, quotes, and backslashes must still be contained by quotes)
     ])    
-def test_address_bad(src):
+def test_address_bad(src: str):
     with pytest.raises(ParseError):
         rfc5322.Rule('address').parse_all(src)
+
+@pytest.mark.parametrize("src", [
+'''From: John Doe <jdoe@machine.example>\r\nTo: Mary Smith <mary@example.net>\r\nSubject: Saying Hello\r\nDate: Fri, 21 Nov 1997 09:55:06 -0600\r\nMessage-ID: <1234@local.machine.example>\r\n\r\n
+This is a message just to say hello.
+So, "Hello".''',
+
+
+]
+)
+def test_parse_example(src: str):
+    rfc5322.Rule('message').parse_all(src)
+
