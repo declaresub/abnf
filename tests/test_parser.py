@@ -1,314 +1,103 @@
+from typing import Any, cast
 import pytest
+
 from abnf.parser import *
 
-def test_empty_literal():
-    parser = Literal('')
-    assert parser
 
-def test_literal():
-    parser = Literal('moof')
-    source = 'moof'
-    node, start = parser.parse(source, 0)
-    assert node.value == 'moof'
 
-@pytest.mark.parametrize("value", [None, 47, ('a', 'b', 'c'), (1, 2)])
-def test_literal_bad_value(value):
-    with pytest.raises(TypeError):
-        Literal(value)
 
-def test_literal_range_fail():
-    parser = Literal(('a', 'b'))
-    with pytest.raises(ParseError):
-        parser.parse('c', 0)
+def test_sorted_by_longest_match():
+    match0 = Match([], 0)
+    match1 = Match([], 1)
+    match2 = Match([], 2)
+    assert sorted_by_longest_match([match0, match1, match2]) == [match2, match1, match0]
 
-def test_literal_range_out_of_bounds():
-    parser = Literal(('a', 'b'))
-    with pytest.raises(ParseError):
-        parser.parse('a', 1)
 
-def test_empty_literal_out_of_bounds():
-    parser = Literal('')
-    src = 'a'
-    with pytest.raises(ParseError):
-        parser.parse(src, 1)
+def test_next_longest():
+    match0 = Match([], 0)
+    match1 = Match([], 1)
+    match2 = Match([], 2)
+    assert [x for x in next_longest(set([match0, match1, match2]))] == [match2, match1, match0]
 
-@pytest.mark.parametrize('value, expected', [('foo', r"Literal('foo')"), ('\r', r"Literal('\x0d')")])
-def test_literal_str(value, expected):
-    parser = Literal(value)
-    assert str(parser) == expected
 
-@pytest.mark.parametrize('value, src', [('A', 'A'), ('A', 'a'), ('a', 'A'), ('a', 'a')])
-def test_literal_case_insensitive(value, src):
-    parser = Literal(value)
-    node, start = parser.parse(src, 0)
-    assert node.value == src
+def test_match_str():
+    match = Match([], 0)
+    assert str(match)
 
-@pytest.mark.parametrize("src", ['moof', 'MOOF', 'mOOf', 'mOoF'])
-def test_char_val(src):
-    node, start = ABNFGrammarRule('char-val').parse('"moof"', 0)
-    visitor = CharValNodeVisitor()
-    parser = visitor.visit_char_val(node)
-    char_node, start = parser.parse(src, 0)
-    assert char_node and char_node.value == src
 
-@pytest.mark.parametrize("src", ['moof', 'MOOF', 'mOOf', 'mOoF'])
-def test_char_val_case_insensitive(src):
-    node, start = ABNFGrammarRule('char-val').parse('%i"moof"', 0)
-    visitor = CharValNodeVisitor()
-    parser = visitor.visit_char_val(node)
-    char_node, start = parser.parse(src, 0)
-    assert char_node and char_node.value.casefold() == 'moof'
+def test_oarse_cache_bad_max_size():
+    with pytest.raises(ValueError):
+        ParseCache(-12)
 
-def test_char_val_case_sensitive():
-    node, start = ABNFGrammarRule('char-val').parse('%s"MOOF"', 0)
-    visitor = CharValNodeVisitor()
-    parser = visitor.visit_char_val(node)
-    src = 'MOOF'
-    char_node, start = parser.parse(src, 0)
-    assert char_node and char_node.value == src
+def test_oarse_cache_miss():
+    cache = ParseCache()
+    with pytest.raises(KeyError):
+        cache[('foo', 1)]
+    assert cache.misses == 1
 
-@pytest.mark.parametrize("src", ['MOOF', 'mOOf', 'mOoF'])
-def test_char_val_case_sensitive_fail(src):
-    node, start = ABNFGrammarRule('char-val').parse('%s"moof"', 0)
-    visitor = CharValNodeVisitor()
-    parser = visitor.visit_char_val(node)
-    with pytest.raises(ParseError):
-        parser.parse(src, 0)
+def test_cache_hit():
+    cache = ParseCache()
+    match_set = set([ Match([], 0)])
+    cache[('foo', 1)] = match_set
+    assert len(cache) == 1
+    assert cache[('foo', 1)] == match_set
+    assert cache.hits == 1
+    assert cache.misses == 0
 
-def test_bin_val():
-    src = "b01111000"
-    node = ABNFGrammarRule('bin-val').parse_all(src)
-    visitor = NumValVisitor()
-    parser = visitor.visit(node)
-    assert parser.value == 'x'
+def test_parse_cache_max_size():
+    cache = ParseCache(max_size=1)
+    cache[('foo', 1)] = set([ Match([], 0)])
+    assert len(cache) == 1
+    match_set = set([ Match([], 2)])
+    cache[('foo', 3)] = match_set
+    assert len(cache) == 1
+    assert cache[('foo', 3)] == match_set
 
-@pytest.mark.parametrize("src", ['A', 'B', 'Z'])
-def test_literal_range(src):
-    parser = Literal(('\x41', '\x5A'))
-    node, start = parser.parse(src, 0)
-    assert node and node.value == src
+def test_parse_cache_del_item():
+    cache = ParseCache(max_size=1)
+    cache[('foo', 1)] = set([ Match([], 0)])
+    assert len(cache) == 1
+    del cache[('foo', 1)]
+    assert len(cache) == 0
+    cache = ParseCache()
+    cache[('foo', 1)] = set([ Match([], 0)])
 
-@pytest.mark.parametrize("src", ['foo', 'bar'])
-def test_alternation(src):
-    parser = Alternation(Literal('foo'), Literal('bar'))
-    node, start = parser.parse(src, 0)
-    assert node.value == src
+def test_parse_cache_iter():
+    cache = ParseCache()
+    cache[('foo', 1)] = set([ Match([], 0)])
+    assert [key for key in cache] == [('foo', 1)]
 
-# test repetition and match of empty elements.
-@pytest.mark.parametrize("src, expected", [
-    ('1*43', (1, 43)),
-    ('1*', (1, None)),
-    ('*43', (0, 43)),
-    ('43', (43, 43)),
-    ])
-def test_rule_repeat(src, expected):
-    node, start = ABNFGrammarRule('repeat').parse(src, 0)
-    visitor = ABNFGrammarNodeVisitor(ABNFGrammarRule)
-    parser = visitor.visit_repeat(node)
-    assert (parser.min, parser.max) == expected
+def test_parse_cache_eq():
+    cache = ParseCache()
+    assert cache == cache
 
-def test_repetition():
-    parser = Repetition(Repeat(1, 2), Literal('a'))
-    node, start = parser.parse('aa', 0)
-    nodes = node if isinstance(node, list) else [node]
-    assert [x for x in nodes] == [LiteralNode('a', x, 1) for x in range(0, 2)]
+def test_parse_cache_not_eq():
+    cache1 = ParseCache()
+    cache2 = ParseCache()
+    assert cache1 != cache2
 
-def test_repetition10():
-    # test added thanks to https://github.com/declaresub/abnf/issues/10.
-    parser = Repetition(Repeat(1, 1), Concatenation(Literal('a'), Literal(':')))
-    node, _ = parser.parse('a:a:a:a:a', 0)
-    assert isinstance(node, list)
-    assert ''.join(n.value for n in node) == "a:"
+def test_parse_cache_str():
+    assert str(ParseCache())
 
-def test_repetition_str():
-    parser = Repetition(Repeat(1, 2), Literal('a'))
-    assert str(parser) == "Repetition(Repeat(1, 2), Literal('a'))"
-
-# concatenation has higher precedence than alternation; the next few tests confirm this.
-@pytest.mark.parametrize("src", ['bc', 'a'])
-def test_operator_precedence(src):
-    grammar_src = '"a" / "b" "c"'
-    node, start = ABNFGrammarRule('alternation').parse(grammar_src, 0)
-    visitor = ABNFGrammarNodeVisitor(ABNFGrammarRule)
-    parser = visitor.visit_alternation(node)
-    node, start = parser.parse(src, 0)
-    nodes = node if isinstance(node, list) else [node]
-    assert ''.join(x.value for x in nodes) == src
-
-@pytest.mark.parametrize("src", ['ac'])
-def test_operator_precedence_1(src):
-    grammar_src = '"a" / "b" "c"'
-    node, start = ABNFGrammarRule('alternation').parse(grammar_src, 0)
-    visitor = ABNFGrammarNodeVisitor(ABNFGrammarRule)
-    parser = visitor.visit_alternation(node)
-    node, start = parser.parse(src, 0)
-    assert node.value == 'a'
-
-@pytest.mark.parametrize("src", ['ac', 'bc'])
-def test_operator_precedence_2(src):
-    grammar_src = '("a" / "b") "c"'
-    node, start = ABNFGrammarRule('concatenation').parse(grammar_src, 0)
-    visitor = ABNFGrammarNodeVisitor(ABNFGrammarRule)
-    parser = visitor.visit_concatenation(node)
-    node, start = parser.parse(src, 0)
-    assert ''.join(x.value for x in node) == src
-
-def test_node_str():
-    node_name = 'foo'
-    node_children = []
-    node = Node(name=node_name, *node_children)
-    assert str(node) == 'Node(name=%s, children=%s)' % (node_name, str(node_children))
-
-def test_node_eq():
-    assert Node('foo') == Node('foo')
-    
-    
-def test_literal_node_str():
-    # test just exercises Node.__str__.
-    node = LiteralNode('a', 1, 2)
-    assert str(node)
-
-def test_literal_node_children():
-    node = LiteralNode('', 0, 0)
-    assert node.children == []
-
-def test_Alternation_str():
-    parser = Alternation(Literal('foo'), Literal('bar'))
-    assert str(parser) == "Alternation(Literal('foo'), Literal('bar'))"
-
-def test_Concatenation_str():
-    parser = Concatenation(Literal('foo'), Literal('bar'))
-    assert str(parser) == "Concatenation(Literal('foo'), Literal('bar'))"
-
-def test_option_str():
-    parser = Option(Alternation(Literal('foo')))
-    assert str(parser) == "Option(Alternation(Literal('foo')))"
-
-def test_rule_undefined():
-    with pytest.raises(GrammarError):
-        Rule('undefined').parse('x', 0)
-
-def test_rule_str():
-    assert str(Rule('ALPHA')) == "Rule('ALPHA')"
-
-@pytest.mark.parametrize("src", ['a', 'b'])
-def test_rule_def_alternation(src):
-    class TestRule(Rule):
+def test_parse_cache_clear_caches():
+    cache = ParseCache()
+    cache[('foo', 1)] = set([ Match([], 0)])
+    cache[('foo', 1)] # trigger a hit
+    try:
+        cache[('bar', 1)] # trigger a miss
+    except KeyError:
         pass
 
-    rulelist = ['moof = "a"', 'moof =/ "b"']
-    for rule in rulelist:
-        TestRule.create(rule)
+    ParseCache.clear_caches()
+    for c in ParseCache.list():
+        assert len(c) == 0
+        assert c.misses == 0
+        assert c.hits == 0
 
-    node, start = TestRule('moof').parse(src, 0)
-    assert node and node.value == src
 
-class XRule(Rule):
-    pass
-
-# an XRule object is created, without definition.
-XRule('foo')
-        
-def test_rule_rules():
-    assert XRule.rules() == [XRule('foo')]
-
-@pytest.mark.parametrize("name, rule", [('foo', XRule('foo')), ('bar', None)])
-def test_rule_get(name, rule):
-    assert XRule.get(name) is rule
-
-def test_parse_all_pass():
-    src = 'moof'
-    node = ABNFGrammarRule('rulename').parse_all(src)
-    assert node.value == src
-
-def test_parse_all_fail():
-    src = 'rule name'
-    with pytest.raises(ParseError):
-        ABNFGrammarRule('rulename').parse_all(src)
-
-@pytest.mark.parametrize("num_val", ['%x2227', '%d8743', '%b0010001000100111'])
-def test_unicode_num_val(num_val):
-    # https://github.com/declaresub/abnf/issues/1
-    class TestRule(Rule):
-        pass
-
-    value = '∧'
-    rule = 'combine = %s' % num_val
-    combine = TestRule.create(rule)
-    node = combine.parse_all(value)
-    assert node.value == value
-
-def test_unicode_hex_val_concat():
-    class TestRule(Rule):
-        pass
-
-    value = 'Я́блоко'
-    rule = 'apple = %x42f.301.431.43b.43e.43a.43e'
-    combine = TestRule.create(rule)
-    print(str(combine.definition))
-    node = combine.parse_all(value)
-
-    assert node.value == value
-
-def test_from_file(tmp_path):
-    grammar = ['foo = "foo"\r\n', 'bar = "bar"\r\n']
-    path = tmp_path / 'test_grammar.abnf'
-    path.write_text(''.join(grammar))
-    
-    class FromFileRule(Rule):
-        pass
-        
-    FromFileRule.from_file(path)
-    
-@pytest.mark.parametrize("first_match, value", [(True, 'foo'), (False, 'foobar')])
-def test_alternation_first_match(first_match, value):
-    src = 'foobar'
-    parser = Alternation(Literal('foo'), Literal('foobar'), first_match=first_match)
-    node, start = parser.parse(src, 0)
-    assert node.value == value
-
-def test_alternation_first_match1():
-    src = 'bar'
-    parser = Alternation(Literal('foo'), Literal('bar'), first_match=True)
-    node, start = parser.parse(src, 0)
-    assert node.value == src
-
-def test_alternation_first_match_fail():
-    src = 'moof'
-    parser = Alternation(Literal('foo'), Literal('bar'), first_match=True)
-    with pytest.raises(ParseError):
-        parser.parse(src, 0)
-
-def test_exclude_rule_identifier():
-    class ExcludeRule(Rule):
-        pass
-
-    ExcludeRule.create('foo = %x66.6f.6f')
-    ExcludeRule.create('keyword = foo')
-    ExcludeRule.create('identifier = ALPHA *(ALPHA / DIGIT )')
-    keyword = ExcludeRule('keyword')
-    identifier = ExcludeRule('identifier')
-    identifier.exclude_rule(keyword)
-    src = 'foo1'
-    node, start =  identifier.parse(src, 0)
-    assert node.value == src and start == 4
-        
-def test_exclude_rule_keyword():
-    class ExcludeRule(Rule):
-        pass
-
-    ExcludeRule.create('foo = %x66.6f.6f')
-    ExcludeRule.create('keyword = foo')
-    ExcludeRule.create('identifier = ALPHA *(ALPHA / DIGIT )')
-    keyword = ExcludeRule('keyword')
-    identifier = ExcludeRule('identifier')
-    identifier.exclude_rule(keyword)
-    src = 'foo'
-    with pytest.raises(ParseError):
-        identifier.parse(src, 0)
 
 @pytest.mark.parametrize("args", [(None, 1), (Literal('a'), None)])
-def test_parseerror_bad_args(args):
+def test_parseerror_bad_args(args: tuple[Any, Any]):
     with pytest.raises(ValueError):
         ParseError(*args)
 
@@ -317,10 +106,216 @@ def test_parseerror_str():
     assert str(ParseError(Literal('a'), 1))
 
 
+
+def test_backtracking():
+    src = 'aababb'
+    parser = Concatenation(Repetition(Repeat(), Alternation(Literal('a'), Literal('b'))), Literal('b'))
+    assert len(parser.lparse_cache) == 0
+    result = parser.lparse(src, 0)
+    match = next(result)
+    assert ''.join(n.value for n in match.nodes) == src
+
+
+def test_alternation_first_match():
+    parser = Alternation(Literal('a'), Literal('ab'), first_match=True)
+    result = parser.lparse('ab', 0)
+    match = next(result)
+    assert ''.join(n.value for n in match.nodes) == 'a'
+    assert match.start == 1
+
+def test_alternation_fail():
+    parser = Alternation(Literal('a'), Literal('b'))
+    result = parser.lparse('c', 0)
+    with pytest.raises(ParseError):
+        next(result)
+
+
+def test_alternation_str():
+    assert str(Alternation(Literal('a'), Literal('b')))
+
+def test_concatenation_from_cache():
+    parser = Concatenation(Literal('a'))
+    result = parser.lparse('a', 0)
+    next(result) # we need to run the generator to get parser to cache result.
+    cached_matchset = parser.lparse_cache[('a', 0)]
+    cached_match = [x for x in cached_matchset][0]
+    cached_match.from_cache = True # type: ignore
+    result = parser.lparse('a', 0)
+    match = next(result)
+    assert hasattr(match, 'from_cache')
+
+def test_concatenation_from_cache_parse_error():
+    parser = Concatenation(Literal('a'))
+    result = parser.lparse('b', 0)
+    try:
+        next(result) # we need to run the generator to get parser to cache result.
+    except ParseError as exc:
+        pass
+    cached_error = parser.lparse_cache[('b', 0)]
+    assert isinstance(cached_error, ParseError)
+    result = parser.lparse('b', 0)
+    try:
+        next(result)
+    except ParseError as exc:
+        assert exc is cached_error
+
+def test_concatenation_str():
+    assert str(Concatenation(Literal('a')))
+
+
+def test_repeat_str():
+    assert str(Repeat())
+
+def test_repetition_str():
+    assert str(Repetition(Repeat(1, 2), Literal('foo')))
+
+def test_option_str():
+    assert str(Option(Literal('foo')))
+
+def test_literal():
+    parser = Literal("a")
+    matches = parser.lparse("a", 0)
+    match = next(matches)
+    assert match == Match([cast(Node, LiteralNode("a", 0, 1))], 1)
+
+
+def test_literal_bad_arg():
+    with pytest.raises(TypeError):
+        Literal(('x', 1)) # type: ignore
+
+class FMARule(Rule):
+    pass
+
+def test_rule_first_match_alternation_get():
+    rule = FMARule("test-first-match-alternation")
+    assert rule.first_match_alternation is False
+    rule.definition = Alternation(Literal("a"), Literal("ab"))
+    assert rule.first_match_alternation is False
+
+def test_rule_first_match_alternation_set():
+    rule = FMARule("test-first-match-alternation")
+    assert rule.first_match_alternation is False
+    node, start = rule.parse("ab", 0)
+    assert node.value == 'ab'
+    assert start == 2
+    rule.first_match_alternation = True
+    assert rule.first_match_alternation is True
+    node, start = rule.parse("ab", 0)
+    assert node.value == 'a'
+    assert start == 1
+    rule.first_match_alternation = False
+    assert rule.first_match_alternation is False
+    node, start = rule.parse("ab", 0)
+    assert node.value == 'ab'
+    assert start == 2
+
+def test_rule_first_match_alternation_grammar_error():
+    rule = FMARule("no-grammar")
+    with pytest.raises(GrammarError):
+        rule.first_match_alternation = False
+
+def test_rule_first_match_alternation_pass():
+    # this test just exercises first_match_alternation setter
+    # in the case of a rule which is not an alternation.
+    rule = FMARule('no-alternation', Literal('a'))
+    rule.first_match_alternation = True
+
+
+def test_rule_grammar_error():
+    with pytest.raises(GrammarError):
+        FMARule('no-definition').parse('a', 0)
+
+class ExcludeRule(Rule):
+    pass
+ExcludeRule.create('foo = %x66.6f.6f')
+ExcludeRule.create('keyword = foo')
+ExcludeRule.create('identifier = ALPHA *(ALPHA / DIGIT )')
+
+def test_exclusion():
+    identifier = ExcludeRule('identifier')
+    identifier.exclude_rule(ExcludeRule('keyword'))
+    assert identifier.parse_all('foobar')
+    with pytest.raises(ParseError):
+        identifier.parse_all('foo') # this will match 'fo', perhaps because of backtrackery.
+        # so we want a different test to trigger the parse error.
+
+def test_exclusion_2():
+    identifier = ExcludeRule('identifier')
+    identifier.exclude_rule(ExcludeRule('keyword'))
+    node, start = identifier.parse('foo', 0)
+    # thanks to backtracking, we get this match.
+    assert node.value == 'fo'
+    assert start == 2
+        
+def test_exclusion_3():
+    identifier_initial = ExcludeRule.create('identifier-initial = ALPHA')
+    no_a_initial = ExcludeRule.create('no-a-initial = "a"')
+    identifier_initial.exclude_rule(no_a_initial)
+    with pytest.raises(ParseError):
+        identifier_initial.parse('a', 0)
+
+
+def test_rule_str():
+    assert str(Rule('DIGIT'))
+
+def test_rule_from_file(tmp_path):
+    grammar = ['foo = "foo"\r\n', 'bar = "bar"\r\n']
+    path = tmp_path / 'test_grammar.abnf'
+    path.write_text(''.join(grammar))
+    
+    class FromFileRule(Rule):
+        pass
+        
+    FromFileRule.from_file(path)
+
+
+def test_node_str():
+    node = Node('test')
+    assert str(node)
+
+def test_node_eq():
+    assert Node('test') == Node('test')
+
+def test_literal_node_children():
+    assert LiteralNode('a', 0, 1).children == []
+
+def test_literal_node_str():
+    assert str(LiteralNode('a', 0, 1))
+
+def test_literal_node_eq():
+    assert LiteralNode('a', 0, 1) == LiteralNode('a', 0, 1)
+
+def test_literal_node_neq():
+    assert LiteralNode('a', 0, 1) != LiteralNode('a', 1, 1)
+
+def test_bin_val():
+    src = "b01111000"
+    node = ABNFGrammarRule('bin-val').parse_all(src)
+    visitor = NumValVisitor()
+    parser = visitor.visit(node)
+    assert parser.value == 'x'
+
 def test_prose_val():
-    class TestRule(Rule):
+    class ProseRule(Rule):
         pass
         
     rule = 'test-prose-val = <blah blah>'
     with pytest.raises(GrammarError):
-        TestRule.create(rule)
+        ProseRule.create(rule)
+
+
+class EdgeCaseRule(Rule):
+    pass
+
+EdgeCaseRule.create('repeat-a = *"a"')
+EdgeCaseRule.create('repeat-repeat-a = *(*"a")')
+
+def test_repetition():
+    node, start = EdgeCaseRule('repeat-a').parse('', 0)
+    assert node.value == ''
+    assert start == 0
+    
+def test_repetition_1():
+    node, start = EdgeCaseRule('repeat-repeat-a').parse('', 0)
+    assert node.value == ''
+    assert start == 0

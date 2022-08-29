@@ -1,27 +1,131 @@
-"""ABNF parser classes."""
-
-
-#### Parser classes ####
-
-# pylint: disable=too-many-lines
-
 from __future__ import annotations
 
 import pathlib
 import typing
+from collections import OrderedDict
+from collections.abc import MutableMapping
+from itertools import filterfalse
+from weakref import WeakSet
+import sys
 
-from .typing import Protocol
-
+# we test version to help pylance.
+if sys.version_info >= (3, 8):
+    from typing import Protocol # pragma: no cover
+else:
+    from typing_extensions import Protocol # pragma: no cover
 
 Source = str
-Nodes = typing.Union["Node", typing.List["Node"]]
+Nodes = typing.List["Node"]
+
+
+class Match:
+    def __init__(self, nodes: Nodes, start: int):
+        self.nodes = nodes
+        self.start = start
+
+    def __hash__(self) -> int:
+        value = "".join(n.value for n in self.nodes)
+        return hash((value, self.start))
+
+    def __str__(self):
+        return (
+            f'Match(value={"".join(n.value for n in self.nodes)}, start={self.start})'
+        )
+
+    def __eq__(self, __o: object) -> bool:
+        return isinstance(__o, self.__class__) and hash(self) == hash(__o)
+
+
+MatchSet = typing.Set[Match]
+Matches = typing.Iterator[Match]
+
+
+def sorted_by_longest_match(matches: typing.Iterable[Match]) -> list[Match]:
+    return sorted(matches, key=lambda item: item.start, reverse=True)
+
+
+def next_longest(matches: MatchSet):
+    for match in sorted_by_longest_match([x for x in matches]):
+        yield match
 
 
 class Parser(Protocol):
-    def parse(
-        self, source: str, start: int
-    ) -> typing.Tuple[Nodes, int]:  # pragma: no cover
-        ...
+    # def parse(
+    #    self, source: str, start: int
+    # ) -> typing.Tuple[Nodes, int]:  # pragma: no cover
+    #   ...
+    def lparse(self, source: Source, start: int) -> Matches:
+        ...  # pragma: no cover
+
+
+ParseCacheKey = tuple[str, int]
+
+
+class ParseCache(MutableMapping[ParseCacheKey, typing.Union[MatchSet, "ParseError"]]):
+    max_cache_size: typing.Optional[int] = None
+    objects: WeakSet[ParseCache] = WeakSet()
+
+    def __new__(cls, max_size: typing.Optional[int] = None):
+        obj = super().__new__(cls)
+        cls.objects.add(obj)
+        return obj
+
+    def __init__(self, max_size: typing.Optional[int] = None):
+        self.dict: OrderedDict[ParseCacheKey, MatchSet | ParseError] = OrderedDict()
+        if max_size is None:
+            max_size = self.max_cache_size
+        if max_size and max_size < 0:
+            raise ValueError("max size must be non-negative.")
+        self.max_size = max_size
+        self.hits = 0
+        self.misses = 0
+
+    def __getitem__(self, key: ParseCacheKey) -> MatchSet:
+        try:
+            value = self.dict[key]
+        except KeyError:
+            self.misses = self.misses + 1
+            raise
+        else:
+            self.hits = self.hits + 1
+            self.dict.move_to_end(key)
+            return value
+
+    def __setitem__(self, key: ParseCacheKey, value: MatchSet | "ParseError"):
+        # here we want to expel least recently used entries, defined to the first entries in the order.
+        self.dict[key] = value
+        if self.max_size and len(self.dict) > self.max_size:
+            self.dict.popitem(last=False)
+
+    def __delitem__(self, key: ParseCacheKey):
+        del self.dict[key]
+
+    def __iter__(self):
+        return self.dict.__iter__()
+
+    def __len__(self):
+        return len(self.dict)
+
+    def __hash__(self):
+        return id(self)
+
+    def __eq__(self, __o: object) -> bool:
+        return hash(self) == hash(__o)
+
+    def __str__(self):
+        return f"{self.__class__.__name__}(max_size = {self.max_size}, size = {len(self)}, misses = {self.misses}, hits = {self.hits})"
+
+    @classmethod
+    def clear_caches(cls):
+        for obj in cls.objects:
+            obj.dict = OrderedDict()
+            obj.hits = 0
+            obj.misses = 0
+
+    @classmethod
+    def list(cls):
+        for obj in cls.objects:
+            yield obj
 
 
 class Alternation:  # pylint: disable=too-few-public-methods
@@ -34,52 +138,22 @@ class Alternation:  # pylint: disable=too-few-public-methods
     def __init__(self, *parsers: Parser, first_match: bool = False):
         self.parsers = list(parsers)
         self.first_match = first_match
-        self.parse = (
-            self._parse_first_match if first_match else self._parse_longest_match
-        )
 
-    def _parse_first_match(self, source: str, start: int) -> typing.Tuple[Nodes, int]:
-        """
-        :param source: source data
-        :type source: str
-        :param start: offset at which to begin parsing.
-        :type start: int
-        :return: parse tree, new offset at which to continue parsing
-        :rtype: (Node, int)
-        :raises ParseError: if none of the alternation arguments can parse source
-        """
-
+    def lparse(self, source: Source, start: int) -> Matches:
+        match_set: MatchSet = set()
         for parser in self.parsers:
             try:
-                return parser.parse(source, start)
+                # note that parser,lparse could return an empty list, say from
+                # something like *"a" .
+                for item in parser.lparse(source, start):
+                    match_set.add(item)
             except ParseError:
                 continue
-        raise ParseError(self, start)
-
-    def _parse_longest_match(self, source: str, start: int) -> typing.Tuple[Nodes, int]:
-        """
-        :param source: source data
-        :type source: str
-        :param start: offset at which to begin parsing.
-        :type start: int
-        :return: parse tree, new offset at which to continue parsing
-        :rtype: (Node, int)
-        :raises ParseError: if none of the alternation arguments can parse source
-        """
-
-        matches: typing.List[typing.Tuple[Nodes, int]] = []
-        for parser in self.parsers:
-            try:
-                matches.append(parser.parse(source, start))
-            except ParseError:
-                continue
-
-        if matches:  # pylint: disable=no-else-return
-            longest_match = matches[0]
-            for match in matches[1:]:
-                if match[1] > longest_match[1]:
-                    longest_match = match
-            return longest_match
+            if self.first_match:
+                break
+        if match_set:
+            for match in match_set:
+                yield match
         else:
             raise ParseError(self, start)
 
@@ -97,30 +171,148 @@ class Concatenation:  # pylint: disable=too-few-public-methods
 
     def __init__(self, *parsers: Parser):
         self.parsers = parsers
+        self.lparse_cache = ParseCache()
 
-    def parse(self, source: str, start: int) -> typing.Tuple[Nodes, int]:
+    def lparse(self, source: Source, start: int):
+        cache_key = (source, start)
+        try:
+            cached_matchset = self.lparse_cache[cache_key]
+        except KeyError:
+            pass
+        else:
+            if isinstance(cached_matchset, ParseError):
+                raise cached_matchset
+            for match in next_longest(cached_matchset):
+                yield match
+            return
+
+        match_set: MatchSet = set([Match([], start)])
+        try:
+            for parser in self.parsers:
+                source_exception: typing.Optional[Exception] = None
+                current_match_set: MatchSet = set()
+                for match in match_set:
+                    try:
+                        g = parser.lparse(source, match.start)
+                        for item in (Match(match.nodes + m.nodes, m.start) for m in g):
+                            current_match_set.add(item)
+                    except ParseError as exc:
+                        source_exception = exc
+
+                if current_match_set:
+                    match_set = current_match_set
+                else:
+                    raise ParseError(self, start) from source_exception
+            self.lparse_cache[cache_key] = match_set
+            for item in next_longest(match_set):
+                yield item
+        except ParseError as exc:
+            self.lparse_cache[cache_key] = exc
+            raise
+
+    def __str__(self):
+        return self.str_template % ", ".join(map(str, self.parsers))
+
+
+class Repeat:  # pylint: disable=too-few-public-methods
+    """Implements the ABNF Repeat operator for Repetition."""
+
+    def __init__(
+        self, min: int = 0, max: typing.Optional[int] = None
+    ):  # pylint: disable=redefined-builtin
+        self.min = min
+        self.max = max
+
+    def __str__(self):
+        return "Repeat(%s, %s)" % (self.min, self.max if max is not None else "None")
+
+
+class Repetition:  # pylint: disable=too-few-public-methods
+    """Implements the ABNF Repetition operation."""
+
+    def __init__(self, repeat: Repeat, element: Parser):
+        self.repeat = repeat
+        self.element = element
+        self.lparse_cache = ParseCache()
+
+    def lparse(self, source: Source, start: int) -> Matches:
+        # when repeat.min == 0, match_list should start with a 0-length match.
+        # cast expression is there to help pylance.
+
+        cache_key = (source, start)
+        try:
+            cached_matchset = self.lparse_cache[cache_key]
+        except KeyError:
+            pass
+        else:
+            if isinstance(cached_matchset, ParseError):
+                raise cached_matchset
+            for match in next_longest(cached_matchset):
+                yield match
+            return
+
+        match_set: MatchSet = set([Match([], start)]) if self.repeat.min == 0 else set()
+        match_count = len(match_set)
+        last_match_set = set([Match([], start)])
+        while True:
+            if all([item.start >= len(source) for item in last_match_set]):
+                break
+
+            new_match_set: MatchSet = set()
+            for match in last_match_set:
+                g = self.element.lparse(source, match.start)
+                try:
+                    for item in (Match(match.nodes + m.nodes, m.start) for m in g):
+                        new_match_set.add(item)
+                except ParseError:
+                    pass
+
+            if not new_match_set <= match_set:
+                match_count = match_count + 1
+                match_set = match_set | new_match_set
+                last_match_set = new_match_set
+            else:
+                break
+            if self.repeat.max and match_count == self.repeat.max:
+                break
+
+        if (
+            match_set and match_count >= self.repeat.min
+        ):  # pylint: disable=no-else-return
+            self.lparse_cache[cache_key] = match_set
+            for match in next_longest(match_set):
+                yield match
+        else:
+            exc = ParseError(self, start)
+            self.lparse_cache[cache_key] = exc
+            raise exc
+
+    def __str__(self):
+        return "Repetition(%s, %s)" % (self.repeat, self.element)
+
+
+class Option:  # pylint: disable=too-few-public-methods
+    """Implements the ABNF Option operation."""
+
+    str_template = "Option(%s)"
+
+    def __init__(self, alternation: Parser):
+        self.alternation = alternation
+        self.parser = Repetition(Repeat(0, 1), alternation)
+
+    def lparse(self, source: Source, start: int) -> Matches:
         """
         :param source: source data
         :type str:
         :param start: offset at which to begin parsing.
-        :returns: a List of Node objects, new offset at which to continue parsing
-        :rtype: List, int
-        :raises ParseError: if one of the concatenation arguments fails to parse source
+        :returns: parse tree, new offset at which to continue parsing
+        :rtype: Node, int
+        :raises ParseError:
         """
-        nodes: typing.List[Node] = []
-        new_start = start
-        for parser in self.parsers:
-            try:
-                node, new_start = parser.parse(source, new_start)
-            except ParseError as e:
-                raise ParseError(self, start) from e
-            else:
-                nodes.extend(node if isinstance(node, list) else [node])
-
-        return nodes, new_start
+        return self.parser.lparse(source, start)
 
     def __str__(self):
-        return self.str_template % ", ".join(map(str, self.parsers))
+        return self.str_template % str(self.alternation)
 
 
 class Literal:  # pylint: disable=too-few-public-methods
@@ -153,23 +345,23 @@ class Literal:  # pylint: disable=too-few-public-methods
             value if isinstance(value, tuple) or case_sensitive else value.casefold()
         )
 
-        self.parse = (
-            self._parse_range if isinstance(value, tuple) else self._parse_value
+        self.lparse = (
+            self._lparse_range if isinstance(value, tuple) else self._lparse_value
         )
 
-    def _parse_range(self, source: str, start: int) -> typing.Tuple[Nodes, int]:
+    def _lparse_range(self, source: str, start: int) -> Matches:
         """Parse source when self.value represents a range."""
         # ranges are always case-sensitive
         try:
             src = source[start]
-            if self.value[0] <= src <= self.value[1]:  # pylint: disable=no-else-return
-                return typing.cast(Node, LiteralNode(src, start, 1)), start + 1
+            if self.value[0] <= src <= self.value[1]:
+                yield Match([typing.cast(Node, LiteralNode(src, start, 1))], start + 1)
             else:
                 raise ParseError(self, start)
         except IndexError as e:
             raise ParseError(self, start) from e
 
-    def _parse_value(self, source: str, start: int) -> typing.Tuple[Nodes, int]:
+    def _lparse_value(self, source: str, start: int) -> Matches:
         """Parse source when self.value represents a literal."""
         # we check position to ensure that the case pattern = '' and start >= len(source)
         # is handled correctly.
@@ -177,9 +369,10 @@ class Literal:  # pylint: disable=too-few-public-methods
             src = source[start : start + len(self.value)]
             match = src if self.case_sensitive else src.casefold()
             if match == self.pattern:  # pylint: disable=no-else-return
-                return typing.cast(
-                    Node, LiteralNode(src, start, len(src))
-                ), start + len(src)
+                yield Match(
+                    [typing.cast(Node, LiteralNode(src, start, len(src)))],
+                    start + len(src),
+                )
             else:
                 raise ParseError(self, start)
         else:
@@ -203,90 +396,8 @@ class Literal:  # pylint: disable=too-few-public-methods
         )
 
 
-class Option:  # pylint: disable=too-few-public-methods
-    """Implements the ABNF Option operation."""
-
-    str_template = "Option(%s)"
-
-    def __init__(self, alternation: Parser):
-        self.alternation = alternation
-
-    def parse(self, source: str, start: int) -> typing.Tuple[Nodes, int]:
-        """
-        :param source: source data
-        :type str:
-        :param start: offset at which to begin parsing.
-        :returns: parse tree, new offset at which to continue parsing
-        :rtype: Node, int
-        :raises ParseError:
-        """
-        try:
-            node, new_start = self.alternation.parse(source, start)
-        except ParseError:
-            node, new_start = ([], start)
-
-        return node, new_start
-
-    def __str__(self):
-        return self.str_template % str(self.alternation)
-
-
-class Repeat:  # pylint: disable=too-few-public-methods
-    """Implements the ABNF Repeat operator for Repetition."""
-
-    def __init__(
-        self, min: int = 0, max: typing.Optional[int] = None
-    ):  # pylint: disable=redefined-builtin
-        self.min = min
-        self.max = max
-
-    def __str__(self):
-        return "Repeat(%s, %s)" % (self.min, self.max if max is not None else "None")
-
-
-class Repetition:  # pylint: disable=too-few-public-methods
-    """Implements the ABNF Repetition operation."""
-
-    def __init__(self, repeat: Repeat, element: Parser):
-        self.repeat = repeat
-        self.element = element
-
-    def parse(self, source: str, start: int) -> typing.Tuple[Nodes, int]:
-        """
-        :param source: source data
-        :type str:
-        :param start: offset at which to begin parsing.
-        :returns: parse tree, new offset at which to continue parsing
-        :rtype: Node, int
-        :raises ParseError:
-        """
-        new_start = start
-        nodes: typing.List[Node] = []
-        end_of_source = len(source)
-        match_count = 0
-        while new_start < end_of_source:
-            try:
-                node, new_start = self.element.parse(source, new_start)
-            except ParseError:
-                break
-            else:
-                match_count = match_count + 1
-                nodes.extend(node if isinstance(node, list) else [node])
-                if self.repeat.max and match_count == self.repeat.max:
-                    break
-
-        # should write something explicit about behavior when self.element.parse returns
-        # a zero-length match  -- [].
-        if match_count >= self.repeat.min:  # pylint: disable=no-else-return
-            return nodes, new_start
-        else:
-            raise ParseError(self, start)
-
-    def __str__(self):
-        return "Repetition(%s, %s)" % (self.repeat, self.element)
-
-
 T = typing.TypeVar("T", bound="Rule")
+
 
 class Rule:
     """A parser generated from an ABNF rule.
@@ -296,37 +407,63 @@ class Rule:
     rule = Rule.create('URI = scheme ":" hier-part [ "?" query ] [ "#" fragment ]')
     """
 
-    first_match_alternation = False
     grammar: typing.List[str] = []
 
-    _obj_map: typing.Dict[
-        typing.Tuple[typing.Type["Rule"], str], "Rule"
-    ] = {}
+    _obj_map: typing.Dict[typing.Tuple[typing.Type["Rule"], str], "Rule"] = {}
 
     def __new__(
         cls: typing.Type[T], name: str, definition: typing.Optional[Parser] = None
-    ) -> 'Rule':  # pylint: disable=unused-argument
+    ) -> "Rule":  # pylint: disable=unused-argument
         """Overrides super().__new__ to implement a symbol table via object caching."""
 
-        rule = cls.get(name, super().__new__(cls))
+        rule = cls.get(name)
+        if rule is None:
+            rule = super().__new__(cls)
+            obj_key = (cls, name.casefold())
+            cls._obj_map[obj_key] = rule
         assert rule is not None
         return rule
 
     def __init__(self, name: str, definition: typing.Optional[Parser] = None):
-        obj_key = (self.__class__, name.casefold())
-        if obj_key not in self._obj_map:
-            self._obj_map[obj_key] = self
+        try:
+            getattr(self, "name")
+        except AttributeError:
             self.name = name
+        try:
+            getattr(self, "exclude")
+        except AttributeError:
+            self.exclude: typing.Optional[Rule] = None
+
         if definition is not None:
             # when defined-as = '=/', we'll need to overwrite existing definition.
             self.definition = definition
-        self.exclude: typing.Optional[Rule] = None
+
+    @property
+    def first_match_alternation(self) -> bool:
+        try:
+            definition = getattr(self, "definition")
+        except AttributeError:
+            return False
+        else:
+            return isinstance(definition, Alternation) and definition.first_match
+
+    @first_match_alternation.setter
+    def first_match_alternation(self, value: bool):
+        try:
+            definition = getattr(self, "definition")
+        except AttributeError as exc:
+            raise GrammarError('Undefined rule "%s".' % self.name) from exc
+        else:
+            if isinstance(definition, Alternation):
+                definition.first_match = value
+            else:
+                # skip.  Or should some exception be raised?
+                pass
 
     def exclude_rule(self, rule: "Rule") -> None:
         """
         Exclude values which match rule.  For example, suppose we have the following
         grammar.
-
         foo = %x66.6f.6f
         keyword = foo
         identifier = ALPHA *(ALPHA / DIGIT )
@@ -338,7 +475,31 @@ class Rule:
         """
         self.exclude = rule
 
-    def parse(self, source: str, start: int) -> typing.Tuple["Node", int]:
+    def lparse(self, source: Source, start: int) -> Matches:
+        def exclude(match: Match) -> bool:
+            if self.exclude is None:
+                return False
+
+            try:
+                self.exclude.parse_all("".join(item.value for item in match.nodes))
+            except ParseError:
+                return False
+            else:
+                return True
+
+        try:
+            g = self.definition.lparse(source, start)
+        except AttributeError as exc:
+            raise GrammarError('Undefined rule "%s".' % self.name) from exc
+
+        matches = set(filterfalse(exclude, g))
+        if matches:
+            for match in matches:
+                yield Match([Node(self.name, *match.nodes)], match.start)
+        else:
+            raise ParseError(self, start) from None
+
+    def parse(self, source: str, start: int) -> tuple["Node", int]:
         """
         :param source: source data
         :type str:
@@ -349,26 +510,16 @@ class Rule:
         :raises GrammarError: if rule has no definition.  This usually means that a
             non-terminal in the grammar is not defined or imported.
         """
-        try:
-            try:
-                node, new_start = self.definition.parse(source, start)
-            except AttributeError as e:
-                raise GrammarError('Undefined rule "%s".' % self.name) from e
-            nodes = node if isinstance(node, list) else [node]
-            if self.exclude is not None:
-                try:
-                    self.exclude.parse_all("".join(item.value for item in nodes))
-                except ParseError:
-                    pass
-                else:
-                    raise ParseError(self.exclude, start)
-        except ParseError as e:
-            raise ParseError(self, start) from e
-        else:
-            rule_node = Node(self.name, *nodes)
-            return rule_node, new_start
 
-    def parse_all(self, source: str) -> Node:
+        g = self.lparse(source, start)
+        matches = set(g)
+        assert matches
+        # we return the longest match.  It is possible that there is more than one
+        # match of maximal length.  Call lparse to see all amatches
+        longest_match = next(next_longest(matches))
+        return (longest_match.nodes[0], longest_match.start)
+
+    def parse_all(self, source: str) -> "Node":
         """
         Parses the source from beginning to end.  If not all of the source is consumed, a
         ParseError is raised.
@@ -392,7 +543,7 @@ class Rule:
         return "%s('%s')" % (self.__class__.__name__, self.name)
 
     @classmethod
-    def create(cls, rule_source: str, start: int = 0):
+    def create(cls: type[T], rule_source: Source, start: int = 0) -> T:
         """Creates a Rule object from ABNF source.  A terminating CRLF will be appended to
         rule_source if needed to satisfy the ABNF grammar rule for "rule".
 
@@ -408,7 +559,8 @@ class Rule:
             rule_source = rule_source + "\r\n"
         parse_tree, start = ABNFGrammarRule("rule").parse(rule_source, start)
         visitor = ABNFGrammarNodeVisitor(cls)
-        return visitor.visit(parse_tree)
+        rule = visitor.visit(parse_tree)
+        return rule
 
     @classmethod
     def from_file(cls, path: typing.Union[str, pathlib.Path]) -> None:
@@ -430,11 +582,11 @@ class Rule:
     @classmethod
     def get(
         cls: typing.Type[T], name: str, default: typing.Optional[T] = None
-    ) -> typing.Optional['Rule']:
+    ) -> typing.Optional["Rule"]:
         """Retrieves Rule by name.  If a Rule object matching name is found, it is returned.
         Otherwise default is returned, and no Rule object is
         created, as would be the case when invoking Rule(name).
-        Note that """
+        Note that"""
 
         _name = name.casefold()
         return cls._obj_map.get((cls, _name), cls._obj_map.get((Rule, _name), default))
@@ -954,7 +1106,9 @@ class NumValVisitor(NodeVisitor):
 class ABNFGrammarNodeVisitor(NodeVisitor):
     """Visitor for visiting nodes generated from ABNFGrammarRules."""
 
-    def __init__(self, rule_cls: typing.Type[Rule], *args: typing.Any, **kwargs: typing.Any):
+    def __init__(
+        self, rule_cls: typing.Type[Rule], *args: typing.Any, **kwargs: typing.Any
+    ):
 
         self.rule_cls = rule_cls
         self.visit_char_val = CharValNodeVisitor()
@@ -967,11 +1121,7 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
         """Creates an Alternation object from alternation node."""
         assert node.name == "alternation"
         args: typing.List[Parser] = list(filter(None, map(self.visit, node.children)))
-        return (
-            Alternation(*args, first_match=self.rule_cls.first_match_alternation)
-            if len(args) > 1
-            else args[0]
-        )
+        return Alternation(*args) if len(args) > 1 else args[0]
 
     def visit_concatenation(self, node: Node):
         """Creates a Concatention object from concatenation node."""
@@ -1049,7 +1199,7 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
         """Visits a rule node, returning a Rule object."""
         rule: Rule
         defined_as: str
-        elements:Parser
+        elements: Parser
         rule, defined_as, elements = filter(None, map(self.visit, node.children))
         # this assertion tells mypy that rule should actually be an object. Without, mypy
         # returns 'error: <nothing> has no attribute "definition"'

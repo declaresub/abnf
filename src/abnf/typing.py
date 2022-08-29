@@ -4,11 +4,11 @@ Parser protocol.  Adding Parser as a superclass of Rule leads to more odd type e
 The code branches on version instead of using try-except so that mypy is happy.
 """
 
-import sys
+import sys # pragma: no cover
 
-if sys.version_info >= (3, 8):
-    from typing import Protocol # pragma: no cover
+if sys.version_info >= (3, 8): # pragma: no cover
+    from typing import Protocol 
 else:
     from typing_extensions import Protocol # pragma: no cover
 
-__all__ = ["Protocol"]
+__all__ = ["Protocol"]  # pragma: no cover
