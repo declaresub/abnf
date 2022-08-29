@@ -20,37 +20,37 @@ def load_fuzz_test_data(dirname):
 
 @pytest.mark.parametrize("src", load_fuzz_test_data('char-val'))
 def test_char_val(src):
-    node, start = ABNFGrammarRule('char-val').parse(src, 0)
+    node, _ = ABNFGrammarRule('char-val').parse(src, 0)
     assert node and node.value == src
 
 @pytest.mark.parametrize("src", load_fuzz_test_data('num-val'))    
 def test_num_val(src):
-    node, start = ABNFGrammarRule('num-val').parse(src, 0)
+    node, _ = ABNFGrammarRule('num-val').parse(src, 0)
     assert node and node.value == src
 
 @pytest.mark.parametrize("src", load_fuzz_test_data('repeat'))
 def test_repeat(src):
-    node, start = ABNFGrammarRule('repeat').parse(src, 0)
+    node, _ = ABNFGrammarRule('repeat').parse(src, 0)
     assert node and node.value == src
 
 @pytest.mark.parametrize("src", load_fuzz_test_data('comment'))
 def test_comment(src):
-    node, start = ABNFGrammarRule('comment').parse(src, 0)
+    node, _ = ABNFGrammarRule('comment').parse(src, 0)
     assert node and node.value == src
 
 @pytest.mark.parametrize("src", [
 """;foo\r\n""",
 """\r\n"""])
 def test_c_nl(src):
-    node, start = ABNFGrammarRule('c-nl').parse(src, 0)
+    node, _ = ABNFGrammarRule('c-nl').parse(src, 0)
     assert node and node.value == src
 
 @pytest.mark.parametrize("src", load_fuzz_test_data('c-wsp'))
 def test_c_wsp(src):
-    node, start = ABNFGrammarRule('c-wsp').parse(src, 0)
+    node, _ = ABNFGrammarRule('c-wsp').parse(src, 0)
     assert node and node.value == src
 
 @pytest.mark.parametrize("src", load_fuzz_test_data('rule'))
 def test_rule(src):
-    node, start = ABNFGrammarRule('rule').parse(src, 0)
+    node, _ = ABNFGrammarRule('rule').parse(src, 0)
     assert node and node.value == src
