@@ -5,7 +5,7 @@ Collected rules from RFC 7405
 https://tools.ietf.org/html/rfc7405
 """
 
-from ..parser import Rule as _Rule
+from abnf.parser import Rule as _Rule
 from .misc import load_grammar_rules
 from . import rfc5234
 

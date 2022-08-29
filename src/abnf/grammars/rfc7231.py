@@ -3,7 +3,7 @@ Collected rules from RFC 7231, Appendix c, D.
 https://tools.ietf.org/html/rfc7231#appendix-C
 """
 
-from ..parser import Rule as _Rule
+from abnf.parser import Rule as _Rule
 from . import rfc4647, rfc5322, rfc5646, rfc7230
 from .misc import load_grammar_rules
 

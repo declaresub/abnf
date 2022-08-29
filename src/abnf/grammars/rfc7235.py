@@ -3,7 +3,7 @@ Collected rules from RFC 7235
 https://tools.ietf.org/html/rfc7235
 """
 
-from ..parser import Rule as _Rule
+from abnf.parser import Rule as _Rule
 from . import rfc7230
 from .misc import load_grammar_rules
 

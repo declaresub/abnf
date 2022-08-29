@@ -3,7 +3,7 @@ Collected rules from RFC 8187
 https://tools.ietf.org/html/rfc8187
 """
 
-from ..parser import Rule as _Rule
+from abnf.parser import Rule as _Rule
 from . import rfc5646
 from .misc import load_grammar_rules
 
