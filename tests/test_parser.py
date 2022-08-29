@@ -1,4 +1,4 @@
-from typing import Any, cast
+from typing import Any, cast, Tuple
 import pytest
 
 from abnf.parser import *
@@ -97,7 +97,7 @@ def test_parse_cache_clear_caches():
 
 
 @pytest.mark.parametrize("args", [(None, 1), (Literal('a'), None)])
-def test_parseerror_bad_args(args: tuple[Any, Any]):
+def test_parseerror_bad_args(args: Tuple[Any, Any]):
     with pytest.raises(ValueError):
         ParseError(*args)
 

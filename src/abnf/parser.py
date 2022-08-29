@@ -58,10 +58,10 @@ class Parser(Protocol):
         ...  # pragma: no cover
 
 
-ParseCacheKey = tuple[str, int]
+ParseCacheKey = typing.Tuple[str, int]
 
 
-class ParseCache(MutableMapping[ParseCacheKey, typing.Union[MatchSet, "ParseError"]]):
+class ParseCache(typing.MutableMapping[ParseCacheKey, typing.Union[MatchSet, "ParseError"]]):
     max_cache_size: typing.Optional[int] = None
     objects: WeakSet[ParseCache] = WeakSet()
 
