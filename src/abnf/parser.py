@@ -3,7 +3,6 @@ from __future__ import annotations
 import pathlib
 import typing
 from collections import OrderedDict
-from collections.abc import MutableMapping
 from itertools import filterfalse
 from weakref import WeakSet
 import sys
