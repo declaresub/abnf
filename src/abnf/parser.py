@@ -5,13 +5,10 @@ import typing
 from collections import OrderedDict
 from itertools import filterfalse
 from weakref import WeakSet
-import sys
 
-# we test version to help pylance.
-if sys.version_info >= (3, 8):
-    from typing import Protocol # pragma: no cover
-else:
-    from typing_extensions import Protocol # pragma: no cover
+
+from .typing import Protocol
+
 
 Source = str
 Nodes = typing.List["Node"]
@@ -58,9 +55,9 @@ class Parser(Protocol):
 
 
 ParseCacheKey = typing.Tuple[str, int]
+ParseCacheValue = typing.Union[MatchSet, "ParseError"]
 
-
-class ParseCache(typing.MutableMapping[ParseCacheKey, typing.Union[MatchSet, "ParseError"]]):
+class ParseCache(typing.MutableMapping[ParseCacheKey, ParseCacheValue]):
     max_cache_size: typing.Optional[int] = None
     objects: WeakSet[ParseCache] = WeakSet()
 
@@ -79,7 +76,7 @@ class ParseCache(typing.MutableMapping[ParseCacheKey, typing.Union[MatchSet, "Pa
         self.hits = 0
         self.misses = 0
 
-    def __getitem__(self, key: ParseCacheKey) -> MatchSet:
+    def __getitem__(self, key: ParseCacheKey) -> ParseCacheValue:
         try:
             value = self.dict[key]
         except KeyError:
@@ -90,7 +87,7 @@ class ParseCache(typing.MutableMapping[ParseCacheKey, typing.Union[MatchSet, "Pa
             self.dict.move_to_end(key)
             return value
 
-    def __setitem__(self, key: ParseCacheKey, value: MatchSet | "ParseError"):
+    def __setitem__(self, key: ParseCacheKey, value: ParseCacheValue):
         # here we want to expel least recently used entries, defined to the first entries in the order.
         self.dict[key] = value
         if self.max_size and len(self.dict) > self.max_size:
