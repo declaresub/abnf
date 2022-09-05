@@ -6,9 +6,9 @@ black
 check-manifest
 mypy
 pep517
-pylint
 pytest
 pytest-cov
+pytest-mypy
 setuptools_scm
 tox
 tox-pyenv
