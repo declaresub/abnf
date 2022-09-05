@@ -322,13 +322,13 @@ The file requirements.txt contains the packages I use for testing and such.
 
 A good starting point would be to run pytest and see that all tests pass.
 
-    pytest --cov-report term-missing --cov=abnf 
+    pytest --mypy --cov-report term-missing --cov=abnf 
 
 The test suite includes fuzz testing with test data generated using [abnfgen](http://www.quut.com/abnfgen/).
 Some of the test rules are long and gruesome.  Thus the tests take a bit of time to complete.
 Skip the fuzz tests with 
 
-        pytest --cov-report term-missing --cov=abnf --ignore=tests/fuzz
+        pytest --mypy --cov-report term-missing --cov=abnf --ignore=tests/fuzz
 
 Following changes, run 
 
