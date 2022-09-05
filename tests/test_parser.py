@@ -1,4 +1,6 @@
+import pathlib
 from typing import Any, cast, Tuple
+
 import pytest
 
 from abnf.parser import *
@@ -138,6 +140,7 @@ def test_concatenation_from_cache():
     result = parser.lparse('a', 0)
     next(result) # we need to run the generator to get parser to cache result.
     cached_matchset = parser.lparse_cache[('a', 0)]
+    assert isinstance(cached_matchset, set)
     cached_match = [x for x in cached_matchset][0]
     cached_match.from_cache = True # type: ignore
     result = parser.lparse('a', 0)
@@ -258,7 +261,7 @@ def test_exclusion_3():
 def test_rule_str():
     assert str(Rule('DIGIT'))
 
-def test_rule_from_file(tmp_path):
+def test_rule_from_file(tmp_path: pathlib.Path):
     grammar = ['foo = "foo"\r\n', 'bar = "bar"\r\n']
     path = tmp_path / 'test_grammar.abnf'
     path.write_text(''.join(grammar))
