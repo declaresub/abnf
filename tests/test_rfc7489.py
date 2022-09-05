@@ -1,6 +1,7 @@
 import pytest
 
 from abnf.grammars import rfc7489
+from abnf.parser import Source
 
 
 def test_valid_dmarc_version():
@@ -17,7 +18,7 @@ def test_valid_dmarc_version():
     'mailto:olivier@hureau.com!50'
 ])
 
-def test_valid_dmarc_uri(src):
+def test_valid_dmarc_uri(src: Source):
     uri = rfc7489.Rule('dmarc-uri')
     assert uri.parse_all(src)
 
@@ -28,7 +29,7 @@ def test_valid_dmarc_uri(src):
     '\t;'
 ])
 
-def test_valid_dmarc_seperator(src):
+def test_valid_dmarc_seperator(src: Source):
     separator = rfc7489.Rule('dmarc-sep')
     assert separator.parse_all(src)
 
@@ -38,7 +39,7 @@ def test_valid_dmarc_seperator(src):
     'p =    none'
 ])
 
-def test_valid_dmarc_request(src):
+def test_valid_dmarc_request(src: Source):
     request = rfc7489.Rule('dmarc-request')
     assert request.parse_all(src)
 
@@ -48,7 +49,7 @@ def test_valid_dmarc_request(src):
     'sp =    none'
 ])
 
-def test_valid_dmarc_srequest(src):
+def test_valid_dmarc_srequest(src: Source):
     srequest = rfc7489.Rule('dmarc-srequest')
     assert srequest.parse_all(src)
 
@@ -60,7 +61,7 @@ def test_valid_dmarc_srequest(src):
     'rua=  mailto:olivier@hureau.com   , mailto:olivier@hureau.com   '
 ])
 
-def test_valid_dmarc_auri(src):
+def test_valid_dmarc_auri(src: Source):
     auri = rfc7489.Rule('dmarc-auri')
     assert auri.parse_all(src)
 
@@ -72,7 +73,7 @@ def test_valid_dmarc_auri(src):
     'ruf=  mailto:olivier@hureau.com   , mailto:olivier@hureau.com   '
 ])
 
-def test_valid_dmarc_furi(src):
+def test_valid_dmarc_furi(src: Source):
     auri = rfc7489.Rule('dmarc-furi')
     assert auri.parse_all(src)
 
@@ -85,7 +86,7 @@ def test_valid_dmarc_furi(src):
     'aSPf = s',
 ])
 
-def test_valid_dmarc_aspf(src):
+def test_valid_dmarc_aspf(src: Source):
     aspf = rfc7489.Rule('dmarc-aspf')
     assert aspf.parse_all(src)
 
@@ -95,7 +96,7 @@ def test_valid_dmarc_aspf(src):
     'RI = 8600'
 ])
 
-def test_valid_dmarc_ri(src):
+def test_valid_dmarc_ri(src: Source):
     interval = rfc7489.Rule('dmarc-ainterval')
     assert interval.parse_all(src)
 
@@ -108,7 +109,7 @@ def test_valid_dmarc_ri(src):
     'fo=1:1:1:1', # This one should not pass but abnf is abnf...
 ])
 
-def test_valid_dmarc_fo(src):
+def test_valid_dmarc_fo(src: Source):
     fo = rfc7489.Rule('dmarc-fo')
     assert fo.parse_all(src)
 
@@ -119,7 +120,7 @@ def test_valid_dmarc_fo(src):
     'rf=aFrF',
 ])
 
-def test_valid_dmarc_rf(src):
+def test_valid_dmarc_rf(src: Source):
     rf = rfc7489.Rule('dmarc-rfmt')
     assert rf.parse_all(src)
 
@@ -132,7 +133,7 @@ def test_valid_dmarc_rf(src):
     'PCT  =  0'
 ])
 
-def test_valid_dmarc_pct(src):
+def test_valid_dmarc_pct(src: Source):
     pct = rfc7489.Rule('dmarc-percent')
     assert pct.parse_all(src)
 
@@ -141,7 +142,7 @@ def test_valid_dmarc_pct(src):
     'v=DMARC1;p=reject;sp=quarantine;rua=mailto:olivier@hureau.com;ruf=mailto:olivier@hureau.com;adkim=s;aspf=s;ri=2400;fo=1:d:s;rf=afrf;pct=0;'
 ])
 
-def test_valid_dmarc_record(src):
+def test_valid_dmarc_record(src: Source):
     record = rfc7489.Rule('dmarc-record')
     assert record.parse_all(src)
 
