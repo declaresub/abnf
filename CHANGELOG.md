@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.0
+
+* Implement backtracking.  This is potentially a breaking change, given the changes to parsing behavior. 
+https://github.com/declaresub/abnf/issues/4, https://github.com/declaresub/abnf/issues/10, https://github.com/declaresub/abnf/issues/11 .
+
+* Add grammars for RFC 3339, 3629, 5987, 6266, 9116.
+
+* Modify RFC 5322 rule ‘obs-unstruct’ following RFC errata.
 
 ## 1.2.1
 
