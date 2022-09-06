@@ -1,5 +1,6 @@
 # ABNF
 
+[![PyPI](https://img.shields.io/pypi/v/abnf)](https://pypi.org/project/abnf/)
 ![abnf-tox](https://github.com/declaresub/abnf/workflows/abnf-tox/badge.svg)
 [![CodeQL](https://github.com/declaresub/abnf/actions/workflows/codeql-analysis.yml/badge.svg?branch=master)](https://github.com/declaresub/abnf/actions/workflows/codeql-analysis.yml)
 
