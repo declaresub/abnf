@@ -1,6 +1,9 @@
 """
 Collected rules from RFC 7230, Appendix B.
 https://tools.ietf.org/html/rfc7230#appendix-B
+
+Note that this RFC is obsolete as of June 2022, replaced by 
+https://www.rfc-editor.org/rfc/rfc9110.
 """
 
 from abnf.parser import Rule as _Rule

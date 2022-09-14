@@ -1,6 +1,9 @@
 """
 Collected rules from RFC 7235
 https://tools.ietf.org/html/rfc7235
+
+Note that this RFC is obsolete as of June 2022, replaced by 
+https://www.rfc-editor.org/rfc/rfc9110.
 """
 
 from abnf.parser import Rule as _Rule

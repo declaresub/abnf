@@ -1,6 +1,9 @@
 """
 Collected rules from RFC 7231, Appendix c, D.
 https://tools.ietf.org/html/rfc7231#appendix-C
+
+Note that this RFC is obsolete as of June 2022, replaced by 
+https://www.rfc-editor.org/rfc/rfc9110.
 """
 
 from abnf.parser import Rule as _Rule
@@ -71,7 +74,7 @@ class Rule(_Rule):
         "day-name = %x4D.6F.6E / %x54.75.65 / %x57.65.64 / %x54.68.75 / %x46.72.69 / %x53.61.74 / %x53.75.6E ",
         "day-name-l = %x4D.6F.6E.64.61.79 / %x54.75.65.73.64.61.79 / %x57.65.64.6E.65.73.64.61.79 / %x54.68.75.72.73.64.61.79 / %x46.72.69.64.61.79 / %x53.61.74.75.72.64.61.79 / %x53.75.6E.64.61.79 ",
         "delay-seconds = 1*DIGIT",
-        # field-name = <comment, see [RFC7230], Section 3.2>
+        # field-name = <comment, see [RFC7230], Section 3.2> -- also see https://www.rfc-editor.org/errata/eid4225 .
         "hour = 2DIGIT",
         # language-range = <language-range, see [RFC4647], Section 2.1>
         # language-tag = <Language-Tag, see [RFC5646], Section 2.1>',
