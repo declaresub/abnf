@@ -322,3 +322,11 @@ def test_repetition_1():
     node, start = EdgeCaseRule('repeat-repeat-a').parse('', 0)
     assert node.value == ''
     assert start == 0
+
+def test_empty_charval_node():
+    # CharValNodeVisitor was incorrectly skipping literal nodes with value "".
+    # https://github.com/declaresub/abnf/issues/14
+    node = ABNFGrammarRule('char-val').parse_all('""')
+    visitor = CharValNodeVisitor()
+    parser = visitor.visit(node)
+    assert parser

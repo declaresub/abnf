@@ -1009,6 +1009,9 @@ for grammar_rule_def in [
     ABNFGrammarRule(grammar_rule_def[0], typing.cast(Parser, grammar_rule_def[1]))
 
 
+def NotNull(x: typing.Any) -> bool:
+    return x is not None
+
 class CharValNodeVisitor(NodeVisitor):
     """CharVal node visitor."""
 
@@ -1018,12 +1021,12 @@ class CharValNodeVisitor(NodeVisitor):
 
     def visit_case_insensitive_string(self, node: Node):
         """Visit a case-insensitive-string node."""
-        value: str = next(filter(None, map(self.visit, node.children)))
+        value: str = next(filter(NotNull, map(self.visit, node.children)))
         return Literal(value, False)
 
     def visit_case_sensitive_string(self, node: Node):
         """Visit a case-sensitive-string node."""
-        value: str = next(filter(None, map(self.visit, node.children)))
+        value: str = next(filter(NotNull, map(self.visit, node.children)))
         return Literal(value, True)
 
     @staticmethod
