@@ -226,8 +226,12 @@ class Repetition:  # pylint: disable=too-few-public-methods
             match_set: MatchSet = set([Match([], start)])
         else:
             concat_parser = Concatenation(*([self.element]*self.repeat.min))
-            # if this raises a ParseError, then the minimum match was not reached.
-            match_set = set(concat_parser.lparse(source, start))
+            try:
+                # if this raises a ParseError, then the minimum match was not reached.
+                match_set = set(concat_parser.lparse(source, start))
+            except ParseError as exc:
+                self.lparse_cache[cache_key] = exc
+                raise
 
         last_match_set = set(match_set)
         match_count = self.repeat.min
