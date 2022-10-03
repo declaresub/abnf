@@ -6,9 +6,7 @@ from collections import OrderedDict
 from itertools import filterfalse
 from weakref import WeakSet
 
-
 from .typing import Protocol
-
 
 Source = str
 Nodes = typing.List["Node"]
@@ -56,6 +54,7 @@ class Parser(Protocol):
 
 ParseCacheKey = typing.Tuple[str, int]
 ParseCacheValue = typing.Union[MatchSet, "ParseError"]
+
 
 class ParseCache(typing.MutableMapping[ParseCacheKey, ParseCacheValue]):
     max_cache_size: typing.Optional[int] = None
@@ -143,7 +142,7 @@ class Alternation:  # pylint: disable=too-few-public-methods
                 # something like *"a" .
                 for item in parser.lparse(source, start):
                     match_found = True
-                    yield(item)
+                    yield (item)
             except ParseError:
                 continue
             if self.first_match:
@@ -208,7 +207,6 @@ class Repetition:  # pylint: disable=too-few-public-methods
         self.element = element
         self.lparse_cache = ParseCache()
 
- 
     def lparse(self, source: Source, start: int) -> Matches:
         cache_key = (source, start)
         try:
@@ -225,7 +223,7 @@ class Repetition:  # pylint: disable=too-few-public-methods
         if self.repeat.min == 0:
             match_set: MatchSet = set([Match([], start)])
         else:
-            concat_parser = Concatenation(*([self.element]*self.repeat.min))
+            concat_parser = Concatenation(*([self.element] * self.repeat.min))
             try:
                 # if this raises a ParseError, then the minimum match was not reached.
                 match_set = set(concat_parser.lparse(source, start))
@@ -259,7 +257,6 @@ class Repetition:  # pylint: disable=too-few-public-methods
         self.lparse_cache[cache_key] = match_set
         for match in next_longest(match_set):
             yield match
-
 
     def __str__(self):
         return "Repetition(%s, %s)" % (self.repeat, self.element)
@@ -584,7 +581,8 @@ class Rule:
 class Node:  # pylint: disable=too-few-public-methods
     """Node objects are used to build parse trees."""
 
-    __slots__ = ('name', 'children')
+    __slots__ = ("name", "children")
+
     def __init__(self, name: str, *children: "Node") -> None:
         super().__init__()
         self.name = name
@@ -603,13 +601,17 @@ class Node:  # pylint: disable=too-few-public-methods
         )
 
     def __eq__(self, other: typing.Any):
-        return self.__class__ == other.__class__ and self.name == other.name and self.children == other.children
+        return (
+            self.__class__ == other.__class__
+            and self.name == other.name
+            and self.children == other.children
+        )
 
 
 class LiteralNode:  # pylint: disable=too-few-public-methods
     """LiteralNode objects are used to build parse trees."""
 
-    __slots__ = ('name', 'value', 'offset', 'length')
+    __slots__ = ("name", "value", "offset", "length")
 
     def __init__(self, value: str, offset: int, length: int):
         super().__init__()
@@ -631,7 +633,12 @@ class LiteralNode:  # pylint: disable=too-few-public-methods
         )
 
     def __eq__(self, other: typing.Any):
-        return self.__class__ == other.__class__ and self.value == other.value and self.offset == other.offset and self.length == other.length
+        return (
+            self.__class__ == other.__class__
+            and self.value == other.value
+            and self.offset == other.offset
+            and self.length == other.length
+        )
 
 
 class NodeVisitor:  # pylint: disable=too-few-public-methods
@@ -992,6 +999,7 @@ for grammar_rule_def in [
 
 def NotNull(x: typing.Any) -> bool:
     return x is not None
+
 
 class CharValNodeVisitor(NodeVisitor):
     """CharVal node visitor."""
