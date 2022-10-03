@@ -112,7 +112,6 @@ def test_parseerror_str():
 def test_backtracking():
     src = 'aababb'
     parser = Concatenation(Repetition(Repeat(), Alternation(Literal('a'), Literal('b'))), Literal('b'))
-    assert len(parser.lparse_cache) == 0
     result = parser.lparse(src, 0)
     match = next(result)
     assert ''.join(n.value for n in match.nodes) == src
@@ -134,33 +133,6 @@ def test_alternation_fail():
 
 def test_alternation_str():
     assert str(Alternation(Literal('a'), Literal('b')))
-
-def test_concatenation_from_cache():
-    parser = Concatenation(Literal('a'))
-    result = parser.lparse('a', 0)
-    next(result) # we need to run the generator to get parser to cache result.
-    cached_matchset = parser.lparse_cache[('a', 0)]
-    assert isinstance(cached_matchset, set)
-    cached_match = [x for x in cached_matchset][0]
-    cached_match.from_cache = True # type: ignore
-    result = parser.lparse('a', 0)
-    match = next(result)
-    assert hasattr(match, 'from_cache')
-
-def test_concatenation_from_cache_parse_error():
-    parser = Concatenation(Literal('a'))
-    result = parser.lparse('b', 0)
-    try:
-        next(result) # we need to run the generator to get parser to cache result.
-    except ParseError as exc:
-        pass
-    cached_error = parser.lparse_cache[('b', 0)]
-    assert isinstance(cached_error, ParseError)
-    result = parser.lparse('b', 0)
-    try:
-        next(result)
-    except ParseError as exc:
-        assert exc is cached_error
 
 def test_concatenation_str():
     assert str(Concatenation(Literal('a')))
@@ -322,6 +294,30 @@ def test_repetition_1():
     node, start = EdgeCaseRule('repeat-repeat-a').parse('', 0)
     assert node.value == ''
     assert start == 0
+
+
+def test_repetition_2():
+        result = Repetition(Repeat(0, 0), Literal("*")).lparse('***', 0)
+        matches = list(result)
+        assert len(matches) == 1
+        match = matches[0]
+        assert match.nodes == []
+        assert match.start == 0
+
+
+def test_repetition_3():
+        result = Repetition(Repeat(0,1), Literal("*")).lparse('***', 0)
+        matches = list(result)
+        assert matches == [Match(nodes=[cast(Node, LiteralNode('*', 0, 1))], start=1), Match(nodes=[], start=0)]
+
+def test_repetition_cached_oarseerror():
+    src = 'a'
+    parser = Repetition(Repeat(1, 1), Literal("*"))
+    parser.lparse_cache[(src, 0)] = ParseError(parser, 0)
+    with pytest.raises(ParseError) as exc_info:
+        next(parser.lparse(src, 0))
+    assert exc_info.value is parser.lparse_cache[(src, 0)]
+
 
 def test_empty_charval_node():
     # CharValNodeVisitor was incorrectly skipping literal nodes with value "".
