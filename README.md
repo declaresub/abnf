@@ -309,7 +309,7 @@ ABNF implements backtracking as of version 2.0.0.  There were sufficient changes
 and so the major version has been bumped.
 
 As is well-known, naive implementations of backtracking typically have exponential worst-case behavior.  Here I attempt to reduce that 
-through the use of generators and some caching. In particular, Concatention and Repetition objects cache parse results.
+through the use of generators and some caching. In particular, Repetition objects cache parse results.
 
 Version 2.0.0 uses a LRU cache, ParseCache.  The code comes wihout any max sizes set for caches, which will obviously result in long-term issues.  
 My hope is to get feedback from parser usage.  ParseCache has a class attribute max_cache_size: int | None that if set to a non-negative integer, will 
