@@ -165,44 +165,23 @@ class Concatenation:  # pylint: disable=too-few-public-methods
 
     def __init__(self, *parsers: Parser):
         self.parsers = parsers
-        self.lparse_cache = ParseCache()
 
     def lparse(self, source: Source, start: int):
-        cache_key = (source, start)
-        try:
-            cached_matchset = self.lparse_cache[cache_key]
-        except KeyError:
-            pass
-        else:
-            if isinstance(cached_matchset, ParseError):
-                raise cached_matchset
-            for match in next_longest(cached_matchset):
-                yield match
-            return
-
-        match_set: MatchSet = set([Match([], start)])
-        try:
-            for parser in self.parsers:
-                source_exception: typing.Optional[Exception] = None
-                current_match_set: MatchSet = set()
-                for match in match_set:
-                    try:
-                        g = parser.lparse(source, match.start)
-                        for item in (Match(match.nodes + m.nodes, m.start) for m in g):
-                            current_match_set.add(item)
-                    except ParseError as exc:
-                        source_exception = exc
-
-                if current_match_set:
-                    match_set = current_match_set
-                else:
-                    raise ParseError(self, start) from source_exception
-            self.lparse_cache[cache_key] = match_set
-            for item in next_longest(match_set):
-                yield item
-        except ParseError as exc:
-            self.lparse_cache[cache_key] = exc
-            raise
+        match_list: list[Match] = [Match([], start)]
+        for parser in self.parsers:
+            current_match_list: list[Match] = []
+            for match in match_list:
+                try:
+                    for m in parser.lparse(source, match.start):
+                        current_match_list.append(Match(match.nodes + m.nodes, m.start))
+                except ParseError:
+                    pass
+            if current_match_list:
+                match_list = current_match_list
+            else:
+                raise ParseError(self, start)
+        for match in sorted_by_longest_match(match_list):
+            yield match
 
     def __str__(self):
         return self.str_template % ", ".join(map(str, self.parsers))
