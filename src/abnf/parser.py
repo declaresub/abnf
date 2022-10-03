@@ -231,10 +231,8 @@ class Repetition:  # pylint: disable=too-few-public-methods
         self.element = element
         self.lparse_cache = ParseCache()
 
+ 
     def lparse(self, source: Source, start: int) -> Matches:
-        # when repeat.min == 0, match_list should start with a 0-length match.
-        # cast expression is there to help pylance.
-
         cache_key = (source, start)
         try:
             cached_matchset = self.lparse_cache[cache_key]
@@ -247,11 +245,18 @@ class Repetition:  # pylint: disable=too-few-public-methods
                 yield match
             return
 
-        match_set: MatchSet = set([Match([], start)]) if self.repeat.min == 0 else set()
-        match_count = len(match_set)
-        last_match_set = set([Match([], start)])
+        if self.repeat.min == 0:
+            match_set: MatchSet = set([Match([], start)])
+        else:
+            concat_parser = Concatenation(*([self.element]*self.repeat.min))
+            # if this raises a ParseError, then the minimum match was not reached.
+            match_set = set(concat_parser.lparse(source, start))
+
+        last_match_set = set(match_set)
+        match_count = self.repeat.min
+
         while True:
-            if all([item.start >= len(source) for item in last_match_set]):
+            if self.repeat.max is not None and match_count == self.repeat.max:
                 break
 
             new_match_set: MatchSet = set()
@@ -268,8 +273,6 @@ class Repetition:  # pylint: disable=too-few-public-methods
                 match_set = match_set | new_match_set
                 last_match_set = new_match_set
             else:
-                break
-            if self.repeat.max and match_count == self.repeat.max:
                 break
 
         if (
