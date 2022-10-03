@@ -136,21 +136,19 @@ class Alternation:  # pylint: disable=too-few-public-methods
         self.first_match = first_match
 
     def lparse(self, source: Source, start: int) -> Matches:
-        match_set: MatchSet = set()
+        match_found = False
         for parser in self.parsers:
             try:
                 # note that parser,lparse could return an empty list, say from
                 # something like *"a" .
                 for item in parser.lparse(source, start):
-                    match_set.add(item)
+                    match_found = True
+                    yield(item)
             except ParseError:
                 continue
             if self.first_match:
-                break
-        if match_set:
-            for match in match_set:
-                yield match
-        else:
+                return
+        if not match_found:
             raise ParseError(self, start)
 
     def __str__(self):
