@@ -607,6 +607,7 @@ class Rule:
 class Node:  # pylint: disable=too-few-public-methods
     """Node objects are used to build parse trees."""
 
+    __slots__ = ('name', 'children')
     def __init__(self, name: str, *children: "Node") -> None:
         super().__init__()
         self.name = name
@@ -625,11 +626,13 @@ class Node:  # pylint: disable=too-few-public-methods
         )
 
     def __eq__(self, other: typing.Any):
-        return self.__class__ == other.__class__ and self.__dict__ == other.__dict__
+        return self.__class__ == other.__class__ and self.name == other.name and self.children == other.children
 
 
 class LiteralNode:  # pylint: disable=too-few-public-methods
     """LiteralNode objects are used to build parse trees."""
+
+    __slots__ = ('name', 'value', 'offset', 'length')
 
     def __init__(self, value: str, offset: int, length: int):
         super().__init__()
@@ -651,7 +654,7 @@ class LiteralNode:  # pylint: disable=too-few-public-methods
         )
 
     def __eq__(self, other: typing.Any):
-        return self.__class__ == other.__class__ and self.__dict__ == other.__dict__
+        return self.__class__ == other.__class__ and self.value == other.value and self.offset == other.offset and self.length == other.length
 
 
 class NodeVisitor:  # pylint: disable=too-few-public-methods
