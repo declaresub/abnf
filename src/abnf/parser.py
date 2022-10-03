@@ -256,16 +256,10 @@ class Repetition:  # pylint: disable=too-few-public-methods
             else:
                 break
 
-        if (
-            match_set and match_count >= self.repeat.min
-        ):  # pylint: disable=no-else-return
-            self.lparse_cache[cache_key] = match_set
-            for match in next_longest(match_set):
-                yield match
-        else:
-            exc = ParseError(self, start)
-            self.lparse_cache[cache_key] = exc
-            raise exc
+        self.lparse_cache[cache_key] = match_set
+        for match in next_longest(match_set):
+            yield match
+
 
     def __str__(self):
         return "Repetition(%s, %s)" % (self.repeat, self.element)
