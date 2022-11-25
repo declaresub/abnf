@@ -48,9 +48,11 @@ class Rule(_Rule):
         'max-age-av = "Max-Age=" non-zero-digit *DIGIT',
         "non-zero-digit = %x31-39",
         'domain-av = "Domain=" domain-value',
-        # domain-value = <subdomain>'
-        # these next three rules are constructed following RFC 1034 and RFC 1123, with
+        # here we implement the prose value as defined in comments. The 
+        # the rules are constructed following RFC 1034 and RFC 1123, with
         # IPv6 address support thrown in.
+        # domain-value = <subdomain>'
+        'domain-value = subdomain',
         'label = (ALPHA / DIGIT) *(((ALPHA / DIGIT / "-") (ALPHA / DIGIT)) / (ALPHA / DIGIT))',
         'subdomain = label *("." label)',
         "domain-value = subdomain / IPv4address / IPv6address",
