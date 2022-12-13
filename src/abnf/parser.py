@@ -367,6 +367,10 @@ class Literal:  # pylint: disable=too-few-public-methods
         )
 
 
+class Prose:
+    def lparse(self, source: Source, start: int) -> Matches:
+        raise ParseError(self, start)
+
 T = typing.TypeVar("T", bound="Rule")
 
 
@@ -378,7 +382,7 @@ class Rule:
     rule = Rule.create('URI = scheme ":" hier-part [ "?" query ] [ "#" fragment ]')
     """
 
-    grammar: typing.List[str] = []
+    grammar: typing.Union[str, typing.List[str]] = []
 
     _obj_map: typing.Dict[typing.Tuple[typing.Type["Rule"], str], "Rule"] = {}
 
@@ -534,6 +538,24 @@ class Rule:
         return rule
 
     @classmethod
+    def load_grammar(cls, grammar: str) -> None:
+        """Loads grammar and attempts to parse it as a rulelist. If successful,
+        cls is populated with the rules in the rulelist.
+        """
+
+        assert isinstance(grammar, str)
+        cr = "\r"
+        lf = "\n"
+        crlf = cr + lf
+
+
+        # process to ensure that line endings are correct.
+        src = grammar.rstrip().replace(cr, "").replace(lf, crlf) + crlf
+        node = ABNFGrammarRule("rulelist").parse_all(src)
+        visitor = ABNFGrammarNodeVisitor(rule_cls=cls)
+        visitor.visit(node)
+
+    @classmethod
     def from_file(cls, path: typing.Union[str, pathlib.Path]) -> None:
         """Loads the contents of path and attempts to parse it as a rulelist. If successful,
         cls is populated with the rules in the rulelist."""
@@ -545,10 +567,7 @@ class Rule:
             else path.open("r", newline=crlf, encoding="ascii")
         ) as f:  # pylint: disable=invalid-name
             src = f.read()
-
-        node = ABNFGrammarRule("rulelist").parse_all(src)
-        visitor = ABNFGrammarNodeVisitor(rule_cls=cls)
-        visitor.visit(node)
+        cls.load_grammar(src)
 
     @classmethod
     def get(
@@ -1141,8 +1160,8 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
 
     @staticmethod
     def visit_prose_val(node: Node):
-        """Raises a GrammarError if a prose-val is encountered."""
-        raise GrammarError("Grammar contains a prose-val.")
+        """Creates a Prose parser that fails."""
+        return Prose()
 
     @staticmethod
     def visit_repeat(node: Node):

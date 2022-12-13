@@ -270,13 +270,21 @@ def test_bin_val():
     parser = visitor.visit(node)
     assert parser.value == 'x'
 
+
+
 def test_prose_val():
     class ProseRule(Rule):
         pass
-        
-    rule = 'test-prose-val = <blah blah>'
-    with pytest.raises(GrammarError):
-        ProseRule.create(rule)
+            
+    src = '<blah blah>'
+    node = ABNFGrammarRule('prose-val').parse_all(src)
+    visitor = ABNFGrammarNodeVisitor(ProseRule)
+    parser = visitor.visit(node)
+    assert isinstance(parser, Prose)
+
+def test_prose():
+    with pytest.raises(ParseError):
+        Prose().lparse('<blah blah>', 0)
 
 
 class EdgeCaseRule(Rule):
