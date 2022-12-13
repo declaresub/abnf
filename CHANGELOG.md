@@ -1,5 +1,25 @@
 # Changelog
 
+## 2.1.0
+
+* Added RFC 9110.
+https://github.com/declaresub/abnf/issues/13
+
+* Prose-vals that are really rulenames wrapped in angle-brackets are now parsed as rulenames and
+become valid rules.
+https://github.com/declaresub/abnf/issues/6
+
+* Added RFC 3987.
+
+* Rule.grammar can now be a string.  Another decorator load_grammar has been added to load such.
+
+* RFC 7235 (now obsoleted by RFC 9110) no longer modifies the rule 'WWW-Authenticate', as the current parser correctly applies the rule as specified in the grammar.
+
+* Modify grammar following an erratum to RFC 6266 to remove an ambiguity in the grammar.
+https://github.com/declaresub/abnf/issues/16
+
+* Implement RFC 6265 rule 'domain-value'.
+
 ## 2.0.2
 
 * Repetition now correctly handles the case self.repeat.min == 0.  
