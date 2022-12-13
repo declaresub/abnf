@@ -1158,10 +1158,17 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
         parser: Parser = next(filter(None, map(self.visit, node.children)))
         return Option(parser)
 
-    @staticmethod
-    def visit_prose_val(node: Node):
+    def visit_prose_val(self, node: Node):
         """Creates a Prose parser that fails."""
-        return Prose()
+        # check to see if value inside angle brackets could be a rulename. See
+        # https://www.rfc-editor.org/rfc/rfc5234.html#section-2.1
+        # for the explanation of this bit of hackery.
+        try:
+            node = ABNFGrammarRule('rulename').parse_all(node.value[1:-1])
+        except ParseError:
+            return Prose()
+        else:
+            return self.visit_rulename(node)
 
     @staticmethod
     def visit_repeat(node: Node):
