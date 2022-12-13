@@ -2,6 +2,8 @@
 
 ## 2.1.0
 
+* Added python 3.11 to tox.
+
 * Added RFC 9110.
 https://github.com/declaresub/abnf/issues/13
 
