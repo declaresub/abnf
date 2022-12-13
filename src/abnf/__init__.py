@@ -1,11 +1,13 @@
 """Parser generator for ABNF grammars."""
 
-try:
-    from importlib.metadata import PackageNotFoundError, metadata  # type: ignore
-except ImportError:  # pragma: no cover
-    from importlib_metadata import metadata, PackageNotFoundError  # type: ignore
+import sys
 
-from .parser import GrammarError, LiteralNode, Node, NodeVisitor, ParseError, Rule
+if sys.version_info >= (3, 8):
+    from importlib.metadata import PackageNotFoundError, metadata  # pragma: no cover
+else:
+    from importlib_metadata import metadata, PackageNotFoundError  # pragma: no cover
+
+from abnf.parser import GrammarError, LiteralNode, Node, NodeVisitor, ParseError, Rule
 
 __all__ = [
     "Rule",
