@@ -4,13 +4,12 @@ https://tools.ietf.org/html/rfc6265
 """
 
 from abnf.parser import Rule as _Rule
-from . import rfc3986, rfc7230, rfc7231
+from . import rfc3986, rfc7231
 from .misc import load_grammar_rules
 
 
 @load_grammar_rules(
     [
-        ("token", rfc7230.Rule("token")),
         ("IPv4address", rfc3986.Rule("IPv4address")),
         ("IPv6address", rfc3986.Rule("IPv6address")),
         ("date1", rfc7231.Rule("date1")),
@@ -38,7 +37,7 @@ class Rule(_Rule):
         "cookie-octet = %x21 / %x23-2B / %x2D-3A / %x3C-5B / %x5D-7E",
         # token = <token, defined in [RFC2616], Section 2.2>' -- the rule below is
         # constructed by hand from RFC 2616 definition.
-        "token = 1*(%x21 / %x23-27 / %x2A-2B / %x2D-2E / %x30-39 / %x41-5A / %x5E-7A / %x7C)",
+        "token = 1*( %x21 / %x23-27 / %x2A-2B / %x2D-2E / %x30-39 / %x41-5A / %x5E-7A / %x7C )",
         "cookie-av = expires-av / max-age-av / domain-av / path-av / secure-av / httponly-av / extension-av",
         'expires-av = "Expires=" sane-cookie-date',
         # sane-cookie-date = <rfc1123-date, defined in [RFC2616], Section 3.3.1>'
