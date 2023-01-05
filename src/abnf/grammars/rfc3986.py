@@ -50,3 +50,7 @@ class Rule(_Rule):
         'gen-delims = ":" / "/" / "?" / "#" / "[" / "]" / "@"',
         'sub-delims = "!" / "$" / "&" / "\'" / "(" / ")" / "*" / "+" / "," / ";" / "="',
     ]
+
+
+# see https://www.rfc-editor.org/rfc/rfc3986#section-3.2.2 .
+Rule('host').first_match_alternation = True
