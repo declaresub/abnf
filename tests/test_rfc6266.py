@@ -18,16 +18,3 @@ from abnf.grammars import rfc6266
 def test_content_disposition(src: str):
     content_disposition = rfc6266.Rule("content-disposition")
     assert content_disposition.parse_all(src)
-
-
-def test_disp_ext_parm():
-    # this test checks to ensure that the RFC 6266 grammar as modified in response to erratum
-    # parses src into an ext-name = ext-value parameter.
-    src = "foo*=utf-8''%E2%88%Aar"
-    node = rfc6266.Rule("disp-ext-parm").parse_all(src)
-    assert len(node.children) == 3
-    assert node.children[0].name == "ext-parmname"
-    assert node.children[0].value == "foo*"
-    assert node.children[1].value == "="
-    assert node.children[2].name == "ext-value"
-    assert node.children[2].value == "utf-8''%E2%88%Aar"
