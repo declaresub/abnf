@@ -14,7 +14,7 @@ def load_grammar_rules(imported_rules: Optional[List[Tuple[str, Rule]]]=None):
         """The function returned by decorator."""
 
         if isinstance(cls.grammar, str):
-            raise TypeError('This decorator must be used with a grammar of tyoe list')
+            raise TypeError('This decorator must be used with a grammar of type list')
 
         for src in cls.grammar:
             cls.create(src)
@@ -36,7 +36,7 @@ def load_grammar(imported_rules: Optional[List[Tuple[str, Rule]]]=None):
     def rule_decorator(cls: Type[Rule]):
         """The function returned by decorator."""
         if isinstance(cls.grammar, list):
-            raise TypeError('This decorator must be used with a grammar of tyoe str.')
+            raise TypeError('This decorator must be used with a grammar of type str.')
         cls.load_grammar(cls.grammar)
         if imported_rules:
             for rule_def in imported_rules:
