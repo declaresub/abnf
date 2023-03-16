@@ -1,9 +1,13 @@
 """Miscellaneous functions."""
 
 from typing import List, Optional, Tuple, Type
-from abnf.parser import Rule
 
-def load_grammar_rules(imported_rules: Optional[List[Tuple[str, Rule]]]=None):
+from abnf.parser import ABNFGrammarNodeVisitor, ABNFGrammarRule, Rule
+
+
+__all__ = ['load_grammar_rules', 'load_grammar_rulelist']
+
+def load_grammar_rules(imported_rules: Optional[List[Tuple[str, Rule]]] = None):
     """A decorator that loads grammar rules following class declaration.  The code assumes
     that cls is a Rule subclass with a grammar attribute.
     The imported_rules parameter allows one to import rules from other modules. For examples,
@@ -26,7 +30,7 @@ def load_grammar_rules(imported_rules: Optional[List[Tuple[str, Rule]]]=None):
     return rule_decorator
 
 
-def load_grammar(imported_rules: Optional[List[Tuple[str, Rule]]]=None):
+def load_grammar_rulelist(imported_rules: Optional[List[Tuple[str, Rule]]] = None):
     """A decorator that loads grammar rules following class declaration.  The code assumes
     that cls is a Rule subclass with a grammar attribute.
     The imported_rules parameter allows one to import rules from other modules. For examples,
@@ -35,9 +39,12 @@ def load_grammar(imported_rules: Optional[List[Tuple[str, Rule]]]=None):
 
     def rule_decorator(cls: Type[Rule]):
         """The function returned by decorator."""
-        if isinstance(cls.grammar, list):
-            raise TypeError('This decorator must be used with a grammar of type str.')
-        cls.load_grammar(cls.grammar)
+        assert isinstance(cls.grammar, str)
+        src = cls.grammar.rstrip().replace("\r", "").replace("\n", "\r\n") + '\r\n'
+        node = ABNFGrammarRule("rulelist").parse_all(src)
+        visitor = ABNFGrammarNodeVisitor(cls)
+        visitor.visit(node)
+
         if imported_rules:
             for rule_def in imported_rules:
                 cls(rule_def[0], rule_def[1].definition)

@@ -382,7 +382,7 @@ class Rule:
     rule = Rule.create('URI = scheme ":" hier-part [ "?" query ] [ "#" fragment ]')
     """
 
-    grammar: typing.Union[str, typing.List[str]] = []
+    grammar: typing.List[str] | str = []
 
     _obj_map: typing.Dict[typing.Tuple[typing.Type["Rule"], str], "Rule"] = {}
 

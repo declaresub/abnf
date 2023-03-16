@@ -49,4 +49,6 @@ class Rule(_Rule):
         'hex-val = "x" 1*HEXDIG\
                                    [ 1*("." 1*HEXDIG) / ("-" 1*HEXDIG) ]\
                                         ; white space',
+
+        r'prose-val      =  "<" *(%x20-3D / %x3F-7E) ">"',
     ]
