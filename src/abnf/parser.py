@@ -538,19 +538,20 @@ class Rule:
         return rule
 
     @classmethod
-    def load_grammar(cls, grammar: str) -> None:
+    def load_grammar(cls, grammar: str, strict: bool = True) -> None:
         """Loads grammar and attempts to parse it as a rulelist. If successful,
         cls is populated with the rules in the rulelist.
         """
 
         assert isinstance(grammar, str)
-        cr = "\r"
-        lf = "\n"
-        crlf = cr + lf
 
+        if strict:
+            # process to ensure that line endings are correct.
+            cr = "\r"
+            lf = "\n"
+            crlf = cr + lf
+            src = grammar.rstrip().replace(cr, "").replace(lf, crlf) + crlf
 
-        # process to ensure that line endings are correct.
-        src = grammar.rstrip().replace(cr, "").replace(lf, crlf) + crlf
         node = ABNFGrammarRule("rulelist").parse_all(src)
         visitor = ABNFGrammarNodeVisitor(rule_cls=cls)
         visitor.visit(node)
