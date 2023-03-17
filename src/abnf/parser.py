@@ -6,7 +6,7 @@ from collections import OrderedDict
 from itertools import filterfalse
 from weakref import WeakSet
 
-from .typing import Protocol
+from .typing import Protocol, runtime_checkable
 
 Source = str
 Nodes = typing.List["Node"]
@@ -42,7 +42,7 @@ def next_longest(matches: MatchSet):
     for match in sorted_by_longest_match([x for x in matches]):
         yield match
 
-
+@runtime_checkable
 class Parser(Protocol):
     # def parse(
     #    self, source: str, start: int
@@ -196,7 +196,7 @@ class Repeat:  # pylint: disable=too-few-public-methods
         self.max = max
 
     def __str__(self):
-        return "Repeat(%s, %s)" % (self.min, self.max if max is not None else "None")
+        return "Repeat(%s, %s)" % (self.min, (self.max if self.max is not None else "None"))
 
 
 class Repetition:  # pylint: disable=too-few-public-methods
@@ -703,10 +703,8 @@ class ParseError(Exception):
     def __init__(
         self, parser: Parser, start: int, *args: typing.Any
     ):  # pylint: disable=super-init-not-called
-        if parser is None:
-            raise ValueError("parser must not be None")
-        if start is None:
-            raise ValueError("start must not be None")
+        assert isinstance(parser, Parser), "parser must satisfy Parser protocol."
+        assert isinstance(start, int), "start must be int."
 
         # it turns out that calling super().__init__(*args) is quite slow.  Because
         # ParseError objects are created so often, the slowness adds up.  So we

@@ -100,7 +100,7 @@ def test_parse_cache_clear_caches():
 
 @pytest.mark.parametrize("args", [(None, 1), (Literal('a'), None)])
 def test_parseerror_bad_args(args: Tuple[Any, Any]):
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         ParseError(*args)
 
 def test_parseerror_str():
