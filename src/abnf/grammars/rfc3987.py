@@ -1,10 +1,10 @@
 from abnf.parser import Rule as _Rule
 
 from . import rfc3986
-from .misc import load_grammar
+from .misc import load_grammar_rulelist
 
 
-@load_grammar(
+@load_grammar_rulelist(
     [
         ("scheme", rfc3986.Rule("scheme")),
         ("port", rfc3986.Rule("port")),

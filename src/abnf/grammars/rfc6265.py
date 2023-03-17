@@ -6,10 +6,10 @@ https://tools.ietf.org/html/rfc6265
 from abnf.parser import Rule as _Rule
 
 from . import rfc2616, rfc3986
-from .misc import load_grammar
+from .misc import load_grammar_rulelist
 
 
-@load_grammar(
+@load_grammar_rulelist(
     [
         ("IPv4address", rfc3986.Rule("IPv4address")),
         ("IPv6address", rfc3986.Rule("IPv6address")),
@@ -40,7 +40,7 @@ extension-av = 1*( %x20-3A / %x3C-7E)
 """
 
 
-@load_grammar(
+@load_grammar_rulelist(
     [
         ("sane-cookie-date", rfc2616.Rule("rfc1123-date")),
         ("token", rfc2616.Rule("token")),

@@ -2,7 +2,7 @@ import typing
 
 import pytest
 
-from abnf.grammars.misc import load_grammar, load_grammar_rules
+from abnf.grammars.misc import load_grammar_rulelist, load_grammar_rules
 from abnf.parser import Literal
 from abnf.parser import Rule as _Rule
 
@@ -23,7 +23,7 @@ def test_misc_load_grammar_rules_import():
     assert Rule("test").definition == ImportRule("test").definition
 
 
-@load_grammar([("test", ImportRule("test"))])
+@load_grammar_rulelist([("test", ImportRule("test"))])
 class Rule1(_Rule):
     grammar: str = ''
 
@@ -38,12 +38,3 @@ class Foo(_Rule):
 def test_load_grammar_rules_str():
     with pytest.raises(TypeError):
         load_grammar_rules()(Foo)
-
-
-class Bar(_Rule):
-    grammar = ['foo="bar"']
-
-
-def test_load_grammar_list():
-    with pytest.raises(TypeError):
-        load_grammar()(Bar)

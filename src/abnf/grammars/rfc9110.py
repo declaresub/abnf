@@ -6,10 +6,10 @@ https://www.rfc-editor.org/rfc/rfc9110.html
 from abnf.parser import Rule as _Rule
 
 from . import rfc3986, rfc4647, rfc5322, rfc5646
-from .misc import load_grammar
+from .misc import load_grammar_rulelist
 
 
-@load_grammar(
+@load_grammar_rulelist(
     [
         ("language-range", rfc4647.Rule("language-range")),
         ("mailbox", rfc5322.Rule("mailbox")),

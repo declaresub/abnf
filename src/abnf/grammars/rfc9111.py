@@ -6,10 +6,11 @@ https://www.rfc-editor.org/rfc/rfc9111.html
 from abnf.parser import Rule as _Rule
 
 from . import rfc9110
-from .misc import load_grammar
+from .misc import load_grammar_rulelist
 
 
-@load_grammar(
+
+@load_grammar_rulelist(
     [
         ("HTTP-date", rfc9110.Rule("HTTP-date")),
         ("OWS", rfc9110.Rule("OWS")),

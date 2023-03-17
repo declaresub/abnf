@@ -10,10 +10,10 @@ Here we collect grammar from RFC 2616 as needed for use with other RFC grammars.
 
 from abnf.parser import Rule as _Rule
 
-from .misc import load_grammar
+from .misc import load_grammar_rulelist
 
 
-@load_grammar()
+@load_grammar_rulelist()
 class Rule(_Rule):
     """Rule objects generated from ABNF in RFC 2616.
     Note that token rule is implemented from prose value in RFC 2616, and | was 
