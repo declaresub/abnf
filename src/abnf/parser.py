@@ -552,7 +552,7 @@ class Rule:
             crlf = cr + lf
             src = grammar.rstrip().replace(cr, "").replace(lf, crlf) + crlf
         else:
-            src = grammar.rstrip()
+            src = grammar
 
         node = ABNFGrammarRule("rulelist").parse_all(src)
         visitor = ABNFGrammarNodeVisitor(rule_cls=cls)

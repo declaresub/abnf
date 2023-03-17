@@ -334,3 +334,12 @@ def test_empty_charval_node():
     visitor = CharValNodeVisitor()
     parser = visitor.visit(node)
     assert parser
+
+
+def test_load_grammar_not_strict():
+    class NotStrictGrammarRule(Rule):
+        pass
+
+    grammar = 'foo = "foo"\r\n'
+    NotStrictGrammarRule.load_grammar(grammar, strict=False)
+    assert NotStrictGrammarRule('foo').definition
