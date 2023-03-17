@@ -1,5 +1,21 @@
 # Changelog
 
+
+
+
+
+## 2.2.0
+
+* Added RFC 9111.
+
+* Removed changes to RFC 6266 grammar from https://www.rfc-editor.org/errata/eid5383, as that erratum
+ has been rejected.
+
+* RFC 3986 rule 'Host' now uses first-match alternation as specified.
+
+* Rule.load_grammar now has an option strirt that specifies whether line endings in a source grammar
+ are fixed.
+
 ## 2.1.0
 
 * Added python 3.11 to tox.
