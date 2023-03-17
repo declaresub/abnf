@@ -44,6 +44,6 @@ def test_subdomain(src: str):
     "127.0.0.1",
     "FE80:CD00:0000:0CDE:1257:0000:211E:729C"
 ])
-def _domain_value(src: str):
+def test_domain_value(src: str):
     node = rfc6265.LocalRule('domain-value').parse_all(src)
     assert node.value == src
