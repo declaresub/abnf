@@ -541,6 +541,9 @@ class Rule:
     def load_grammar(cls, grammar: str, strict: bool = True) -> None:
         """Loads grammar and attempts to parse it as a rulelist. If successful,
         cls is populated with the rules in the rulelist.
+        When strict = True, line endings following rules are normalized to CRLF to 
+        satisfy the definition of 'rulelist.  If strict is set to False, the grammar
+        is parsed as is.
         """
 
         assert isinstance(grammar, str)
