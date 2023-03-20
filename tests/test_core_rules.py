@@ -1,8 +1,8 @@
-import pytest
 from itertools import chain, product
 
-from abnf.parser import Rule, Source
+import pytest
 
+from abnf.parser import Rule, Source
 
 
 @pytest.mark.parametrize("src", [chr(x) for x in chain(range(0x41, 0x5b), range(0x61, 0x7b))])
