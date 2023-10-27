@@ -16,7 +16,7 @@ The code herein has been in use in production here and there on the internet sin
 
 ## Requirements
 
-ABNF is tested with Python 3.7-11. The package requires typing_extensions >=4, and for python 3.7, importlib_metadata.
+ABNF is tested with Python 3.8-12. The package requires typing_extensions >=4, and for python 3.7, importlib_metadata.
 
 
 ## Installation
@@ -339,7 +339,7 @@ to resolve any problems found, then
 
     tox
     
-to execute tests for python 3.7-3.11.
+to execute tests for python 3.8-3.12.
 
 
 The code is formatted using black.
