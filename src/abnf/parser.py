@@ -38,9 +38,8 @@ def sorted_by_longest_match(matches: typing.Iterable[Match]) -> list[Match]:
     return sorted(matches, key=lambda item: item.start, reverse=True)
 
 
-def next_longest(matches: MatchSet):
-    for match in sorted_by_longest_match([x for x in matches]):
-        yield match
+def next_longest(matches: MatchSet) -> Generator[Match, None, None]:
+    yield from sorted_by_longest_match(list(matches))
 
 @runtime_checkable
 class Parser(Protocol):
