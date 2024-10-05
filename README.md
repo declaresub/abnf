@@ -16,7 +16,7 @@ The code herein has been in use in production here and there on the internet sin
 
 ## Requirements
 
-ABNF is tested with Python 3.8-12.
+ABNF is tested with Python 3.9-13.
 
 
 ## Installation
@@ -339,7 +339,7 @@ to resolve any problems found, then
 
     tox
     
-to execute tests for python 3.8-3.12.
+to execute tests for python 3.9-3.13.
 
 
 The code is formatted using black.
