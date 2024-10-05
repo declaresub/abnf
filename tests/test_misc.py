@@ -1,5 +1,3 @@
-import typing
-
 import pytest
 
 from abnf.grammars.misc import load_grammar_rulelist, load_grammar_rules
@@ -16,7 +14,7 @@ ImportRule("test", Literal("test"))
 
 @load_grammar_rules([("test", ImportRule("test"))])
 class Rule(_Rule):
-    grammar: typing.List[str] = []
+    grammar = []
 
 
 def test_misc_load_grammar_rules_import():
@@ -25,7 +23,7 @@ def test_misc_load_grammar_rules_import():
 
 @load_grammar_rulelist([("test", ImportRule("test"))])
 class Rule1(_Rule):
-    grammar: str = ''
+    grammar = ''
 
 def test_load_grammar():
     assert Rule("test").definition == ImportRule("test").definition
