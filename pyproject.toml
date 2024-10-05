@@ -12,7 +12,7 @@ profile = "black"
 [tool.ruff.lint]
 select = ["F", "E", "UP", "ASYNC", "BLE", "COM", "C4", "T20", "RUF", "B", "SIM", "DTZ", "EM", "ISC", "ICN", "FURB", "PERF", "I"]
 ignore = ["E501", "S101", "RUF001"]
-
+target-version = "py39"
 
 [tool.ruff.lint.flake8-pytest-style]
 fixture-parentheses = false
