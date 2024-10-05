@@ -17,11 +17,15 @@ repos:
     # Run the linter.
     - id: ruff
       files: src/abnf
+- repo: https://github.com/RobertCraigie/pyright-python
+  rev: v1.1.383
+  hooks:
+    - id: pyright
 - repo: local
   hooks:
-    - id: py-test-unit
-      name: pytest-unit
-      entry: pytest tests/ --ignore=tests/fuzz
+    - id: tox
+      name: tox
+      entry: tox
       language: system
       pass_filenames: false
       always_run: true

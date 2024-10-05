@@ -5,6 +5,7 @@
 check-manifest
 pep517
 pre-commit
+pyright[nodejs]==1.1.383
 pytest
 pytest-cov
 setuptools_scm
