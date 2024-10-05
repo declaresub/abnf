@@ -1,9 +1,9 @@
 include CHANGELOG.md
 include LICENSE.txt
-include pylintrc
 include pytest.ini
 include requirements.txt
 include tox.ini
+include *.yaml
 recursive-include tests *.grammar
 recursive-include tests *.py
 recursive-include tests *.tst
