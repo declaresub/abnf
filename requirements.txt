@@ -2,13 +2,11 @@
 
 
 -e .
-black
 check-manifest
-mypy
 pep517
+pre-commit
 pytest
 pytest-cov
-pytest-mypy
 setuptools_scm
 tox>=4
 twine
