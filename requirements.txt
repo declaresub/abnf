@@ -10,7 +10,6 @@ pytest
 pytest-cov
 pytest-mypy
 setuptools_scm
-tox
-tox-pyenv
+tox>=4
 twine
 wheel
