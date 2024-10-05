@@ -1,0 +1,8 @@
+              
+- name: abnf-pyright    
+  uses: jakebailey/pyright-action@v2.3.2
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
