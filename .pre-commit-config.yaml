@@ -1,5 +1,9 @@
 fail_fast: true
 repos:
+-   repo: https://github.com/mgedmin/check-manifest
+    rev: "0.49"
+    hooks:
+    -   id: check-manifest
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v4.6.0
   hooks:
