@@ -3,6 +3,7 @@ from __future__ import annotations
 import pathlib
 import typing
 from collections import OrderedDict
+from collections.abc import Generator
 from itertools import filterfalse
 from weakref import WeakSet
 
@@ -381,12 +382,12 @@ class Rule:
     rule = Rule.create('URI = scheme ":" hier-part [ "?" query ] [ "#" fragment ]')
     """
 
-    grammar: typing.List[str] | str = []
+    grammar: typing.ClassVar[typing.List[str] | str] = []
 
     _obj_map: typing.Dict[typing.Tuple[typing.Type["Rule"], str], "Rule"] = {}
 
     def __new__(
-        cls: typing.Type[T], name: str, definition: typing.Optional[Parser] = None
+        cls, name: str, definition: typing.Optional[Parser] = None
     ) -> "Rule":  # pylint: disable=unused-argument
         """Overrides super().__new__ to implement a symbol table via object caching."""
 
@@ -724,7 +725,7 @@ class GrammarError(Exception):
 # To get parsing for parser generation started, the ABNF grammar from RFC 5234 and
 # RFC 7405, plus the core rules from RFC 5234, are defined ab initio.
 
-for core_rule_def in [
+for core_rule_def in typing.cast(list[typing.Tuple[str, Parser]], [
     ("ALPHA", Alternation(Literal(("\x41", "\x5A")), Literal(("\x61", "\x7A")))),
     ("BIT", Alternation(Literal("0"), Literal("1"))),
     ("CHAR", Literal(("\x01", "\x7F"))),
@@ -760,15 +761,15 @@ for core_rule_def in [
     ("SP", Literal("\x20", case_sensitive=True)),
     ("VCHAR", Literal(("\x21", "\x7E"))),
     ("WSP", Alternation(Rule("SP"), Rule("HTAB"))),
-]:
-    Rule(core_rule_def[0], typing.cast(Parser, core_rule_def[1]))
+]):
+    Rule(core_rule_def[0], core_rule_def[1])
 
 
 class ABNFGrammarRule(Rule):
     """Rules defining ABNF in ABNF."""
 
 
-for grammar_rule_def in [
+for grammar_rule_def in typing.cast(list[typing.Tuple[str, Parser]], [
     (
         "rulelist",
         Repetition(
@@ -1015,8 +1016,8 @@ for grammar_rule_def in [
             Rule("DQUOTE"),
         ),
     ),
-]:
-    ABNFGrammarRule(grammar_rule_def[0], typing.cast(Parser, grammar_rule_def[1]))
+]):
+    ABNFGrammarRule(grammar_rule_def[0], grammar_rule_def[1])
 
 
 def NotNull(x: typing.Any) -> bool:
@@ -1051,7 +1052,7 @@ class NumValVisitor(NodeVisitor):
 
     def visit_num_val(self, node: Node):  # pylint:disable=missing-function-docstring
         """Visit a num-val, returning (value, case_sensitive)."""
-        return next(filter(None, map(self.visit, node.children)))
+        return next(filter(NotNull, map(self.visit, node.children)))
 
     def visit_bin_val(self, node: Node):  # pylint:disable=missing-function-docstring
         # first child node is marker literal "b"
@@ -1130,13 +1131,13 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
     def visit_alternation(self, node: Node):
         """Creates an Alternation object from alternation node."""
         assert node.name == "alternation"
-        args: typing.List[Parser] = list(filter(None, map(self.visit, node.children)))
+        args: typing.List[Parser] = list(filter(NotNull, map(self.visit, node.children)))
         return Alternation(*args) if len(args) > 1 else args[0]
 
     def visit_concatenation(self, node: Node):
         """Creates a Concatention object from concatenation node."""
         assert node.name == "concatenation"
-        args: typing.List[Parser] = list(filter(None, map(self.visit, node.children)))
+        args: typing.List[Parser] = list(filter(NotNull, map(self.visit, node.children)))
         return Concatenation(*args) if len(args) > 1 else args[0]
 
     @staticmethod
@@ -1150,15 +1151,15 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
 
     def visit_elements(self, node: Node):
         """Creates an Alternation object from elements node."""
-        return next(filter(None, map(self.visit, node.children)))
+        return next(filter(NotNull, map(self.visit, node.children)))
 
     def visit_group(self, node: Node):
         """Returns an Alternation object from group node."""
-        return next(filter(None, map(self.visit, node.children)))
+        return next(filter(NotNull, map(self.visit, node.children)))
 
     def visit_option(self, node: Node):
         """Creates an Option object from option node."""
-        parser: Parser = next(filter(None, map(self.visit, node.children)))
+        parser: Parser = next(filter(NotNull, map(self.visit, node.children)))
         return Option(parser)
 
     def visit_prose_val(self, node: Node):
@@ -1217,7 +1218,7 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
         rule: Rule
         defined_as: str
         elements: Parser
-        rule, defined_as, elements = filter(None, map(self.visit, node.children))
+        rule, defined_as, elements = filter(NotNull, map(self.visit, node.children))
         # this assertion tells mypy that rule should actually be an object. Without, mypy
         # returns 'error: <nothing> has no attribute "definition"'
         assert rule
@@ -1228,7 +1229,7 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
 
     def visit_rulelist(self, node: Node):
         """Visits a rulelist node, returning a list of Rule objects."""
-        return list(filter(None, map(self.visit, node.children)))
+        return list(filter(NotNull, map(self.visit, node.children)))
 
     def visit_rulename(self, node: Node):
         """Visits a rulename node, looks up the Rule object for rulename, and returns it."""
