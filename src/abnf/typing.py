@@ -4,7 +4,6 @@ Parser protocol.  Adding Parser as a superclass of Rule leads to more odd type e
 The code branches on version instead of using try-except so that mypy is happy.
 """
 
-import sys  # pragma: no cover
 
 from typing import Protocol, runtime_checkable
 
