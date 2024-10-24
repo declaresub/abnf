@@ -13,3 +13,5 @@ build/
 dist/
 
 .vscode
+pypi-notes
+profile_rule.py
