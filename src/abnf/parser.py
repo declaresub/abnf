@@ -10,7 +10,7 @@ from weakref import WeakSet
 from .typing import Protocol, runtime_checkable
 
 Source = str
-Nodes = typing.List["Node"]
+Nodes = list["Node"]
 
 
 class Match:
@@ -31,7 +31,7 @@ class Match:
         return isinstance(__o, self.__class__) and hash(self) == hash(__o)
 
 
-MatchSet = typing.Set[Match]
+MatchSet = set[Match]
 Matches = typing.Iterator[Match]
 
 
@@ -46,31 +46,32 @@ def next_longest(matches: MatchSet) -> Generator[Match, None, None]:
 class Parser(Protocol):
     # def parse(
     #    self, source: str, start: int
-    # ) -> typing.Tuple[Nodes, int]:  # pragma: no cover
+    # ) -> tuple[Nodes, int]:  # pragma: no cover
     #   ...
     def lparse(self, source: Source, start: int) -> Matches:
         ...  # pragma: no cover
 
 
-ParseCacheKey = typing.Tuple[str, int]
+ParseCacheKey = tuple[str, int]
 ParseCacheValue = typing.Union[MatchSet, "ParseError"]
 
 
 class ParseCache(typing.MutableMapping[ParseCacheKey, ParseCacheValue]):
-    max_cache_size: typing.Optional[int] = None
+    max_cache_size: int | None = None
     objects: WeakSet[ParseCache] = WeakSet()
 
-    def __new__(cls, max_size: typing.Optional[int] = None):
+    def __new__(cls, max_size: int | None = None):
         obj = super().__new__(cls)
         cls.objects.add(obj)
         return obj
 
-    def __init__(self, max_size: typing.Optional[int] = None):
+    def __init__(self, max_size: typing.Union[int, None] = None):
         self.dict: OrderedDict[ParseCacheKey, MatchSet | ParseError] = OrderedDict()
         if max_size is None:
             max_size = self.max_cache_size
         if max_size and max_size < 0:
-            raise ValueError("max size must be non-negative.")
+            msg = "max size must be non-negative."
+            raise ValueError(msg)
         self.max_size = max_size
         self.hits = 0
         self.misses = 0
@@ -119,8 +120,7 @@ class ParseCache(typing.MutableMapping[ParseCacheKey, ParseCacheValue]):
 
     @classmethod
     def list(cls):
-        for obj in cls.objects:
-            yield obj
+        yield from cls.objects
 
 
 class Alternation:  # pylint: disable=too-few-public-methods
@@ -170,10 +170,9 @@ class Concatenation:  # pylint: disable=too-few-public-methods
         for parser in self.parsers:
             current_match_list: list[Match] = []
             for match in match_list:
-                try:
-                    for m in parser.lparse(source, match.start):
-                        current_match_list.append(Match(match.nodes + m.nodes, m.start))
-                except ParseError:
+                try: # noqa: SIM105
+                    current_match_list.extend([Match(match.nodes + m.nodes, m.start) for m in parser.lparse(source, match.start)])
+                except ParseError:  # noqa: PERF203
                     pass
             if current_match_list:
                 match_list = current_match_list
@@ -190,13 +189,15 @@ class Repeat:  # pylint: disable=too-few-public-methods
     """Implements the ABNF Repeat operator for Repetition."""
 
     def __init__(
-        self, min: int = 0, max: typing.Optional[int] = None
+        self, min: int = 0, max: typing.Union[int, None] = None
     ):  # pylint: disable=redefined-builtin
         self.min = min
         self.max = max
 
     def __str__(self):
-        return "Repeat(%s, %s)" % (self.min, (self.max if self.max is not None else "None"))
+        _min = self.min
+        _max = self.max if self.max is not None else "None"
+        return f"Repeat({_min}, {_max})"
 
 
 class Repetition:  # pylint: disable=too-few-public-methods
@@ -221,7 +222,7 @@ class Repetition:  # pylint: disable=too-few-public-methods
             return
 
         if self.repeat.min == 0:
-            match_set: MatchSet = set([Match([], start)])
+            match_set: MatchSet = {Match([], start)}
         else:
             concat_parser = Concatenation(*([self.element] * self.repeat.min))
             try:
@@ -259,7 +260,7 @@ class Repetition:  # pylint: disable=too-few-public-methods
             yield match
 
     def __str__(self):
-        return "Repetition(%s, %s)" % (self.repeat, self.element)
+        return f"Repetition({self.repeat}, {self.element})"
 
 
 class Option:  # pylint: disable=too-few-public-methods
@@ -291,7 +292,7 @@ class Literal:  # pylint: disable=too-few-public-methods
 
     def __init__(
         self,
-        value: typing.Union[str, typing.Tuple[str, str]],
+        value: typing.Union[str, tuple[str, str]],
         case_sensitive: bool = False,
     ):
         """
@@ -308,7 +309,8 @@ class Literal:  # pylint: disable=too-few-public-methods
                 and isinstance(value[1], str)  # type: ignore
             )
         ):
-            raise TypeError("value argument must be a string or a 2-tuple of strings.")
+            msg = "value argument must be a string or a 2-tuple of strings."
+            raise TypeError(msg )
 
         self.value = value
         self.case_sensitive = case_sensitive
@@ -353,16 +355,16 @@ class Literal:  # pylint: disable=too-few-public-methods
         # str(self.value) handles the case value == tuple.
         non_printable_chars = set(map(chr, range(0x00, 0x20)))
         value = tuple(
-            (
-                r"\x%02x" % ord(x) if x in non_printable_chars else x
+            
+                rf"\x{ord(x):02x}" if x in non_printable_chars else x
                 for x in self.value
-            )  # pylint: disable=consider-using-f-string
+            
         )
 
         return (
             f"Literal({value})"
             if isinstance(self.value, tuple)
-            else "Literal('%s'%s)"
+            else "Literal('%s'%s)"  # noqa: UP031
             % ("".join(value), ", case_sensitive" if self.case_sensitive else "")
         )
 
@@ -382,13 +384,13 @@ class Rule:
     rule = Rule.create('URI = scheme ":" hier-part [ "?" query ] [ "#" fragment ]')
     """
 
-    grammar: typing.ClassVar[typing.List[str] | str] = []
+    grammar: typing.ClassVar[list[str] | str] = []
 
-    _obj_map: typing.Dict[typing.Tuple[typing.Type["Rule"], str], "Rule"] = {}
+    _obj_map: typing.ClassVar[dict[tuple[type[Rule], str], Rule]] = {}
 
     def __new__(
-        cls, name: str, definition: typing.Optional[Parser] = None
-    ) -> "Rule":  # pylint: disable=unused-argument
+        cls, name: str, definition: typing.Union[Parser, None] = None
+    ):  # pylint: disable=unused-argument
         """Overrides super().__new__ to implement a symbol table via object caching."""
 
         rule = cls.get(name)
@@ -399,13 +401,13 @@ class Rule:
         assert rule is not None
         return rule
 
-    def __init__(self, name: str, definition: typing.Optional[Parser] = None):
+    def __init__(self, name: str, definition: typing.Union[Parser, None] = None):
         try:
-            getattr(self, "name")
+            _ = self.name
         except AttributeError:
             self.name = name
         try:
-            getattr(self, "exclude")
+            _ = self.exclude
         except AttributeError:
             self.exclude: typing.Optional[Rule] = None
 
@@ -416,7 +418,7 @@ class Rule:
     @property
     def first_match_alternation(self) -> bool:
         try:
-            definition = getattr(self, "definition")
+            definition = self.definition
         except AttributeError:
             return False
         else:
@@ -425,9 +427,10 @@ class Rule:
     @first_match_alternation.setter
     def first_match_alternation(self, value: bool):
         try:
-            definition = getattr(self, "definition")
+            definition = self.definition
         except AttributeError as exc:
-            raise GrammarError('Undefined rule "%s".' % self.name) from exc
+            msg = f'Undefined rule "{self.name}"'
+            raise GrammarError(msg) from exc
         else:
             if isinstance(definition, Alternation):
                 definition.first_match = value
@@ -435,7 +438,7 @@ class Rule:
                 # skip.  Or should some exception be raised?
                 pass
 
-    def exclude_rule(self, rule: "Rule") -> None:
+    def exclude_rule(self, rule: Rule) -> None:
         """
         Exclude values which match rule.  For example, suppose we have the following
         grammar.
@@ -465,7 +468,8 @@ class Rule:
         try:
             g = self.definition.lparse(source, start)
         except AttributeError as exc:
-            raise GrammarError('Undefined rule "%s".' % self.name) from exc
+            msg = f'Undefined rule "{self.name}"'
+            raise GrammarError(msg) from exc
 
         matches = set(filterfalse(exclude, g))
         if matches:
@@ -474,7 +478,7 @@ class Rule:
         else:
             raise ParseError(self, start) from None
 
-    def parse(self, source: str, start: int) -> tuple["Node", int]:
+    def parse(self, source: str, start: int) -> tuple[Node, int]:
         """
         :param source: source data
         :type str:
@@ -494,7 +498,7 @@ class Rule:
         longest_match = next(next_longest(matches))
         return (longest_match.nodes[0], longest_match.start)
 
-    def parse_all(self, source: str) -> "Node":
+    def parse_all(self, source: str) -> Node:
         """
         Parses the source from beginning to end.  If not all of the source is consumed, a
         ParseError is raised.
@@ -515,7 +519,7 @@ class Rule:
         return node
 
     def __str__(self):
-        return "%s('%s')" % (self.__class__.__name__, self.name)
+        return f"{self.__class__.__name__}('{self.name}')"
 
     @classmethod
     def create(cls: type[T], rule_source: Source, start: int = 0) -> T:
@@ -568,7 +572,7 @@ class Rule:
 
         crlf = "\r\n"
         with (
-            open(path, "r", newline=crlf, encoding="ascii")
+            open(path, newline=crlf, encoding="ascii")
             if isinstance(path, str)
             else path.open("r", newline=crlf, encoding="ascii")
         ) as f:  # pylint: disable=invalid-name
@@ -577,8 +581,8 @@ class Rule:
 
     @classmethod
     def get(
-        cls: typing.Type[T], name: str, default: typing.Optional[T] = None
-    ) -> typing.Optional["Rule"]:
+        cls: type[T], name: str, default: typing.Optional[T] = None
+    ) -> typing.Optional[Rule]:
         """Retrieves Rule by name.  If a Rule object matching name is found, it is returned.
         Otherwise default is returned, and no Rule object is
         created, as would be the case when invoking Rule(name).
@@ -608,7 +612,7 @@ class Node:  # pylint: disable=too-few-public-methods
 
     __slots__ = ("name", "children")
 
-    def __init__(self, name: str, *children: "Node") -> None:
+    def __init__(self, name: str, *children: Node) -> None:
         super().__init__()
         self.name = name
         self.children = list(children)
@@ -620,7 +624,7 @@ class Node:  # pylint: disable=too-few-public-methods
         return "".join(child.value for child in self.children)
 
     def __str__(self) -> str:
-        return "Node(name=%s, children=[%s])" % (
+        return "Node(name={}, children=[{}])".format(
             self.name,
             ", ".join(x.__str__() for x in self.children),
         )
@@ -646,12 +650,12 @@ class LiteralNode:  # pylint: disable=too-few-public-methods
         self.length = length
 
     @property
-    def children(self) -> typing.List[Node]:
+    def children(self) -> list[Node]:
         """Returns an empty list of children, since LiteralNodes are terminal."""
         return []
 
     def __str__(self):
-        return 'Node(name=%s, offset=%s, value="%s")' % (
+        return 'Node(name={}, offset={}, value="{}")'.format(
             self.name,
             self.offset,
             self.value.replace("\r", r"\r").replace("\n", r"\n"),
@@ -714,7 +718,7 @@ class ParseError(Exception):
         self.start = start
 
     def __str__(self):
-        return "%s: %s" % (str(self.parser), self.start)
+        return f"{self.parser!s}: {self.start}"
 
 
 class GrammarError(Exception):
@@ -725,7 +729,7 @@ class GrammarError(Exception):
 # To get parsing for parser generation started, the ABNF grammar from RFC 5234 and
 # RFC 7405, plus the core rules from RFC 5234, are defined ab initio.
 
-for core_rule_def in typing.cast(list[typing.Tuple[str, Parser]], [
+for core_rule_def in typing.cast(list[tuple[str, Parser]], [
     ("ALPHA", Alternation(Literal(("\x41", "\x5A")), Literal(("\x61", "\x7A")))),
     ("BIT", Alternation(Literal("0"), Literal("1"))),
     ("CHAR", Literal(("\x01", "\x7F"))),
@@ -769,7 +773,7 @@ class ABNFGrammarRule(Rule):
     """Rules defining ABNF in ABNF."""
 
 
-for grammar_rule_def in typing.cast(list[typing.Tuple[str, Parser]], [
+for grammar_rule_def in typing.cast(list[tuple[str, Parser]], [
     (
         "rulelist",
         Repetition(
@@ -1067,13 +1071,13 @@ class NumValVisitor(NodeVisitor):
         return Literal(self._read_value(node.children[1:], "HEXDIG", 16), True)
 
     def _read_value(
-        self, digit_nodes: typing.List[Node], digit_node_name: str, base: int
-    ) -> typing.Union[str, typing.Tuple[str, str]]:
+        self, digit_nodes: list[Node], digit_node_name: str, base: int
+    ) -> typing.Union[str, tuple[str, str]]:
         """Reads the character from the child nodes of the num-val node.
         Returns either a string, or a tuple representing a character range."""
 
         # type specification needed for mypy to know that value can be either type.
-        value: typing.Union[str, typing.Tuple[str, str]]
+        value: typing.Union[str, tuple[str, str]]
         range_op = "-"
         buffer = ""
         iter_nodes = iter(digit_nodes)
@@ -1118,7 +1122,7 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
     """Visitor for visiting nodes generated from ABNFGrammarRules."""
 
     def __init__(
-        self, rule_cls: typing.Type[Rule], *args: typing.Any, **kwargs: typing.Any
+        self, rule_cls: type[Rule], *args: typing.Any, **kwargs: typing.Any
     ):
 
         self.rule_cls = rule_cls
@@ -1131,13 +1135,13 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
     def visit_alternation(self, node: Node):
         """Creates an Alternation object from alternation node."""
         assert node.name == "alternation"
-        args: typing.List[Parser] = list(filter(NotNull, map(self.visit, node.children)))
+        args: list[Parser] = list(filter(NotNull, map(self.visit, node.children)))
         return Alternation(*args) if len(args) > 1 else args[0]
 
     def visit_concatenation(self, node: Node):
         """Creates a Concatention object from concatenation node."""
         assert node.name == "concatenation"
-        args: typing.List[Parser] = list(filter(NotNull, map(self.visit, node.children)))
+        args: list[Parser] = list(filter(NotNull, map(self.visit, node.children)))
         return Concatenation(*args) if len(args) > 1 else args[0]
 
     @staticmethod
