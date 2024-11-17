@@ -706,10 +706,7 @@ class ParseError(Exception):
 
     def __init__(
         self, parser: Parser, start: int, *args: typing.Any
-    ):  # pylint: disable=super-init-not-called
-        assert isinstance(parser, Parser), "parser must satisfy Parser protocol."
-        assert isinstance(start, int), "start must be int."
-
+    ):
         # it turns out that calling super().__init__(*args) is quite slow.  Because
         # ParseError objects are created so often, the slowness adds up.  So we
         # just set self.args directly, which is all that Exception.__init__ does.
