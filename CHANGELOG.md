@@ -2,6 +2,12 @@
 
 
 
+## 2.3.0
+
+* A bit of work with cProfiler led to 7x improvement in parsing speed on grammars used to test parsing speed.
+
+* abnf now supports python 3.9 - 3.13.
+
 ## 2.2.0
 
 * Added RFC 9111.
