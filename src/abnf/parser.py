@@ -178,8 +178,7 @@ class Concatenation:  # pylint: disable=too-few-public-methods
                 match_list = current_match_list
             else:
                 raise ParseError(self, start)
-        for match in sorted_by_longest_match(match_list):
-            yield match
+        yield from sorted_by_longest_match(match_list)
 
     def __str__(self):
         return self.str_template % ", ".join(map(str, self.parsers))
@@ -217,8 +216,7 @@ class Repetition:  # pylint: disable=too-few-public-methods
         else:
             if isinstance(cached_matchset, ParseError):
                 raise cached_matchset
-            for match in next_longest(cached_matchset):
-                yield match
+            yield from next_longest(cached_matchset)
             return
 
         if self.repeat.min == 0:
@@ -255,8 +253,7 @@ class Repetition:  # pylint: disable=too-few-public-methods
                 break
 
         self.lparse_cache[cache_key] = match_set
-        for match in next_longest(match_set):
-            yield match
+        yield from next_longest(match_set)
 
     def __str__(self):
         return f"Repetition({self.repeat}, {self.element})"
@@ -472,8 +469,7 @@ class Rule:
 
         matches = set(filterfalse(exclude, g))
         if matches:
-            for match in matches:
-                yield Match([Node(self.name, *match.nodes)], match.start)
+            yield from [Match([Node(self.name, *match.nodes)], match.start) for match in matches]
         else:
             raise ParseError(self, start) from None
 
