@@ -42,14 +42,14 @@ def sorted_by_longest_match(matches: typing.Iterable[Match]) -> list[Match]:
 def next_longest(matches: MatchSet) -> Generator[Match, None, None]:
     yield from sorted_by_longest_match(list(matches))
 
+
 @runtime_checkable
 class Parser(Protocol):
     # def parse(
     #    self, source: str, start: int
     # ) -> tuple[Nodes, int]:  # pragma: no cover
     #   ...
-    def lparse(self, source: Source, start: int) -> Matches:
-        ...  # pragma: no cover
+    def lparse(self, source: Source, start: int) -> Matches: ...  # pragma: no cover
 
 
 ParseCacheKey = tuple[str, int]
@@ -170,8 +170,13 @@ class Concatenation:
         for parser in self.parsers:
             current_match_list: list[Match] = []
             for match in match_list:
-                try: # noqa: SIM105
-                    current_match_list.extend([Match(match.nodes + m.nodes, m.start) for m in parser.lparse(source, match.start)])
+                try:  # noqa: SIM105
+                    current_match_list.extend(
+                        [
+                            Match(match.nodes + m.nodes, m.start)
+                            for m in parser.lparse(source, match.start)
+                        ]
+                    )
                 except ParseError:  # noqa: PERF203
                     pass
             if current_match_list:
@@ -187,9 +192,7 @@ class Concatenation:
 class Repeat:
     """Implements the ABNF Repeat operator for Repetition."""
 
-    def __init__(
-        self, min: int = 0, max: typing.Union[int, None] = None
-    ):
+    def __init__(self, min: int = 0, max: typing.Union[int, None] = None):
         self.min = min
         self.max = max
 
@@ -241,7 +244,9 @@ class Repetition:
             for match in last_match_set:
                 g = self.element.lparse(source, match.start)
                 try:  # noqa: SIM105
-                    new_match_set.update([Match(match.nodes + m.nodes, m.start) for m in g])
+                    new_match_set.update(
+                        [Match(match.nodes + m.nodes, m.start) for m in g]
+                    )
                 except ParseError:
                     pass
 
@@ -306,7 +311,7 @@ class Literal:
             )
         ):
             msg = "value argument must be a string or a 2-tuple of strings."
-            raise TypeError(msg )
+            raise TypeError(msg)
 
         self.value = value
         self.case_sensitive = case_sensitive
@@ -337,7 +342,7 @@ class Literal:
         if start < len(source):
             src = source[start : start + len(self.value)]
             match = src if self.case_sensitive else src.casefold()
-            if match == self.pattern: 
+            if match == self.pattern:
                 yield Match(
                     [typing.cast(Node, LiteralNode(src, start, len(src)))],
                     start + len(src),
@@ -351,10 +356,7 @@ class Literal:
         # str(self.value) handles the case value == tuple.
         non_printable_chars = set(map(chr, range(0x00, 0x20)))
         value = tuple(
-            
-                rf"\x{ord(x):02x}" if x in non_printable_chars else x
-                for x in self.value
-            
+            rf"\x{ord(x):02x}" if x in non_printable_chars else x for x in self.value
         )
 
         return (
@@ -368,6 +370,7 @@ class Literal:
 class Prose:
     def lparse(self, source: Source, start: int) -> Matches:
         raise ParseError(self, start)
+
 
 T = typing.TypeVar("T", bound="Rule")
 
@@ -384,9 +387,7 @@ class Rule:
 
     _obj_map: typing.ClassVar[dict[tuple[type[Rule], str], Rule]] = {}
 
-    def __new__(
-        cls, name: str, definition: typing.Union[Parser, None] = None
-    ):
+    def __new__(cls, name: str, definition: typing.Union[Parser, None] = None):
         """Overrides super().__new__ to implement a symbol table via object caching."""
 
         rule = cls.get(name)
@@ -469,7 +470,9 @@ class Rule:
 
         matches = set(filterfalse(exclude, g))
         if matches:
-            yield from [Match([Node(self.name, *match.nodes)], match.start) for match in matches]
+            yield from [
+                Match([Node(self.name, *match.nodes)], match.start) for match in matches
+            ]
         else:
             raise ParseError(self, start) from None
 
@@ -540,7 +543,7 @@ class Rule:
     def load_grammar(cls, grammar: str, strict: bool = True) -> None:
         """Loads grammar and attempts to parse it as a rulelist. If successful,
         cls is populated with the rules in the rulelist.
-        When strict = True, line endings following rules are normalized to CRLF to 
+        When strict = True, line endings following rules are normalized to CRLF to
         satisfy the definition of 'rulelist.  If strict is set to False, the grammar
         is parsed as is.
         """
@@ -700,9 +703,7 @@ class NodeVisitor:
 class ParseError(Exception):
     """Raised in response to errors during parsing."""
 
-    def __init__(
-        self, parser: Parser, start: int, *args: typing.Any
-    ):
+    def __init__(self, parser: Parser, start: int, *args: typing.Any):
         # it turns out that calling super().__init__(*args) is quite slow.  Because
         # ParseError objects are created so often, the slowness adds up.  So we
         # just set self.args directly, which is all that Exception.__init__ does.
@@ -722,43 +723,49 @@ class GrammarError(Exception):
 # To get parsing for parser generation started, the ABNF grammar from RFC 5234 and
 # RFC 7405, plus the core rules from RFC 5234, are defined ab initio.
 
-for core_rule_def in typing.cast(list[tuple[str, Parser]], [
-    ("ALPHA", Alternation(Literal(("\x41", "\x5A")), Literal(("\x61", "\x7A")))),
-    ("BIT", Alternation(Literal("0"), Literal("1"))),
-    ("CHAR", Literal(("\x01", "\x7F"))),
-    (
-        "CTL",
-        Alternation(Literal(("\x00", "\x1F")), Literal("\x7F", case_sensitive=True)),
-    ),
-    ("CR", Literal("\x0D", case_sensitive=True)),
-    ("CRLF", Concatenation(Rule("CR"), Rule("LF"))),
-    ("DIGIT", Literal(("\x30", "\x39"))),
-    ("DQUOTE", Literal("\x22", case_sensitive=True)),
-    (
-        "HEXDIG",
-        Alternation(
-            Rule("DIGIT"),
-            Literal("A"),
-            Literal("B"),
-            Literal("C"),
-            Literal("D"),
-            Literal("E"),
-            Literal("F"),
+for core_rule_def in typing.cast(
+    list[tuple[str, Parser]],
+    [
+        ("ALPHA", Alternation(Literal(("\x41", "\x5a")), Literal(("\x61", "\x7a")))),
+        ("BIT", Alternation(Literal("0"), Literal("1"))),
+        ("CHAR", Literal(("\x01", "\x7f"))),
+        (
+            "CTL",
+            Alternation(
+                Literal(("\x00", "\x1f")), Literal("\x7f", case_sensitive=True)
+            ),
         ),
-    ),
-    ("HTAB", Literal("\x09", case_sensitive=True)),
-    ("LF", Literal("\x0A", case_sensitive=True)),
-    (
-        "LWSP",
-        Repetition(
-            Repeat(), Alternation(Rule("WSP"), Concatenation(Rule("CRLF"), Rule("WSP")))
+        ("CR", Literal("\x0d", case_sensitive=True)),
+        ("CRLF", Concatenation(Rule("CR"), Rule("LF"))),
+        ("DIGIT", Literal(("\x30", "\x39"))),
+        ("DQUOTE", Literal("\x22", case_sensitive=True)),
+        (
+            "HEXDIG",
+            Alternation(
+                Rule("DIGIT"),
+                Literal("A"),
+                Literal("B"),
+                Literal("C"),
+                Literal("D"),
+                Literal("E"),
+                Literal("F"),
+            ),
         ),
-    ),
-    ("OCTET", Literal(("\x00", "\xFF"))),
-    ("SP", Literal("\x20", case_sensitive=True)),
-    ("VCHAR", Literal(("\x21", "\x7E"))),
-    ("WSP", Alternation(Rule("SP"), Rule("HTAB"))),
-]):
+        ("HTAB", Literal("\x09", case_sensitive=True)),
+        ("LF", Literal("\x0a", case_sensitive=True)),
+        (
+            "LWSP",
+            Repetition(
+                Repeat(),
+                Alternation(Rule("WSP"), Concatenation(Rule("CRLF"), Rule("WSP"))),
+            ),
+        ),
+        ("OCTET", Literal(("\x00", "\xff"))),
+        ("SP", Literal("\x20", case_sensitive=True)),
+        ("VCHAR", Literal(("\x21", "\x7e"))),
+        ("WSP", Alternation(Rule("SP"), Rule("HTAB"))),
+    ],
+):
     Rule(core_rule_def[0], core_rule_def[1])
 
 
@@ -766,254 +773,263 @@ class ABNFGrammarRule(Rule):
     """Rules defining ABNF in ABNF."""
 
 
-for grammar_rule_def in typing.cast(list[tuple[str, Parser]], [
-    (
-        "rulelist",
-        Repetition(
-            Repeat(1),
+for grammar_rule_def in typing.cast(
+    list[tuple[str, Parser]],
+    [
+        (
+            "rulelist",
+            Repetition(
+                Repeat(1),
+                Alternation(
+                    ABNFGrammarRule("rule"),
+                    Concatenation(
+                        Repetition(Repeat(), ABNFGrammarRule("c-wsp")),
+                        ABNFGrammarRule("c-nl"),
+                    ),
+                ),
+            ),
+        ),
+        (
+            "rule",
+            Concatenation(
+                ABNFGrammarRule("rulename"),
+                ABNFGrammarRule("defined-as"),
+                ABNFGrammarRule("elements"),
+                ABNFGrammarRule("c-nl"),
+            ),
+        ),
+        (
+            "rulename",
+            Concatenation(
+                Rule("ALPHA"),
+                Repetition(
+                    Repeat(), Alternation(Rule("ALPHA"), Rule("DIGIT"), Literal("-"))
+                ),
+            ),
+        ),
+        (
+            "defined-as",
+            Concatenation(
+                Repetition(Repeat(), ABNFGrammarRule("c-wsp")),
+                Alternation(Literal("=/"), Literal("=")),
+                Repetition(Repeat(), ABNFGrammarRule("c-wsp")),
+            ),
+        ),
+        (
+            "elements",
+            Concatenation(
+                ABNFGrammarRule("alternation"),
+                Repetition(Repeat(), ABNFGrammarRule("c-wsp")),
+            ),
+        ),
+        (
+            "c-wsp",
             Alternation(
-                ABNFGrammarRule("rule"),
-                Concatenation(
-                    Repetition(Repeat(), ABNFGrammarRule("c-wsp")),
-                    ABNFGrammarRule("c-nl"),
-                ),
+                Rule("WSP"), Concatenation(ABNFGrammarRule("c-nl"), Rule("WSP"))
             ),
         ),
-    ),
-    (
-        "rule",
-        Concatenation(
-            ABNFGrammarRule("rulename"),
-            ABNFGrammarRule("defined-as"),
-            ABNFGrammarRule("elements"),
-            ABNFGrammarRule("c-nl"),
-        ),
-    ),
-    (
-        "rulename",
-        Concatenation(
-            Rule("ALPHA"),
-            Repetition(
-                Repeat(), Alternation(Rule("ALPHA"), Rule("DIGIT"), Literal("-"))
-            ),
-        ),
-    ),
-    (
-        "defined-as",
-        Concatenation(
-            Repetition(Repeat(), ABNFGrammarRule("c-wsp")),
-            Alternation(Literal("=/"), Literal("=")),
-            Repetition(Repeat(), ABNFGrammarRule("c-wsp")),
-        ),
-    ),
-    (
-        "elements",
-        Concatenation(
-            ABNFGrammarRule("alternation"),
-            Repetition(Repeat(), ABNFGrammarRule("c-wsp")),
-        ),
-    ),
-    (
-        "c-wsp",
-        Alternation(Rule("WSP"), Concatenation(ABNFGrammarRule("c-nl"), Rule("WSP"))),
-    ),
-    ("c-nl", Alternation(ABNFGrammarRule("comment"), Rule("CRLF"))),
-    (
-        "comment",
-        Concatenation(
-            Literal(";"),
-            Repetition(Repeat(), Alternation(Rule("WSP"), Rule("VCHAR"))),
-            Rule("CRLF"),
-        ),
-    ),
-    (
-        "alternation",
-        Concatenation(
-            ABNFGrammarRule("concatenation"),
-            Repetition(
-                Repeat(),
-                Concatenation(
-                    Repetition(Repeat(), ABNFGrammarRule("c-wsp")),
-                    Literal("/"),
-                    Repetition(Repeat(), ABNFGrammarRule("c-wsp")),
-                    ABNFGrammarRule("concatenation"),
-                ),
-            ),
-        ),
-    ),
-    (
-        "concatenation",
-        Concatenation(
-            ABNFGrammarRule("repetition"),
-            Repetition(
-                Repeat(),
-                Concatenation(
-                    Repetition(Repeat(1), ABNFGrammarRule("c-wsp")),
-                    ABNFGrammarRule("repetition"),
-                ),
-            ),
-        ),
-    ),
-    (
-        "repetition",
-        Concatenation(Option(ABNFGrammarRule("repeat")), ABNFGrammarRule("element")),
-    ),
-    (
-        "repeat",
-        Alternation(
+        ("c-nl", Alternation(ABNFGrammarRule("comment"), Rule("CRLF"))),
+        (
+            "comment",
             Concatenation(
-                Repetition(Repeat(0, None), Rule("DIGIT")),
-                Literal("*"),
-                Repetition(Repeat(0, None), Rule("DIGIT")),
+                Literal(";"),
+                Repetition(Repeat(), Alternation(Rule("WSP"), Rule("VCHAR"))),
+                Rule("CRLF"),
             ),
-            Repetition(Repeat(1, None), Rule("DIGIT")),
         ),
-    ),
-    (
-        "element",
-        Alternation(
-            ABNFGrammarRule("rulename"),
-            ABNFGrammarRule("group"),
-            ABNFGrammarRule("option"),
-            ABNFGrammarRule("char-val"),
-            ABNFGrammarRule("num-val"),
-            ABNFGrammarRule("prose-val"),
+        (
+            "alternation",
+            Concatenation(
+                ABNFGrammarRule("concatenation"),
+                Repetition(
+                    Repeat(),
+                    Concatenation(
+                        Repetition(Repeat(), ABNFGrammarRule("c-wsp")),
+                        Literal("/"),
+                        Repetition(Repeat(), ABNFGrammarRule("c-wsp")),
+                        ABNFGrammarRule("concatenation"),
+                    ),
+                ),
+            ),
         ),
-    ),
-    (
-        "group",
-        Concatenation(
-            Literal("("),
-            Repetition(Repeat(), ABNFGrammarRule("c-wsp")),
-            ABNFGrammarRule("alternation"),
-            Repetition(Repeat(), ABNFGrammarRule("c-wsp")),
-            Literal(")"),
+        (
+            "concatenation",
+            Concatenation(
+                ABNFGrammarRule("repetition"),
+                Repetition(
+                    Repeat(),
+                    Concatenation(
+                        Repetition(Repeat(1), ABNFGrammarRule("c-wsp")),
+                        ABNFGrammarRule("repetition"),
+                    ),
+                ),
+            ),
         ),
-    ),
-    (
-        "option",
-        Concatenation(
-            Literal("["),
-            Repetition(Repeat(), ABNFGrammarRule("c-wsp")),
-            ABNFGrammarRule("alternation"),
-            Repetition(Repeat(), ABNFGrammarRule("c-wsp")),
-            Literal("]"),
+        (
+            "repetition",
+            Concatenation(
+                Option(ABNFGrammarRule("repeat")), ABNFGrammarRule("element")
+            ),
         ),
-    ),
-    (
-        "num-val",
-        Concatenation(
-            Literal("%"),
+        (
+            "repeat",
             Alternation(
-                ABNFGrammarRule("bin-val"),
-                ABNFGrammarRule("dec-val"),
-                ABNFGrammarRule("hex-val"),
+                Concatenation(
+                    Repetition(Repeat(0, None), Rule("DIGIT")),
+                    Literal("*"),
+                    Repetition(Repeat(0, None), Rule("DIGIT")),
+                ),
+                Repetition(Repeat(1, None), Rule("DIGIT")),
             ),
         ),
-    ),
-    (
-        "bin-val",
-        Concatenation(
-            Literal("b"),
+        (
+            "element",
+            Alternation(
+                ABNFGrammarRule("rulename"),
+                ABNFGrammarRule("group"),
+                ABNFGrammarRule("option"),
+                ABNFGrammarRule("char-val"),
+                ABNFGrammarRule("num-val"),
+                ABNFGrammarRule("prose-val"),
+            ),
+        ),
+        (
+            "group",
             Concatenation(
-                Repetition(Repeat(1), Rule("BIT")),
-                Option(
-                    Alternation(
-                        Repetition(
-                            Repeat(1),
-                            Concatenation(
-                                Literal("."), Repetition(Repeat(1), Rule("BIT"))
-                            ),
-                        ),
-                        Concatenation(Literal("-"), Repetition(Repeat(1), Rule("BIT"))),
-                    )
+                Literal("("),
+                Repetition(Repeat(), ABNFGrammarRule("c-wsp")),
+                ABNFGrammarRule("alternation"),
+                Repetition(Repeat(), ABNFGrammarRule("c-wsp")),
+                Literal(")"),
+            ),
+        ),
+        (
+            "option",
+            Concatenation(
+                Literal("["),
+                Repetition(Repeat(), ABNFGrammarRule("c-wsp")),
+                ABNFGrammarRule("alternation"),
+                Repetition(Repeat(), ABNFGrammarRule("c-wsp")),
+                Literal("]"),
+            ),
+        ),
+        (
+            "num-val",
+            Concatenation(
+                Literal("%"),
+                Alternation(
+                    ABNFGrammarRule("bin-val"),
+                    ABNFGrammarRule("dec-val"),
+                    ABNFGrammarRule("hex-val"),
                 ),
             ),
         ),
-    ),
-    (
-        "dec-val",
-        Concatenation(
-            Literal("d"),
+        (
+            "bin-val",
             Concatenation(
-                Repetition(Repeat(1), Rule("DIGIT")),
-                Option(
-                    Alternation(
-                        Repetition(
-                            Repeat(1),
-                            Concatenation(
-                                Literal("."), Repetition(Repeat(1), Rule("DIGIT"))
+                Literal("b"),
+                Concatenation(
+                    Repetition(Repeat(1), Rule("BIT")),
+                    Option(
+                        Alternation(
+                            Repetition(
+                                Repeat(1),
+                                Concatenation(
+                                    Literal("."), Repetition(Repeat(1), Rule("BIT"))
+                                ),
                             ),
-                        ),
-                        Concatenation(
-                            Literal("-"), Repetition(Repeat(1), Rule("DIGIT"))
-                        ),
-                    )
+                            Concatenation(
+                                Literal("-"), Repetition(Repeat(1), Rule("BIT"))
+                            ),
+                        )
+                    ),
                 ),
             ),
         ),
-    ),
-    (
-        "hex-val",
-        Concatenation(
-            Literal("x"),
+        (
+            "dec-val",
             Concatenation(
-                Repetition(Repeat(1), Rule("HEXDIG")),
-                Option(
-                    Alternation(
-                        Repetition(
-                            Repeat(1),
-                            Concatenation(
-                                Literal("."), Repetition(Repeat(1), Rule("HEXDIG"))
+                Literal("d"),
+                Concatenation(
+                    Repetition(Repeat(1), Rule("DIGIT")),
+                    Option(
+                        Alternation(
+                            Repetition(
+                                Repeat(1),
+                                Concatenation(
+                                    Literal("."), Repetition(Repeat(1), Rule("DIGIT"))
+                                ),
                             ),
-                        ),
-                        Concatenation(
-                            Literal("-"), Repetition(Repeat(1), Rule("HEXDIG"))
-                        ),
-                    )
+                            Concatenation(
+                                Literal("-"), Repetition(Repeat(1), Rule("DIGIT"))
+                            ),
+                        )
+                    ),
                 ),
             ),
         ),
-    ),
-    (
-        "prose-val",
-        Concatenation(
-            Literal("<"),
-            Repetition(
-                Repeat(),
-                Alternation(Literal(("\x20", "\x3D")), Literal(("\x3F", "\x7E"))),
+        (
+            "hex-val",
+            Concatenation(
+                Literal("x"),
+                Concatenation(
+                    Repetition(Repeat(1), Rule("HEXDIG")),
+                    Option(
+                        Alternation(
+                            Repetition(
+                                Repeat(1),
+                                Concatenation(
+                                    Literal("."), Repetition(Repeat(1), Rule("HEXDIG"))
+                                ),
+                            ),
+                            Concatenation(
+                                Literal("-"), Repetition(Repeat(1), Rule("HEXDIG"))
+                            ),
+                        )
+                    ),
+                ),
             ),
-            Literal(">"),
         ),
-    ),
-    # definitions from RFC 7405
-    (
-        "char-val",
-        Alternation(
-            ABNFGrammarRule("case-insensitive-string"),
-            ABNFGrammarRule("case-sensitive-string"),
-        ),
-    ),
-    (
-        "case-insensitive-string",
-        Concatenation(Option(Literal("%i")), ABNFGrammarRule("quoted-string")),
-    ),
-    (
-        "case-sensitive-string",
-        Concatenation(Literal("%s"), ABNFGrammarRule("quoted-string")),
-    ),
-    (
-        "quoted-string",
-        Concatenation(
-            Rule("DQUOTE"),
-            Repetition(
-                Repeat(),
-                Alternation(Literal(("\x20", "\x21")), Literal(("\x23", "\x7E"))),
+        (
+            "prose-val",
+            Concatenation(
+                Literal("<"),
+                Repetition(
+                    Repeat(),
+                    Alternation(Literal(("\x20", "\x3d")), Literal(("\x3f", "\x7e"))),
+                ),
+                Literal(">"),
             ),
-            Rule("DQUOTE"),
         ),
-    ),
-]):
+        # definitions from RFC 7405
+        (
+            "char-val",
+            Alternation(
+                ABNFGrammarRule("case-insensitive-string"),
+                ABNFGrammarRule("case-sensitive-string"),
+            ),
+        ),
+        (
+            "case-insensitive-string",
+            Concatenation(Option(Literal("%i")), ABNFGrammarRule("quoted-string")),
+        ),
+        (
+            "case-sensitive-string",
+            Concatenation(Literal("%s"), ABNFGrammarRule("quoted-string")),
+        ),
+        (
+            "quoted-string",
+            Concatenation(
+                Rule("DQUOTE"),
+                Repetition(
+                    Repeat(),
+                    Alternation(Literal(("\x20", "\x21")), Literal(("\x23", "\x7e"))),
+                ),
+                Rule("DQUOTE"),
+            ),
+        ),
+    ],
+):
     ABNFGrammarRule(grammar_rule_def[0], grammar_rule_def[1])
 
 
@@ -1114,10 +1130,7 @@ class NumValVisitor(NodeVisitor):
 class ABNFGrammarNodeVisitor(NodeVisitor):
     """Visitor for visiting nodes generated from ABNFGrammarRules."""
 
-    def __init__(
-        self, rule_cls: type[Rule], *args: typing.Any, **kwargs: typing.Any
-    ):
-
+    def __init__(self, rule_cls: type[Rule], *args: typing.Any, **kwargs: typing.Any):
         self.rule_cls = rule_cls
         self.visit_char_val = CharValNodeVisitor()
         self.visit_num_val = NumValVisitor()
@@ -1165,7 +1178,7 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
         # https://www.rfc-editor.org/rfc/rfc5234.html#section-2.1
         # for the explanation of this bit of hackery.
         try:
-            node = ABNFGrammarRule('rulename').parse_all(node.value[1:-1])
+            node = ABNFGrammarRule("rulename").parse_all(node.value[1:-1])
         except ParseError:
             return Prose()
         else:
