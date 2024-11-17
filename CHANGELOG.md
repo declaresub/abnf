@@ -2,8 +2,6 @@
 
 
 
-
-
 ## 2.2.0
 
 * Added RFC 9111.
@@ -13,7 +11,7 @@
 
 * RFC 3986 rule 'Host' now uses first-match alternation as specified.
 
-* Rule.load_grammar now has an option strirt that specifies whether line endings in a source grammar
+* Rule.load_grammar now has an option 'strict' that specifies whether line endings in a source grammar
  are fixed.
 
 ## 2.1.0
