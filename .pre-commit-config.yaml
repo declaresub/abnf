@@ -21,6 +21,8 @@ repos:
   rev: v1.1.389
   hooks:
     - id: pyright
+      additional_dependencies: [pytest]
+
 - repo: local
   hooks:
     - id: tox

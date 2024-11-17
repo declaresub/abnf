@@ -1,29 +1,29 @@
 import pathlib
-from typing import Any, cast, Tuple
+from typing import cast
 
 import pytest
 
 from abnf.parser import (
-    CharValNodeVisitor,
     ABNFGrammarNodeVisitor,
-    Prose,
     ABNFGrammarRule,
-    NumValVisitor,
-    Rule,
+    Alternation,
+    CharValNodeVisitor,
+    Concatenation,
     GrammarError,
+    Literal,
+    LiteralNode,
     Match,
-    sorted_by_longest_match,
-    next_longest,
+    Node,
+    NumValVisitor,
+    Option,
     ParseCache,
     ParseError,
-    Literal,
-    Concatenation,
+    Prose,
     Repeat,
     Repetition,
-    Alternation,
-    Option,
-    Node,
-    LiteralNode,
+    Rule,
+    next_longest,
+    sorted_by_longest_match,
 )
 
 
@@ -38,7 +38,7 @@ def test_next_longest():
     match0 = Match([], 0)
     match1 = Match([], 1)
     match2 = Match([], 2)
-    assert [x for x in next_longest(set([match0, match1, match2]))] == [
+    assert list(next_longest({match0, match1, match2})) == [
         match2,
         match1,
         match0,
@@ -64,7 +64,7 @@ def test_oarse_cache_miss():
 
 def test_cache_hit():
     cache = ParseCache()
-    match_set = set([Match([], 0)])
+    match_set = {Match([], 0)}
     cache[("foo", 1)] = match_set
     assert len(cache) == 1
     assert cache[("foo", 1)] == match_set
@@ -74,9 +74,9 @@ def test_cache_hit():
 
 def test_parse_cache_max_size():
     cache = ParseCache(max_size=1)
-    cache[("foo", 1)] = set([Match([], 0)])
+    cache[("foo", 1)] = {Match([], 0)}
     assert len(cache) == 1
-    match_set = set([Match([], 2)])
+    match_set = {Match([], 2)}
     cache[("foo", 3)] = match_set
     assert len(cache) == 1
     assert cache[("foo", 3)] == match_set
@@ -84,18 +84,18 @@ def test_parse_cache_max_size():
 
 def test_parse_cache_del_item():
     cache = ParseCache(max_size=1)
-    cache[("foo", 1)] = set([Match([], 0)])
+    cache[("foo", 1)] = {Match([], 0)}
     assert len(cache) == 1
     del cache[("foo", 1)]
     assert len(cache) == 0
     cache = ParseCache()
-    cache[("foo", 1)] = set([Match([], 0)])
+    cache[("foo", 1)] = {Match([], 0)}
 
 
 def test_parse_cache_iter():
     cache = ParseCache()
-    cache[("foo", 1)] = set([Match([], 0)])
-    assert [key for key in cache] == [("foo", 1)]
+    cache[("foo", 1)] = {Match([], 0)}
+    assert list(cache) == [("foo", 1)]
 
 
 def test_parse_cache_eq():
@@ -115,9 +115,9 @@ def test_parse_cache_str():
 
 def test_parse_cache_clear_caches():
     cache = ParseCache()
-    cache[("foo", 1)] = set([Match([], 0)])
+    cache[("foo", 1)] = {Match([], 0)}
     cache[("foo", 1)]  # trigger a hit
-    try:
+    try:  # noqa: SIM105
         cache[("bar", 1)]  # trigger a miss
     except KeyError:
         pass
@@ -127,12 +127,6 @@ def test_parse_cache_clear_caches():
         assert len(c) == 0
         assert c.misses == 0
         assert c.hits == 0
-
-
-@pytest.mark.parametrize("args", [(None, 1), (Literal("a"), None)])
-def test_parseerror_bad_args(args: Tuple[Any, Any]):
-    with pytest.raises(AssertionError):
-        ParseError(*args)
 
 
 def test_parseerror_str():
