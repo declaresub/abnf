@@ -123,7 +123,7 @@ class ParseCache(typing.MutableMapping[ParseCacheKey, ParseCacheValue]):
         yield from cls.objects
 
 
-class Alternation:  # pylint: disable=too-few-public-methods
+class Alternation:
     """Implements the ABNF alternation operator. -- Alternation(parser1, parser2, ...)
     returns a parser that invokes parser1, parser2, ... in turn and returns the result
     of the first successful parse.."""
@@ -154,7 +154,7 @@ class Alternation:  # pylint: disable=too-few-public-methods
         return self.str_template % ", ".join(map(str, self.parsers))
 
 
-class Concatenation:  # pylint: disable=too-few-public-methods
+class Concatenation:
     """Implements the ABNF concatention operation. Concatention(parser1, parser2, ...)
     returns a parser that invokes parser1, parser2, ... in turn and returns a list of Nodes
     if every parser succeeds.
@@ -184,12 +184,12 @@ class Concatenation:  # pylint: disable=too-few-public-methods
         return self.str_template % ", ".join(map(str, self.parsers))
 
 
-class Repeat:  # pylint: disable=too-few-public-methods
+class Repeat:
     """Implements the ABNF Repeat operator for Repetition."""
 
     def __init__(
         self, min: int = 0, max: typing.Union[int, None] = None
-    ):  # pylint: disable=redefined-builtin
+    ):
         self.min = min
         self.max = max
 
@@ -199,7 +199,7 @@ class Repeat:  # pylint: disable=too-few-public-methods
         return f"Repeat({_min}, {_max})"
 
 
-class Repetition:  # pylint: disable=too-few-public-methods
+class Repetition:
     """Implements the ABNF Repetition operation."""
 
     def __init__(self, repeat: Repeat, element: Parser):
@@ -259,7 +259,7 @@ class Repetition:  # pylint: disable=too-few-public-methods
         return f"Repetition({self.repeat}, {self.element})"
 
 
-class Option:  # pylint: disable=too-few-public-methods
+class Option:
     """Implements the ABNF Option operation."""
 
     str_template = "Option(%s)"
@@ -283,7 +283,7 @@ class Option:  # pylint: disable=too-few-public-methods
         return self.str_template % str(self.alternation)
 
 
-class Literal:  # pylint: disable=too-few-public-methods
+class Literal:
     """Represents a terminal literal value."""
 
     def __init__(
@@ -334,10 +334,10 @@ class Literal:  # pylint: disable=too-few-public-methods
         """Parse source when self.value represents a literal."""
         # we check position to ensure that the case pattern = '' and start >= len(source)
         # is handled correctly.
-        if start < len(source):  # pylint: disable=no-else-return
+        if start < len(source):
             src = source[start : start + len(self.value)]
             match = src if self.case_sensitive else src.casefold()
-            if match == self.pattern:  # pylint: disable=no-else-return
+            if match == self.pattern: 
                 yield Match(
                     [typing.cast(Node, LiteralNode(src, start, len(src)))],
                     start + len(src),
@@ -386,7 +386,7 @@ class Rule:
 
     def __new__(
         cls, name: str, definition: typing.Union[Parser, None] = None
-    ):  # pylint: disable=unused-argument
+    ):
         """Overrides super().__new__ to implement a symbol table via object caching."""
 
         rule = cls.get(name)
@@ -570,7 +570,7 @@ class Rule:
             open(path, newline=crlf, encoding="ascii")
             if isinstance(path, str)
             else path.open("r", newline=crlf, encoding="ascii")
-        ) as f:  # pylint: disable=invalid-name
+        ) as f:
             src = f.read()
         cls.load_grammar(src)
 
@@ -602,7 +602,7 @@ class Rule:
 # basic reflective visitor.
 
 
-class Node:  # pylint: disable=too-few-public-methods
+class Node:
     """Node objects are used to build parse trees."""
 
     __slots__ = ("name", "children", "_value")
@@ -633,7 +633,7 @@ class Node:  # pylint: disable=too-few-public-methods
         )
 
 
-class LiteralNode:  # pylint: disable=too-few-public-methods
+class LiteralNode:
     """LiteralNode objects are used to build parse trees."""
 
     __slots__ = ("name", "value", "offset", "length")
@@ -666,7 +666,7 @@ class LiteralNode:  # pylint: disable=too-few-public-methods
         )
 
 
-class NodeVisitor:  # pylint: disable=too-few-public-methods
+class NodeVisitor:
     """An external visitor class."""
 
     def __init__(self):
@@ -689,7 +689,7 @@ class NodeVisitor:  # pylint: disable=too-few-public-methods
         )(node)
 
     @staticmethod
-    def _skip_visit(node: Node):  # pylint: disable=unused-argument
+    def _skip_visit(node: Node):
         """Skip node visit."""
         return None
 
@@ -1047,19 +1047,19 @@ class CharValNodeVisitor(NodeVisitor):
 class NumValVisitor(NodeVisitor):
     """Visitor of num-val nodes."""
 
-    def visit_num_val(self, node: Node):  # pylint:disable=missing-function-docstring
+    def visit_num_val(self, node: Node):
         """Visit a num-val, returning (value, case_sensitive)."""
         return next(filter(NotNull, map(self.visit, node.children)))
 
-    def visit_bin_val(self, node: Node):  # pylint:disable=missing-function-docstring
+    def visit_bin_val(self, node: Node):
         # first child node is marker literal "b"
         return Literal(self._read_value(node.children[1:], "BIT", 2), True)
 
-    def visit_dec_val(self, node: Node):  # pylint:disable=missing-function-docstring
+    def visit_dec_val(self, node: Node):
         # first child node is marker literal "b"
         return Literal(self._read_value(node.children[1:], "DIGIT", 10), True)
 
-    def visit_hex_val(self, node: Node):  # pylint:disable=missing-function-docstring
+    def visit_hex_val(self, node: Node):
         # first child node is marker literal "x"
         return Literal(self._read_value(node.children[1:], "HEXDIG", 16), True)
 
@@ -1201,7 +1201,7 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
 
     def visit_repetition(self, node: Node):
         """Creates a Repetition object from repetition node."""
-        if node.children[0].name == "repeat":  # pylint: disable=no-else-return
+        if node.children[0].name == "repeat":
             return Repetition(
                 self.visit_repeat(node.children[0]),
                 self.visit_element(node.children[1]),
