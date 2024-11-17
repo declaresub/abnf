@@ -242,9 +242,8 @@ class Repetition:  # pylint: disable=too-few-public-methods
             new_match_set: MatchSet = set()
             for match in last_match_set:
                 g = self.element.lparse(source, match.start)
-                try:
-                    for item in (Match(match.nodes + m.nodes, m.start) for m in g):
-                        new_match_set.add(item)
+                try:  # noqa: SIM105
+                    new_match_set.update([Match(match.nodes + m.nodes, m.start) for m in g])
                 except ParseError:
                     pass
 
