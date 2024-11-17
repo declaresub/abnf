@@ -5,6 +5,7 @@ import pytest
 from abnf.grammars import rfc5322
 from abnf.parser import ParseError
 
+
 @pytest.mark.parametrize("src", [
     r'simple@example.com', 
     r'very.common@example.com', 

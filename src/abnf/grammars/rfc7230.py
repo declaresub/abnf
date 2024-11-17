@@ -6,7 +6,10 @@ Note that this RFC is obsolete as of June 2022, replaced by
 https://www.rfc-editor.org/rfc/rfc9110.
 """
 
+from typing import ClassVar, Union
+
 from abnf.parser import Rule as _Rule
+
 from . import rfc3986
 from .misc import load_grammar_rules
 
@@ -29,7 +32,7 @@ from .misc import load_grammar_rules
 class Rule(_Rule):
     """Parser rules for grammar from RFC 7230."""
 
-    grammar = [
+    grammar: ClassVar[Union[list[str], str]] = [
         "BWS = OWS",
         'Connection = *( "," OWS ) connection-option *( OWS "," [ OWS connection-option ] )',
         "Content-Length = 1*DIGIT",

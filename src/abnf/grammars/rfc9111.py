@@ -9,7 +9,6 @@ from . import rfc9110
 from .misc import load_grammar_rulelist
 
 
-
 @load_grammar_rulelist(
     [
         ("HTTP-date", rfc9110.Rule("HTTP-date")),

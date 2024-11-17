@@ -5,9 +5,12 @@ Collected rules from RFC 7405
 https://tools.ietf.org/html/rfc7405
 """
 
+from typing import ClassVar, Union
+
 from abnf.parser import Rule as _Rule
-from .misc import load_grammar_rules
+
 from . import rfc5234
+from .misc import load_grammar_rules
 
 
 @load_grammar_rules(
@@ -20,7 +23,7 @@ from . import rfc5234
 class Rule(_Rule):
     """Rule objects generated from ABNF in RFC 7405."""
 
-    grammar = [
+    grammar: ClassVar[Union[list[str], str]] = [
         "char-val = case-insensitive-string /\
                            case-sensitive-string",
         'case-insensitive-string =\

@@ -5,7 +5,10 @@ Collected rules from RFC 5234
 https://tools.ietf.org/html/rfc5234
 """
 
+from typing import ClassVar, Union
+
 from abnf.parser import Rule as _Rule
+
 from .misc import load_grammar_rules
 
 
@@ -13,7 +16,7 @@ from .misc import load_grammar_rules
 class Rule(_Rule):
     """Rule objects generated from ABNF in RFC 5234."""
 
-    grammar = [
+    grammar: ClassVar[Union[list[str], str]] = [
         "rulelist = 1*( rule / (*c-wsp c-nl) )",
         "rule = rulename defined-as elements c-nl\
                                         ; continues if next line starts\
@@ -49,6 +52,5 @@ class Rule(_Rule):
         'hex-val = "x" 1*HEXDIG\
                                    [ 1*("." 1*HEXDIG) / ("-" 1*HEXDIG) ]\
                                         ; white space',
-
         r'prose-val      =  "<" *(%x20-3D / %x3F-7E) ">"',
     ]

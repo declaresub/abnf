@@ -2,8 +2,10 @@
 Collected rules from RFC 3629, Appendix A.
 https://datatracker.ietf.org/doc/html/rfc3629
 """
+from typing import ClassVar, Union
 
 from abnf.parser import Rule as _Rule
+
 from .misc import load_grammar_rules
 
 
@@ -11,7 +13,7 @@ from .misc import load_grammar_rules
 class Rule(_Rule):
     """Rules from RFC 3629."""
 
-    grammar = [
+    grammar: ClassVar[Union[list[str], str]] = [
         'UTF8-octets = *( UTF8-char )',
         'UTF8-char   = UTF8-1 / UTF8-2 / UTF8-3 / UTF8-4',
         'UTF8-1      = %x00-7F',

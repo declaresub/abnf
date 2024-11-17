@@ -6,7 +6,10 @@ Note that this RFC is obsolete as of June 2022, replaced by
 https://www.rfc-editor.org/rfc/rfc9110.
 """
 
+from typing import ClassVar, Union
+
 from abnf.parser import Rule as _Rule
+
 from . import rfc4647, rfc5322, rfc5646, rfc7230
 from .misc import load_grammar_rules
 
@@ -32,7 +35,7 @@ from .misc import load_grammar_rules
 class Rule(_Rule):
     """Rules from RFC 7231."""
 
-    grammar = [
+    grammar: ClassVar[Union[list[str], str]] = [
         'Accept = [ ( "," / ( media-range [ accept-params ] ) ) *( OWS "," [ OWS ( media-range [ accept-params ] ) ] ) ]',
         'Accept-Charset = *( "," OWS ) ( ( charset / "*" ) [ weight ] ) *( OWS "," [ OWS ( ( charset / "*" ) [ weight ] ) ] )',
         'Accept-Encoding = [ ( "," / ( codings [ weight ] ) ) *( OWS "," [ OWS ( codings [ weight ] ) ] ) ]',

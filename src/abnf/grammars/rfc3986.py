@@ -3,7 +3,10 @@ Collected rules from RFC 3986, Appendix A.
 https://tools.ietf.org/html/rfc3986#appendix-A
 """
 
+from typing import ClassVar, Union
+
 from abnf.parser import Rule as _Rule
+
 from .misc import load_grammar_rules
 
 
@@ -11,7 +14,7 @@ from .misc import load_grammar_rules
 class Rule(_Rule):
     """Rules from RFC 3986."""
 
-    grammar = [
+    grammar: ClassVar[Union[list[str], str]] = [
         'URI = scheme ":" hier-part [ "?" query ] [ "#" fragment ]',
         'hier-part = "//" authority path-abempty / path-absolute / path-rootless / path-empty',
         "URI-reference = URI / relative-ref",

@@ -3,7 +3,10 @@ Collected rules from RFC 7234
 https://tools.ietf.org/html/rfc7234
 """
 
+from typing import ClassVar, Union
+
 from abnf.parser import Rule as _Rule
+
 from . import rfc7230, rfc7231
 from .misc import load_grammar_rules
 
@@ -23,7 +26,7 @@ from .misc import load_grammar_rules
 class Rule(_Rule):
     """Rules from RFC 7234."""
 
-    grammar = [
+    grammar: ClassVar[Union[list[str], str]] = [
         "Age = delta-seconds",
         'Cache-Control = *( "," OWS ) cache-directive *( OWS "," [ OWS cache-directive ] )',
         "Expires = HTTP-date",

@@ -3,7 +3,10 @@ Collected rules from RFC 7489
 https://tools.ietf.org/html/rfc7489
 """
 
+from typing import ClassVar, Union
+
 from abnf.parser import Rule as _Rule
+
 from . import rfc5322
 from .misc import load_grammar_rules
 
@@ -25,7 +28,7 @@ class Rule(_Rule):
         'dmarc-record = dmarc-version dmarc-sep dmarc-request *( dmarc-sep ( dmarc-srequest / dmarc-auri / dmarc-furi / dmarc-aspf / dmarc-adkim / dmarc-aspf dmarc-ainterval / dmarc-fo / dmarc-percent ) ) dmarc-sep'
 
     ]'''
-    grammar = [
+    grammar: ClassVar[Union[list[str], str]] = [
             'URI = %x6D %x61 %x69 %x6C %x74 %x6F %x3A addr-spec',
             'dmarc-uri = URI [ "!" 1*DIGIT [ "k" / "m" / "g" / "t" ] ]',
             

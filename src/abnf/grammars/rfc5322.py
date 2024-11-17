@@ -3,7 +3,10 @@ Collected rules from RFC 5322
 https://tools.ietf.org/html/rfc5322
 """
 
+from typing import ClassVar, Union
+
 from abnf.parser import Rule as _Rule
+
 from .misc import load_grammar_rules
 
 
@@ -11,7 +14,7 @@ from .misc import load_grammar_rules
 class Rule(_Rule):
     """Rule objects generated from ABNF in RFC 5322."""
 
-    grammar = [
+    grammar: ClassVar[Union[list[str], str]] = [
         'quoted-pair = ("\\" (VCHAR / WSP)) / obs-qp',
         "FWS = ([*WSP CRLF] 1*WSP) / obs-FWS ",
         "ctext = %d33-39 / %d42-91 / %d93-126 / obs-ctext",

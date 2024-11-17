@@ -6,10 +6,12 @@ https://www.rfc-editor.org/rfc/rfc9116
 """
 
 
-from abnf.parser import Rule as _Rule
-from . import rfc3986, rfc5322, rfc3629, rfc5646, rfc3339
-from .misc import load_grammar_rules
+from typing import ClassVar, Union
 
+from abnf.parser import Rule as _Rule
+
+from . import rfc3339, rfc3629, rfc3986, rfc5322, rfc5646
+from .misc import load_grammar_rules
 
 
 @load_grammar_rules(
@@ -32,7 +34,7 @@ from .misc import load_grammar_rules
 class Rule(_Rule):
     """Rules from RFC 5987."""
 
-    grammar = [
+    grammar: ClassVar[Union[list[str], str]] = [
         'body =  signed / unsigned',
 
         'unsigned =  *line (contact-field eol) *line (expires-field eol) *line [lang-field eol] *line',

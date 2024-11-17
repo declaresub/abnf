@@ -1,20 +1,18 @@
-import pytest
 import os
-import io
-import typing
+
+import pytest
 
 from abnf.parser import ABNFGrammarRule, Source
-
 
 # fuzz test data generated using abnfgen <http://www.quut.com/abnfgen/>.
 
 FUZZ_DIR = 'tests/fuzz'
 
 def load_fuzz_test_data(dirname: str):
-    test_data: typing.List[str] = []
+    test_data: list[str] = []
     dir = os.path.join(FUZZ_DIR, dirname)
     for filename in os.listdir(dir):
-        with io.open(os.path.join(dir, filename), 'rb') as f:
+        with open(os.path.join(dir, filename), 'rb') as f:
             test_data.append(f.read().decode('utf-8'))
             
     return test_data

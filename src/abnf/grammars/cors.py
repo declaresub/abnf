@@ -3,7 +3,10 @@ Collected rules from fetch standard
 https://fetch.spec.whatwg.org/#cors-protocol
 """
 
+from typing import ClassVar, Union
+
 from abnf.parser import Rule as _Rule
+
 from . import rfc3986, rfc7230, rfc7234
 from .misc import load_grammar_rules
 
@@ -20,7 +23,7 @@ from .misc import load_grammar_rules
     ]
 )
 class Rule(_Rule):
-    grammar = [
+    grammar: ClassVar[Union[list[str], str]] = [
         "Origin = origin-or-null",
         "origin-or-null = origin / %x6E.75.6C.6C",
         'origin = scheme "://" host [ ":" port ]',

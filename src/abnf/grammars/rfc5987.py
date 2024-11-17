@@ -3,10 +3,12 @@ Collected rules from RFC 5987
 https://tools.ietf.org/html/rfc5987
 """
 
+from typing import ClassVar, Union
+
 from abnf.parser import Rule as _Rule
+
 from . import rfc5646, rfc7230
 from .misc import load_grammar_rules
-
 
 
 @load_grammar_rules(
@@ -19,7 +21,7 @@ from .misc import load_grammar_rules
 class Rule(_Rule):
     """Rules from RFC 5987."""
 
-    grammar = [
+    grammar: ClassVar[Union[list[str], str]] = [
     #'#parameter     = attribute LWSP "=" LWSP value',
     #'attribute     = token',
     'value         = token / quoted-string',
