@@ -1,7 +1,7 @@
 include CHANGELOG.md
 include LICENSE.txt
 include pytest.ini
-include requirements.txt
+include requirements-dev.txt
 include tox.ini
 include *.yaml
 recursive-include tests *.grammar
