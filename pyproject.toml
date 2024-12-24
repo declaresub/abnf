@@ -1,57 +1,90 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [
+    "setuptools>=45",
+    "setuptools_scm[toml]>=6.2",
+]
+
 [project]
-name = "abnf"
 authors = [
-  {name = "Charles Yeomans", email = "charles@declaresub.com"},
+    { email = "charles@declaresub.com", name = "Charles Yeomans" },
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: Software Development :: Interpreters",
 ]
 description = "Parsers for ABNF grammars."
+dynamic = [
+    "version",
+]
+keywords = [
+    "abnf",
+    "generator",
+    "parser",
+]
+name = "abnf"
 readme = "README.md"
 requires-python = ">= 3.9"
-keywords = ["abnf", "parser", "generator"]
-classifiers = [
-"Development Status :: 5 - Production/Stable",
-"Intended Audience :: Developers",
-"License :: OSI Approved :: MIT License",
-"Topic :: Software Development :: Code Generators",
-"Topic :: Software Development :: Interpreters",
-"Programming Language :: Python",
-"Programming Language :: Python :: 3",
-"Programming Language :: Python :: 3.9",
-"Programming Language :: Python :: 3.10",
-"Programming Language :: Python :: 3.11",
-"Programming Language :: Python :: 3.12",
-"Programming Language :: Python :: 3.13",
-]
-dynamic = ["version"]
-
-[build-system]
-requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools_scm]
 
 [tool.black]
 
+[tool.check-manifest]
+ignore = [
+    "tests/notes",
+]
+
 [tool.isort]
 profile = "black"
+
+[tool.pyright]
+pythonVersion = "3.9"
 
 [tool.ruff]
 target-version = "py39"
 
 [tool.ruff.lint]
-select = ["F", "E", "UP", "ASYNC", "BLE", "COM", "C4", "T20", "RUF", "B", "SIM", "DTZ", "EM", "ISC", "ICN", "FURB", "PERF", "I"]
-ignore = ["E501", "S101", "RUF001", "COM812"]
-
+ignore = [
+    "COM812",
+    "E501",
+    "RUF001",
+    "S101",
+]
+select = [
+    "ASYNC",
+    "B",
+    "BLE",
+    "C4",
+    "COM",
+    "DTZ",
+    "E",
+    "EM",
+    "F",
+    "FURB",
+    "I",
+    "ICN",
+    "ISC",
+    "PERF",
+    "RUF",
+    "SIM",
+    "T20",
+    "UP",
+]
 
 [tool.ruff.lint.flake8-pytest-style]
 fixture-parentheses = false
 mark-parentheses = false
 
 [tool.ruff.lint.pyupgrade]
-# Preserve types, even if a file imports `from __future__ import annotations`.
 keep-runtime-typing = true
 
-[tool.check-manifest]
-ignore = ["tests/notes"]
-
-[tool.pyright]
-pythonVersion = "3.9"
+[tool.setuptools_scm]
