@@ -1,5 +1,8 @@
 name: Build Package
-on: push
+on: 
+  push:
+    tags:
+      - v*
 jobs:
   build:
     name: Build abnf distribution
