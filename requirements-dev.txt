@@ -8,6 +8,7 @@ pyright[nodejs]==1.1.389
 pytest==8.3.4
 pytest-cov==6.0.0
 ruff==0.8.4
+setuptools==75.6.0
 setuptools_scm==8.1.0
 tox==4.23.2
 twine==6.0.1
