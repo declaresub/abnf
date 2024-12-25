@@ -1,6 +1,16 @@
 # Changelog
 
+## 2.3.1
 
+* This version contains no code changes.
+
+* The contents of setup.cfg are now in pyproject.toml; setup.cfg and setup.py have been removed.
+
+* Github codeql action is updated.
+
+* Requirements.txt has been renamed to requirements-dev.txt to clarify that ABNF has no package dependencies.
+
+* ABNF packages are now published to pypi using trusted publishing.
 
 ## 2.3.0
 
