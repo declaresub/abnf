@@ -1,5 +1,12 @@
 # Changelog
 
+
+## 2.4.0
+
+* Add grammar for RFC 9051 (thanks to [iKoulee](https://github.com/iKoulee)).
+
+* Bump setuptools from 75.6.0 to 78.1.1.
+
 ## 2.3.1
 
 * This version contains no code changes.
