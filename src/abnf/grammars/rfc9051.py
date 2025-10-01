@@ -74,7 +74,7 @@ class Rule(_Rule):
         'capability = ("AUTH=" auth-type) / atom',
         'capability-data = "CAPABILITY" *(SP capability) SP "IMAP4rev2" '
         "*(SP capability)",
-        "CHAR8 = %x01-ff",
+        "CHAR8 = %x01-FF",
         "charset = atom / quoted",
         'childinfo-extended-item = "CHILDINFO" SP "(" '
         "list-select-base-opt-quoted *(SP list-select-base-opt-quoted) "
