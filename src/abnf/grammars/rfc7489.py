@@ -32,8 +32,8 @@ class Rule(_Rule):
             'URI = %x6D %x61 %x69 %x6C %x74 %x6F %x3A addr-spec',
             'dmarc-uri = URI [ "!" 1*DIGIT [ "k" / "m" / "g" / "t" ] ]',
             
-            'dmarc-version = "v" *WSP "=" *WSP %x44 %x4d %x41 %x52 %x43 %x31',
-            'dmarc-sep = *WSP %x3b *WSP',
+            'dmarc-version = "v" *WSP "=" *WSP %x44 %x4D %x41 %x52 %x43 %x31',
+            'dmarc-sep = *WSP %x3B *WSP',
             'dmarc-request = "p" *WSP "=" *WSP ( "none" / "quarantine" / "reject" )',
             'dmarc-srequest  = "sp" *WSP "=" *WSP ( "none" / "quarantine" / "reject" )',
             'dmarc-auri = "rua" *WSP "=" *WSP dmarc-uri *(*WSP "," *WSP dmarc-uri)',
