@@ -303,8 +303,10 @@ limit cache size.
         
 ## Development, Testing, etc.
 
-Should you wish to tinker with the code, install in a virtual environment and have at it.
-The file requirements.txt contains the packages I use for testing and such.
+Should you wish to tinker with the code, install in a virtual environment and have at it. The requirements for a dev environment
+are specifed in pyproject.toml.  To install using pip:
+
+    pip install .[dev]
 
 A good starting point would be to run pytest and see that all tests pass.
 
