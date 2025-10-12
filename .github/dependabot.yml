@@ -1,0 +1,9 @@
+version: 2
+updates:
+  - package-ecosystem: pip
+    # Files stored in repository root
+    directory: "/"
+    schedule:
+      interval: daily
+      time: "04:00"
+      timezone: America/Kentucky/Monticello
