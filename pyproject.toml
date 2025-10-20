@@ -46,7 +46,7 @@ dev = [
 'pytest-cov==7.0.0',
 'ruff==0.14.0',
 'setuptools==80.9.0',
-'setuptools_scm==9.2.1',
+'setuptools_scm==9.2.2',
 'tox==4.31.0',
 ]
 
