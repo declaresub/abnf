@@ -22,10 +22,11 @@ class Rule(_Rule):
     """Rules from RFC 7239."""
 
     grammar: ClassVar[list[str] | str] = [
-        'Forwarded         = *( "," OWS ) forwarded-element *( OWS "," [ OWS forwarded-element ] )',
+        'Forwarded         = forwarded-element *( OWS "," OWS forwarded-element )',
         'forwarded-element = [ forwarded-pair ] *( ";" [ forwarded-pair ] )',
         'forwarded-pair    = token "=" value',
         'value             = token / quoted-string',
-        # token         = <token, see [RFC7230], Section 3.2.6>',
-        # quoted-string = <quoted-string, see [RFC7230], Section 3.2.6>',
+        # OWS              = <OWS, see [RFC7230], Section 3.2.3>',
+        # token            = <token, see [RFC7230], Section 3.2.6>',
+        # quoted-string    = <quoted-string, see [RFC7230], Section 3.2.6>',
     ]
