@@ -12,6 +12,7 @@ __pycache__
 build/
 dist/
 
+.idea
 .vscode
 pypi-notes
 profile_rule.py
