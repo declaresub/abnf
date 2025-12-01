@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.4.1
+
+* Add grammar for RFC 7239 (thanks to [alanverresen](https://github.com/alanverresen)).
+
+* Claim support for python 3.14, drop support for python 3.9.
+
+* Move dev dependency specifications to pyproject.toml; delete requirements-dev.txt.
+
+* Remove twine, wheel from dev dependencies; bump versions of other dev packages to current versions.
+
+* Enable dependabot checks.
 
 ## 2.4.0
 
