@@ -41,7 +41,7 @@ requires-python = ">= 3.10"
 dev = [
 'check-manifest==0.51',
 'pre-commit==4.5.1',
-'pyright[nodejs]== 1.1.407',
+'pyright[nodejs]== 1.1.408',
 'pytest==9.0.2',
 'pytest-cov==7.0.0',
 'ruff==0.14.11',
