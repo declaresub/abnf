@@ -1,19 +1,10 @@
 //! `RuleRegistry` — named-rule namespace.
-//!
-//! Mirrors the role of `Rule._obj_map` on the Python side: maps a rule
-//! name to the `NamedRule` that stands for it.  References to a name
-//! that hasn't been defined yet return a placeholder rule whose
-//! definition can be filled in later, supporting forward references in
-//! the meta-grammar and in user-supplied `rulelist` inputs.
-//!
-//! Names are compared case-insensitively via Unicode case-folding,
-//! matching Python's `str.casefold()` used as the registry key.
 
 use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::casefold::casefold;
-use crate::parser::ArcParser;
+use crate::parser::{arc, ArcParser};
 use crate::rule::NamedRule;
 
 #[derive(Debug, Default)]
@@ -26,11 +17,18 @@ impl RuleRegistry {
         Self::default()
     }
 
-    /// Returns the rule named `name`, creating an undefined placeholder
-    /// if it doesn't yet exist.  Multiple `get_or_create` calls with
-    /// names that case-fold to the same key return the same
-    /// `Arc<NamedRule>`.
-    pub fn get_or_create(&mut self, name: &str) -> Arc<NamedRule> {
+    /// Get or create a parser reference for `name`.  The result is an
+    /// `ArcParser` ready to compose into a combinator tree; each call
+    /// returns a fresh `Arc<Parser::Rule(...)>` whose inner
+    /// `NamedRule` is shared with every other reference to the same
+    /// name.
+    pub fn get_or_create(&mut self, name: &str) -> ArcParser {
+        arc(self.get_or_create_rule(name))
+    }
+
+    /// Get or create the underlying `NamedRule` (for setting its
+    /// definition).
+    pub fn get_or_create_rule(&mut self, name: &str) -> Arc<NamedRule> {
         let key = casefold(name);
         self.rules
             .entry(key)
@@ -39,9 +37,9 @@ impl RuleRegistry {
     }
 
     /// Define a rule.  Creates a placeholder if necessary, then sets
-    /// its definition.  Returns the rule handle.
+    /// its definition.
     pub fn define(&mut self, name: &str, definition: ArcParser) -> Arc<NamedRule> {
-        let rule = self.get_or_create(name);
+        let rule = self.get_or_create_rule(name);
         rule.set_definition(definition);
         rule
     }

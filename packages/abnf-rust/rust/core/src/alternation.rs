@@ -14,7 +14,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::error::ParseError;
 use crate::matcher::Match;
-use crate::parser::{ArcParser, ParseResult, ParserOp};
+use crate::parser::{ArcParser, ParseResult};
 
 #[derive(Debug)]
 pub struct Alternation {
@@ -44,10 +44,8 @@ impl Alternation {
     pub fn set_first_match(&self, value: bool) {
         self.first_match.store(value, Ordering::Relaxed);
     }
-}
 
-impl ParserOp for Alternation {
-    fn lparse(&self, source: &str, start: usize) -> ParseResult {
+    pub fn lparse(&self, source: &str, start: usize) -> ParseResult {
         let mut all: Vec<Match> = Vec::new();
         let mut found = false;
         let first_match = self.first_match();
@@ -63,8 +61,7 @@ impl ParserOp for Alternation {
             }
             // Mirror Python: in first_match mode, return after the
             // first parser that did NOT raise, regardless of whether
-            // it yielded any matches.  The outer rule turns an empty
-            // match-set into a ParseError if appropriate.
+            // it yielded any matches.
             if first_match {
                 return if found {
                     Ok(all)

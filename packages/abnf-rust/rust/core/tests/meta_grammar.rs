@@ -9,8 +9,7 @@
 use std::sync::Arc;
 
 use abnf_core::{
-    build_meta_grammar, parse_rule_source, parse_rulelist_source, Literal, NamedRule, ParserOp,
-    RuleRegistry,
+    build_meta_grammar, parse_rule_source, parse_rulelist_source, Literal, NamedRule, RuleRegistry,
 };
 
 fn fresh_registry() -> RuleRegistry {

@@ -1,15 +1,6 @@
 //! The ABNF meta-grammar (RFC 5234 + RFC 7405 character-string rules).
 //!
-//! Mirrors the bootstrap block at `_parser_python.py:776-1033` — 24
-//! named rules that, taken together, parse ABNF source text into a
-//! tree the visitor in [`crate::visitor`] can turn back into a
-//! combinator tree.
-//!
-//! The hardcoded definitions reference each other, so we create every
-//! placeholder up-front via the registry (which supports forward
-//! references) and then install definitions via `registry.define`.
-
-use std::sync::Arc;
+//! Mirrors the bootstrap block at `_parser_python.py:776-1033`.
 
 use crate::alternation::Alternation;
 use crate::concatenation::Concatenation;
@@ -20,69 +11,63 @@ use crate::registry::RuleRegistry;
 use crate::repetition::{Repeat, Repetition};
 
 fn lit_ci(value: &str) -> ArcParser {
-    Arc::new(Literal::string(value, false))
+    Literal::string(value, false).into()
 }
 
 fn rep(min: usize, max: Option<usize>, element: ArcParser) -> ArcParser {
-    Arc::new(Repetition::new(Repeat::new(min, max), element))
+    Repetition::new(Repeat::new(min, max), element).into()
 }
 
 fn alt(parsers: Vec<ArcParser>) -> ArcParser {
-    Arc::new(Alternation::new(parsers))
+    Alternation::new(parsers).into()
 }
 
 fn concat(parsers: Vec<ArcParser>) -> ArcParser {
-    Arc::new(Concatenation::new(parsers))
+    Concatenation::new(parsers).into()
 }
 
 fn opt(parser: ArcParser) -> ArcParser {
-    Arc::new(OptionParser::new(parser))
+    OptionParser::new(parser).into()
 }
 
 /// Populate `registry` with the 24 ABNF meta-grammar rules.  The
 /// registry should already contain the RFC 5234 core rules
 /// ([`crate::install_core_rules`]).
 pub fn install_meta_grammar(registry: &mut RuleRegistry) {
-    // Pre-create every rule reference up-front.  Each call materialises
-    // the same `Arc<NamedRule>` whether or not the rule has been
-    // defined yet, and coerces to `ArcParser` for use as combinator
-    // children below.  We later install actual definitions via
-    // `registry.define`, which writes through the same cell.
-    let rulename: ArcParser = registry.get_or_create("rulename");
-    let defined_as: ArcParser = registry.get_or_create("defined-as");
-    let elements: ArcParser = registry.get_or_create("elements");
-    let c_wsp: ArcParser = registry.get_or_create("c-wsp");
-    let c_nl: ArcParser = registry.get_or_create("c-nl");
-    let comment: ArcParser = registry.get_or_create("comment");
-    let alternation_ref: ArcParser = registry.get_or_create("alternation");
-    let concatenation_ref: ArcParser = registry.get_or_create("concatenation");
-    let repetition_ref: ArcParser = registry.get_or_create("repetition");
-    let repeat_ref: ArcParser = registry.get_or_create("repeat");
-    let element: ArcParser = registry.get_or_create("element");
-    let group: ArcParser = registry.get_or_create("group");
-    let option_ref: ArcParser = registry.get_or_create("option");
-    let num_val: ArcParser = registry.get_or_create("num-val");
-    let bin_val: ArcParser = registry.get_or_create("bin-val");
-    let dec_val: ArcParser = registry.get_or_create("dec-val");
-    let hex_val: ArcParser = registry.get_or_create("hex-val");
-    let prose_val: ArcParser = registry.get_or_create("prose-val");
-    let char_val: ArcParser = registry.get_or_create("char-val");
-    let case_insensitive_string: ArcParser =
-        registry.get_or_create("case-insensitive-string");
-    let case_sensitive_string: ArcParser =
-        registry.get_or_create("case-sensitive-string");
-    let quoted_string: ArcParser = registry.get_or_create("quoted-string");
-    let rule_ref: ArcParser = registry.get_or_create("rule");
+    // Pre-create every meta-grammar rule reference up front.
+    let rulename = registry.get_or_create("rulename");
+    let defined_as = registry.get_or_create("defined-as");
+    let elements = registry.get_or_create("elements");
+    let c_wsp = registry.get_or_create("c-wsp");
+    let c_nl = registry.get_or_create("c-nl");
+    let comment = registry.get_or_create("comment");
+    let alternation_ref = registry.get_or_create("alternation");
+    let concatenation_ref = registry.get_or_create("concatenation");
+    let repetition_ref = registry.get_or_create("repetition");
+    let repeat_ref = registry.get_or_create("repeat");
+    let element = registry.get_or_create("element");
+    let group = registry.get_or_create("group");
+    let option_ref = registry.get_or_create("option");
+    let num_val = registry.get_or_create("num-val");
+    let bin_val = registry.get_or_create("bin-val");
+    let dec_val = registry.get_or_create("dec-val");
+    let hex_val = registry.get_or_create("hex-val");
+    let prose_val = registry.get_or_create("prose-val");
+    let char_val = registry.get_or_create("char-val");
+    let case_insensitive_string = registry.get_or_create("case-insensitive-string");
+    let case_sensitive_string = registry.get_or_create("case-sensitive-string");
+    let quoted_string = registry.get_or_create("quoted-string");
+    let rule_ref = registry.get_or_create("rule");
 
     // Core-rule references.
-    let alpha: ArcParser = registry.get_or_create("ALPHA");
-    let digit: ArcParser = registry.get_or_create("DIGIT");
-    let bit: ArcParser = registry.get_or_create("BIT");
-    let hexdig: ArcParser = registry.get_or_create("HEXDIG");
-    let wsp: ArcParser = registry.get_or_create("WSP");
-    let vchar: ArcParser = registry.get_or_create("VCHAR");
-    let crlf: ArcParser = registry.get_or_create("CRLF");
-    let dquote: ArcParser = registry.get_or_create("DQUOTE");
+    let alpha = registry.get_or_create("ALPHA");
+    let digit = registry.get_or_create("DIGIT");
+    let bit = registry.get_or_create("BIT");
+    let hexdig = registry.get_or_create("HEXDIG");
+    let wsp = registry.get_or_create("WSP");
+    let vchar = registry.get_or_create("VCHAR");
+    let crlf = registry.get_or_create("CRLF");
+    let dquote = registry.get_or_create("DQUOTE");
 
     // rulelist = 1*( rule / (*c-wsp c-nl) )
     registry.define(
@@ -136,10 +121,7 @@ pub fn install_meta_grammar(registry: &mut RuleRegistry) {
     // c-wsp = WSP / (c-nl WSP)
     registry.define(
         "c-wsp",
-        alt(vec![
-            wsp.clone(),
-            concat(vec![c_nl.clone(), wsp.clone()]),
-        ]),
+        alt(vec![wsp.clone(), concat(vec![c_nl.clone(), wsp.clone()])]),
     );
 
     // c-nl = comment / CRLF
@@ -317,15 +299,15 @@ pub fn install_meta_grammar(registry: &mut RuleRegistry) {
                 0,
                 None,
                 alt(vec![
-                    Arc::new(Literal::range('\x20', '\x3D')),
-                    Arc::new(Literal::range('\x3F', '\x7E')),
+                    Literal::range('\x20', '\x3D').into(),
+                    Literal::range('\x3F', '\x7E').into(),
                 ]),
             ),
             lit_ci(">"),
         ]),
     );
 
-    // char-val = case-insensitive-string / case-sensitive-string  (RFC 7405)
+    // char-val = case-insensitive-string / case-sensitive-string
     registry.define(
         "char-val",
         alt(vec![
@@ -355,8 +337,8 @@ pub fn install_meta_grammar(registry: &mut RuleRegistry) {
                 0,
                 None,
                 alt(vec![
-                    Arc::new(Literal::range('\x20', '\x21')),
-                    Arc::new(Literal::range('\x23', '\x7E')),
+                    Literal::range('\x20', '\x21').into(),
+                    Literal::range('\x23', '\x7E').into(),
                 ]),
             ),
             dquote.clone(),
@@ -365,8 +347,7 @@ pub fn install_meta_grammar(registry: &mut RuleRegistry) {
 }
 
 /// Build a fresh registry with both the RFC 5234 core rules and the
-/// ABNF meta-grammar installed.  Convenience for callers that want a
-/// turnkey meta-grammar.
+/// ABNF meta-grammar installed.
 pub fn build_meta_grammar() -> RuleRegistry {
     let mut registry = RuleRegistry::new();
     crate::core_rules::install_core_rules(&mut registry);

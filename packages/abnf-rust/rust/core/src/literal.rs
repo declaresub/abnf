@@ -17,16 +17,19 @@ use crate::casefold::casefold;
 use crate::error::ParseError;
 use crate::matcher::Match;
 use crate::node::{LiteralNode, NodeKind};
-use crate::parser::{ParseResult, ParserOp};
+use crate::parser::ParseResult;
 
 #[derive(Debug, Clone)]
 pub enum LiteralKind {
-    /// Exact-string literal.  `value` is the original; `pattern` is
-    /// `value` for the case-sensitive variant and `casefold(value)`
-    /// for case-insensitive matching.
-    String { value: Arc<str>, pattern: Arc<str>, value_chars: usize },
-    /// Inclusive single-character range.
-    Range { lo: char, hi: char },
+    String {
+        value: Arc<str>,
+        pattern: Arc<str>,
+        value_chars: usize,
+    },
+    Range {
+        lo: char,
+        hi: char,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -36,9 +39,6 @@ pub struct Literal {
 }
 
 impl Literal {
-    /// Construct a string literal.  When `case_sensitive` is false, the
-    /// stored `pattern` is the case-folded form for cheap comparison
-    /// at match time.
     pub fn string(value: impl Into<Arc<str>>, case_sensitive: bool) -> Self {
         let value: Arc<str> = value.into();
         let pattern: Arc<str> = if case_sensitive {
@@ -48,12 +48,15 @@ impl Literal {
         };
         let value_chars = value.chars().count();
         Self {
-            kind: LiteralKind::String { value, pattern, value_chars },
+            kind: LiteralKind::String {
+                value,
+                pattern,
+                value_chars,
+            },
             case_sensitive,
         }
     }
 
-    /// Construct a range literal.  Ranges are always case-sensitive.
     pub fn range(lo: char, hi: char) -> Self {
         Self {
             kind: LiteralKind::Range { lo, hi },
@@ -68,21 +71,27 @@ impl Literal {
     fn describe(&self) -> String {
         match &self.kind {
             LiteralKind::String { value, .. } => {
-                let suffix = if self.case_sensitive { ", case_sensitive" } else { "" };
+                let suffix = if self.case_sensitive {
+                    ", case_sensitive"
+                } else {
+                    ""
+                };
                 format!("Literal('{value}'{suffix})")
             }
             LiteralKind::Range { lo, hi } => format!("Literal(('{lo}', '{hi}'))"),
         }
     }
-}
 
-impl ParserOp for Literal {
-    fn lparse(&self, source: &str, start: usize) -> ParseResult {
+    pub fn lparse(&self, source: &str, start: usize) -> ParseResult {
         match &self.kind {
             LiteralKind::Range { lo, hi } => {
-                // Ranges match exactly one character.
-                let remaining = source.get(start..).ok_or_else(|| self.parse_error(start))?;
-                let ch = remaining.chars().next().ok_or_else(|| self.parse_error(start))?;
+                let remaining = source
+                    .get(start..)
+                    .ok_or_else(|| self.parse_error(start))?;
+                let ch = remaining
+                    .chars()
+                    .next()
+                    .ok_or_else(|| self.parse_error(start))?;
                 if ch >= *lo && ch <= *hi {
                     let len = ch.len_utf8();
                     let matched: Arc<str> = ch.to_string().into();
@@ -92,12 +101,14 @@ impl ParserOp for Literal {
                     Err(self.parse_error(start))
                 }
             }
-            LiteralKind::String { value, pattern, value_chars } => {
-                // Python slices `len(self.value)` characters from
-                // source starting at `start`, casefolds the slice
-                // (when not case-sensitive), and compares to the
-                // precomputed pattern.  We do the same in char space.
-                let remaining = source.get(start..).ok_or_else(|| self.parse_error(start))?;
+            LiteralKind::String {
+                value,
+                pattern,
+                value_chars,
+            } => {
+                let remaining = source
+                    .get(start..)
+                    .ok_or_else(|| self.parse_error(start))?;
                 let mut byte_end = 0usize;
                 let mut taken = 0usize;
                 for (i, ch) in remaining.char_indices() {
@@ -109,15 +120,12 @@ impl ParserOp for Literal {
                     byte_end = i + ch.len_utf8();
                 }
                 if taken < *value_chars {
-                    // source ran out before we could match enough
-                    // characters.
                     return Err(self.parse_error(start));
                 }
                 let candidate = &remaining[..byte_end];
                 let matches = if self.case_sensitive {
                     candidate == value.as_ref()
                 } else {
-                    // pattern is already folded
                     casefold(candidate) == pattern.as_ref()
                 };
                 if matches {

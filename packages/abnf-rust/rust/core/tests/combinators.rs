@@ -4,19 +4,16 @@
 //! match semantics surfaces in `cargo test` before the PyO3 layer is
 //! involved.
 
-use std::sync::Arc;
-
 use abnf_core::{
-    Alternation, Concatenation, Literal, Match, OptionParser, ParserOp, Prose, Repeat, Repetition,
-    ArcParser,
+    Alternation, ArcParser, Concatenation, Literal, Match, OptionParser, Prose, Repeat, Repetition,
 };
 
 fn lit(value: &str) -> ArcParser {
-    Arc::new(Literal::string(value, false))
+    Literal::string(value, false).into()
 }
 
 fn lit_cs(value: &str) -> ArcParser {
-    Arc::new(Literal::string(value, true))
+    Literal::string(value, true).into()
 }
 
 fn match_value(m: &Match) -> String {
@@ -158,8 +155,8 @@ fn backtracking_through_repetition_then_literal() {
     // Mirrors Python test_backtracking:
     // Concatenation(Repetition(0..*, Alternation(a|b)), Literal("b"))
     // on input "aababb" should succeed consuming the whole string.
-    let inner = Arc::new(Alternation::new(vec![lit("a"), lit("b")]));
-    let rep = Arc::new(Repetition::new(Repeat::new(0, None), inner));
+    let inner: ArcParser = Alternation::new(vec![lit("a"), lit("b")]).into();
+    let rep: ArcParser = Repetition::new(Repeat::new(0, None), inner).into();
     let parser = Concatenation::new(vec![rep, lit("b")]);
     let matches = parser.lparse("aababb", 0).unwrap();
     assert_eq!(matches[0].start, 6);

@@ -1,14 +1,10 @@
 //! `Concatenation` — sequence operator.
 //!
-//! Mirrors `abnf.parser.Concatenation` (`_parser_python.py:157-189`):
-//! builds an enumeration of (combined-nodes, end-position) pairs by
-//! iteratively extending each accumulated prefix through every
-//! subsequent parser.  If at any stage every prefix dies, the whole
-//! concatenation errors at the original `start`.
+//! Mirrors `abnf.parser.Concatenation` (`_parser_python.py:157-189`).
 
 use crate::error::ParseError;
 use crate::matcher::Match;
-use crate::parser::{ArcParser, ParseResult, ParserOp};
+use crate::parser::{ArcParser, ParseResult};
 
 #[derive(Debug)]
 pub struct Concatenation {
@@ -19,12 +15,8 @@ impl Concatenation {
     pub fn new(parsers: Vec<ArcParser>) -> Self {
         Self { parsers }
     }
-}
 
-impl ParserOp for Concatenation {
-    fn lparse(&self, source: &str, start: usize) -> ParseResult {
-        // The seed is a single empty match at `start`; each parser
-        // extends every surviving prefix.
+    pub fn lparse(&self, source: &str, start: usize) -> ParseResult {
         let mut match_list: Vec<Match> = vec![Match::new(Vec::new(), start)];
         for parser in &self.parsers {
             let mut next: Vec<Match> = Vec::new();
@@ -42,9 +34,6 @@ impl ParserOp for Concatenation {
             }
             match_list = next;
         }
-        // Python sorts the final list longest-first before yielding.
-        // We mirror that ordering here so downstream consumers see the
-        // same sequence.
         sort_by_longest(&mut match_list);
         Ok(match_list)
     }
