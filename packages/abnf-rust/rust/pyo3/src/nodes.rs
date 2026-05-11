@@ -267,20 +267,46 @@ pub fn py_match_to_rust(py_match: &Bound<'_, PyAny>) -> PyResult<Match> {
 }
 
 fn py_to_node_kind(obj: &Bound<'_, PyAny>) -> PyResult<NodeKind> {
-    let name: String = obj.getattr("name")?.extract()?;
-    if name == "literal" {
-        let value: String = obj.getattr("value")?.extract()?;
-        let offset: usize = obj.getattr("offset")?.extract()?;
-        let length: usize = obj.getattr("length")?.extract()?;
-        let arc: Arc<str> = Arc::from(value);
-        Ok(NodeKind::Literal(LiteralNode::new(arc, offset, length)))
-    } else {
-        let children_py = obj.getattr("children")?;
-        let mut children: Vec<NodeKind> = Vec::new();
-        for item in children_py.iter()? {
-            let item = item?;
-            children.push(py_to_node_kind(&item)?);
-        }
-        Ok(NodeKind::Internal(Node::new(Arc::from(name), children)))
+    // Distinguish terminal vs internal by Python type, not by the
+    // `name` attribute: ABNF rule names like `literal` in RFC 9051
+    // collide with the conventional `"literal"` node-name terminal
+    // nodes use, so a string-based check would misclassify rule
+    // wrappers as terminals.
+    if let Ok(lit) = obj.downcast::<PyLiteralNode>() {
+        let lit = lit.borrow();
+        let arc: Arc<str> = Arc::from(lit.value.as_str());
+        return Ok(NodeKind::Literal(LiteralNode::new(arc, lit.offset, lit.length)));
     }
+    // Fallback: probe for a `length` attribute that internal `Node`
+    // values do not expose; covers pure-Python `LiteralNode`
+    // instances that may flow through during mixed-backend testing.
+    if let (Ok(value_obj), Ok(offset_obj), Ok(length_obj)) = (
+        obj.getattr("value"),
+        obj.getattr("offset"),
+        obj.getattr("length"),
+    ) {
+        if let (Ok(value), Ok(offset), Ok(length)) = (
+            value_obj.extract::<String>(),
+            offset_obj.extract::<usize>(),
+            length_obj.extract::<usize>(),
+        ) {
+            let name: String = obj
+                .getattr("name")
+                .and_then(|n| n.extract())
+                .unwrap_or_else(|_| "literal".to_string());
+            if name == "literal" {
+                let arc: Arc<str> = Arc::from(value);
+                return Ok(NodeKind::Literal(LiteralNode::new(arc, offset, length)));
+            }
+        }
+    }
+    // Internal node: walk its children.
+    let name: String = obj.getattr("name")?.extract()?;
+    let children_py = obj.getattr("children")?;
+    let mut children: Vec<NodeKind> = Vec::new();
+    for item in children_py.iter()? {
+        let item = item?;
+        children.push(py_to_node_kind(&item)?);
+    }
+    Ok(NodeKind::Internal(Node::new(Arc::from(name), children)))
 }

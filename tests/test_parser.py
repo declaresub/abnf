@@ -377,6 +377,12 @@ def test_repetition_3():
     ]
 
 
+@pytest.mark.skipif(
+    __import__("abnf.parser", fromlist=["_BACKEND"])._BACKEND == "rust",
+    reason="Repetition's parse cache is internal to the Rust engine; "
+    "the pure-Python lparse_cache attribute is not exposed by the "
+    "Rust-backed pyclass.",
+)
 def test_repetition_cached_oarseerror():
     src = "a"
     parser = Repetition(Repeat(1, 1), Literal("*"))
