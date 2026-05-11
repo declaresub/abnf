@@ -1,14 +1,36 @@
 //! PyO3 bindings exposing the `abnf-core` engine to Python.
 //!
-//! The compiled module appears as `abnf_rust._ext`; the Python package
-//! wrapper in `src/abnf_rust/__init__.py` re-exports its symbols.
-//!
-//! This file is currently a placeholder so the wheel builds cleanly;
-//! the combinator pyclasses land in a subsequent phase.
+//! The compiled module appears as ``abnf_rust._ext``; the Python
+//! package wrapper in `src/abnf_rust/__init__.py` re-exports its
+//! symbols.
+
+mod bootstrap;
+mod errors;
+mod external;
+mod iter;
+mod nodes;
+mod parsers;
 
 use pyo3::prelude::*;
 
 #[pymodule]
-fn _ext(_py: Python<'_>, _m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn _ext(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
+    // Combinators
+    m.add_class::<parsers::PyAlternation>()?;
+    m.add_class::<parsers::PyConcatenation>()?;
+    m.add_class::<parsers::PyRepetition>()?;
+    m.add_class::<parsers::PyOption>()?;
+    m.add_class::<parsers::PyLiteral>()?;
+    m.add_class::<parsers::PyProse>()?;
+    m.add_class::<parsers::PyRepeat>()?;
+
+    // Parse tree
+    m.add_class::<nodes::PyMatch>()?;
+    m.add_class::<nodes::PyNode>()?;
+    m.add_class::<nodes::PyLiteralNode>()?;
+
+    // Functions
+    m.add_function(wrap_pyfunction!(bootstrap::bootstrap, m)?)?;
+
     Ok(())
 }

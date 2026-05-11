@@ -73,15 +73,21 @@ impl Backing {
 #[derive(Debug)]
 pub struct ParseCache {
     inner: Backing,
-    bound: Option<(*const u8, usize)>,
+    /// `(ptr, len)` of the source the cache is currently keyed
+    /// against.  Cheap to compare on every call; mismatch triggers a
+    /// content-hash check.
+    bound_token: Option<(*const u8, usize)>,
+    /// `XxHash` of the bound source's content.  Distinguishes
+    /// distinct sources that reuse the same address (e.g. short-lived
+    /// Python strings).
+    bound_hash: Option<u64>,
     pub hits: u64,
     pub misses: u64,
 }
 
-// SAFETY: the only raw pointer held is `bound`, a `(ptr, len)` token
-// used purely for equality comparisons against the next source
-// passed in.  It is never dereferenced and never outlives the call
-// that produced it once the cache is cleared.
+// SAFETY: `bound_token` holds a `(ptr, len)` value that is only used
+// as a fast-equality hint; the actual cache invalidation falls back
+// to content hashing.  The raw pointer is never dereferenced.
 unsafe impl Send for ParseCache {}
 unsafe impl Sync for ParseCache {}
 
@@ -91,15 +97,31 @@ impl ParseCache {
             Some(cap) => Backing::Bounded(LruCache::new(cap)),
             None => Backing::Unbounded(HashMap::new()),
         };
-        Self { inner, bound: None, hits: 0, misses: 0 }
+        Self {
+            inner,
+            bound_token: None,
+            bound_hash: None,
+            hits: 0,
+            misses: 0,
+        }
     }
 
     fn bind(&mut self, source: &str) {
         let token = (source.as_ptr(), source.len());
-        if self.bound != Some(token) {
-            self.inner.clear();
-            self.bound = Some(token);
+        // Fast equality check: same (ptr, len) AND same hash signature.
+        // The hash defends against the case where a previous source's
+        // memory was freed and the new source happens to reuse the
+        // same address with the same length — without this, we would
+        // serve stale cache entries from the old source.
+        let hash = hash_str(source);
+        if self.bound_token == Some(token) && self.bound_hash == Some(hash) {
+            return;
         }
+        if self.bound_hash != Some(hash) {
+            self.inner.clear();
+            self.bound_hash = Some(hash);
+        }
+        self.bound_token = Some(token);
     }
 
     pub fn get(&mut self, source: &str, start: usize) -> Option<CachedResult> {
@@ -120,7 +142,8 @@ impl ParseCache {
 
     pub fn clear(&mut self) {
         self.inner.clear();
-        self.bound = None;
+        self.bound_token = None;
+        self.bound_hash = None;
         self.hits = 0;
         self.misses = 0;
     }
@@ -138,4 +161,12 @@ impl Default for ParseCache {
     fn default() -> Self {
         Self::new(None)
     }
+}
+
+fn hash_str(s: &str) -> u64 {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+    let mut h = DefaultHasher::new();
+    s.hash(&mut h);
+    h.finish()
 }

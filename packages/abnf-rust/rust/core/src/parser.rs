@@ -17,6 +17,16 @@ pub type ParseResult = Result<Vec<Match>, crate::error::ParseError>;
 /// Shared parser handle used to compose trees.
 pub type ArcParser = Arc<Parser>;
 
+/// External parser callback — used by the PyO3 layer to embed a
+/// foreign (Python-side) parser object inside a Rust combinator tree.
+///
+/// Implementors are responsible for marshalling their own
+/// `lparse(source, start) -> matches` semantics into the
+/// [`ParseResult`] shape.
+pub trait ExternalParser: std::fmt::Debug + Send + Sync + 'static {
+    fn lparse(&self, source: &str, start: usize) -> ParseResult;
+}
+
 /// Tagged union over every combinator type.
 #[derive(Debug)]
 pub enum Parser {
@@ -27,6 +37,7 @@ pub enum Parser {
     Literal(Literal),
     Prose(Prose),
     Rule(Arc<NamedRule>),
+    External(Arc<dyn ExternalParser>),
 }
 
 impl Parser {
@@ -39,6 +50,7 @@ impl Parser {
             Parser::Literal(p) => p.lparse(source, start),
             Parser::Prose(p) => p.lparse(source, start),
             Parser::Rule(p) => p.lparse(source, start),
+            Parser::External(p) => p.lparse(source, start),
         }
     }
 }

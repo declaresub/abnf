@@ -61,9 +61,10 @@ else:
         _backend = _py
         _BACKEND = "python"
 
-# Combinator and helper primitives.  These are rebound to whichever
-# backend is active; existing imports (``from abnf.parser import
-# Alternation`` etc.) continue to work transparently.
+# Backend-swappable primitives.  The Rust backend exposes its own
+# pyclass equivalents of these; everything else (ParseCache, the
+# visitors, the utility functions) is shared with the Python
+# implementation regardless of which backend is active.
 Alternation = _backend.Alternation
 Concatenation = _backend.Concatenation
 Repetition = _backend.Repetition
@@ -74,17 +75,37 @@ Repeat = _backend.Repeat
 Match = _backend.Match
 Node = _backend.Node
 LiteralNode = _backend.LiteralNode
-ParseCache = _backend.ParseCache
-ABNFGrammarNodeVisitor = _backend.ABNFGrammarNodeVisitor
-CharValNodeVisitor = _backend.CharValNodeVisitor
-NumValVisitor = _backend.NumValVisitor
-sorted_by_longest_match = _backend.sorted_by_longest_match
-next_longest = _backend.next_longest
+
+# Always-Python helpers.  The Rust backend re-uses these from the
+# pure-Python module to avoid duplicating their (cheap) logic.
+ParseCache = _py.ParseCache
+ABNFGrammarNodeVisitor = _py.ABNFGrammarNodeVisitor
+CharValNodeVisitor = _py.CharValNodeVisitor
+NumValVisitor = _py.NumValVisitor
+sorted_by_longest_match = _py.sorted_by_longest_match
+next_longest = _py.next_longest
 
 if _BACKEND == "rust":
+    # Monkey-patch the pure-Python module's free name bindings so the
+    # visitor methods defined there (which build combinator trees
+    # while walking a parsed `rulelist`) construct Rust-backed
+    # combinators instead of pure-Python ones.  Without this, a
+    # `Rule.create("foo = bar")` call would still install a
+    # pure-Python `Alternation` / `Concatenation` / ... tree as the
+    # rule's definition, defeating the Rust speedup.
+    _py.Alternation = Alternation
+    _py.Concatenation = Concatenation
+    _py.Repetition = Repetition
+    _py.Option = Option
+    _py.Literal = Literal
+    _py.Prose = Prose
+    _py.Repeat = Repeat
+    _py.Node = Node
+    _py.LiteralNode = LiteralNode
+    _py.Match = Match
     # Replace the pure-Python combinator trees registered into
-    # ``ABNFGrammarRule._obj_map`` at ``_parser_python`` import time with
-    # Rust-backed equivalents.  See ``abnf_rust.bootstrap`` for details.
+    # ABNFGrammarRule._obj_map at _parser_python import time with
+    # Rust-backed equivalents.  See abnf_rust.bootstrap.
     _backend.bootstrap(ABNFGrammarRule)
 
 

@@ -49,7 +49,7 @@ pub use matcher::Match;
 pub use meta_grammar::{build_meta_grammar, install_meta_grammar};
 pub use node::{LiteralNode, Node, NodeKind};
 pub use option::OptionParser;
-pub use parser::{ArcParser, Parser};
+pub use parser::{arc, ArcParser, ExternalParser, ParseResult, Parser};
 pub use prose::Prose;
 pub use registry::RuleRegistry;
 pub use repetition::{Repeat, Repetition};
