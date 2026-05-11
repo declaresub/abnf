@@ -8,6 +8,7 @@ __pycache__
 .pytest*
 .python-version
 .venv
+.benchmarks/
 
 build/
 dist/

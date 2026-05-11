@@ -413,6 +413,32 @@ class Rule:
             self.definition = definition
 
     @property
+    def definition(self) -> Parser:
+        """Underlying parser combinator for this rule.
+
+        Backed by ``self._definition``.  The property setter forwards
+        writes through ``Rule._set_definition_hook`` (when set) so the
+        Rust backend can keep its shadow registry of named-rule
+        handles in sync with the Python-visible definition graph.
+        """
+
+        return self._definition  # type: ignore[attr-defined,no-any-return]
+
+    @definition.setter
+    def definition(self, value: Parser) -> None:
+        self._definition = value
+        hook = getattr(type(self), "_set_definition_hook", None)
+        if hook is not None:
+            hook(self, value)
+
+    #: Optional hook invoked on every ``rule.definition = ...`` write.
+    #: The dispatch shim installs an implementation when the Rust
+    #: backend is active; the pure-Python backend leaves it unset.
+    _set_definition_hook: typing.ClassVar[
+        typing.Callable[[Rule, Parser], None] | None
+    ] = None
+
+    @property
     def first_match_alternation(self) -> bool:
         try:
             definition = self.definition

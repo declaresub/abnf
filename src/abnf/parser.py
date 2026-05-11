@@ -103,6 +103,11 @@ if _BACKEND == "rust":
     _py.Node = Node
     _py.LiteralNode = LiteralNode
     _py.Match = Match
+    # Wire the definition-sync hook so every `rule.definition = ...`
+    # write mirrors into the Rust side's NamedRule registry.  Without
+    # this, rule references in user grammars dispatch through Python's
+    # `Rule.lparse` on every call, bottlenecking the Rust engine.
+    Rule._set_definition_hook = staticmethod(_backend.set_definition_hook)
     # Replace the pure-Python combinator trees registered into
     # ABNFGrammarRule._obj_map at _parser_python import time with
     # Rust-backed equivalents.  See abnf_rust.bootstrap.

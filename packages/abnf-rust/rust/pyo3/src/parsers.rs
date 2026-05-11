@@ -319,17 +319,21 @@ pub fn extract_parser(obj: &Bound<'_, PyAny>) -> PyResult<ArcParser> {
     if let Ok(p) = obj.downcast::<PyProse>() {
         return Ok(p.borrow().inner.clone());
     }
-    // Fallback: anything with a `lparse` method becomes a
-    // `PyCallbackParser`.  We don't bother checking the method here —
-    // a missing `lparse` will surface as a `TypeError` at parse time.
+    // If the value is a Python Rule (or anything else carrying a
+    // `name`+`lparse` shape that fits the parser-by-name contract),
+    // look up — or lazily create — its shadow Rust `NamedRule` in
+    // the bridge registry.  This is the fast path that keeps rule
+    // references purely in Rust at parse time, instead of dispatching
+    // every reference through Python.
+    if obj.hasattr("name")? && obj.hasattr("lparse")? {
+        let handle = crate::bridge::get_or_create(obj)?;
+        return Ok(arc(handle));
+    }
+    // Last-resort fallback: any other object with an `lparse` method
+    // is wrapped as a `PyCallbackParser`.  Reserved for callers that
+    // pass duck-typed parsers without a `name` attribute.
     if obj.hasattr("lparse")? {
-        let description = obj
-            .getattr("name")
-            .ok()
-            .and_then(|n| n.extract::<String>().ok())
-            .map(|n| format!("Rule({n})"))
-            .unwrap_or_else(|| "PyCallback".to_string());
-        let callback = PyCallbackParser::new(obj.clone().unbind(), description);
+        let callback = PyCallbackParser::new(obj.clone().unbind(), "PyCallback");
         let parser: Parser = Parser::External(Arc::new(callback));
         return Ok(arc(parser));
     }

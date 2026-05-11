@@ -5,8 +5,10 @@
 //! symbols.
 
 mod bootstrap;
+mod bridge;
 mod errors;
 mod external;
+mod hooks;
 mod iter;
 mod nodes;
 mod parsers;
@@ -31,6 +33,7 @@ fn _ext(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
 
     // Functions
     m.add_function(wrap_pyfunction!(bootstrap::bootstrap, m)?)?;
+    m.add_function(wrap_pyfunction!(hooks::set_definition_hook, m)?)?;
 
     Ok(())
 }
