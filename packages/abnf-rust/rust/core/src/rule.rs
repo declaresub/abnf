@@ -42,17 +42,30 @@ impl NamedRule {
         })?;
         let inner = def.lparse(source, start)?;
 
-        let mut seen: HashSet<MatchKey> = HashSet::new();
-        let mut wrapped: Vec<Match> = Vec::new();
+        // Hot path: most rules produce exactly one match.  Skip the
+        // dedup allocation entirely.
+        if inner.len() == 1 {
+            let m = inner.into_iter().next().expect("len == 1");
+            let node = Node::new(self.name.clone(), m.nodes);
+            return Ok(vec![Match::new(
+                vec![NodeKind::Internal(node)],
+                m.start,
+            )]);
+        }
+
+        // Multi-match (ambiguous grammar): dedup by end position.
+        // Matches with the same end consume the same source span and
+        // therefore have the same value, so dedup-by-start mirrors
+        // Python's `(value, start)` set semantics without
+        // materialising every match value.
+        let mut seen: HashSet<usize> = HashSet::new();
+        let mut wrapped: Vec<Match> = Vec::with_capacity(inner.len());
         for m in inner {
-            let key = MatchKey {
-                value: m.value(),
-                start: m.start,
-            };
-            if seen.insert(key) {
-                let node = Node::new(self.name.clone(), m.nodes);
-                wrapped.push(Match::new(vec![NodeKind::Internal(node)], m.start));
+            if !seen.insert(m.start) {
+                continue;
             }
+            let node = Node::new(self.name.clone(), m.nodes);
+            wrapped.push(Match::new(vec![NodeKind::Internal(node)], m.start));
         }
         if wrapped.is_empty() {
             Err(ParseError::new(format!("Rule({})", self.name), start))
@@ -60,10 +73,4 @@ impl NamedRule {
             Ok(wrapped)
         }
     }
-}
-
-#[derive(PartialEq, Eq, Hash)]
-struct MatchKey {
-    value: String,
-    start: usize,
 }

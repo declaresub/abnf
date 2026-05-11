@@ -20,14 +20,38 @@ impl Concatenation {
         let mut match_list: Vec<Match> = vec![Match::new(Vec::new(), start)];
         for parser in &self.parsers {
             let mut next: Vec<Match> = Vec::new();
-            for prefix in &match_list {
-                if let Ok(extensions) = parser.lparse(source, prefix.start) {
-                    for ext in extensions {
-                        let mut combined = prefix.nodes.clone();
-                        combined.extend(ext.nodes);
-                        next.push(Match::new(combined, ext.start));
-                    }
+            // Consume `match_list` by value so the last extension of
+            // each prefix can move — instead of clone — the prefix
+            // nodes.  For deterministic grammars (one extension per
+            // prefix, the common case), this saves one allocation
+            // per concatenation step per surviving prefix.
+            for prefix in match_list.drain(..) {
+                let extensions = match parser.lparse(source, prefix.start) {
+                    Ok(e) => e,
+                    Err(_) => continue,
+                };
+                if extensions.is_empty() {
+                    continue;
                 }
+                let mut iter = extensions.into_iter();
+                // Take the last extension separately so we can move
+                // (rather than clone) `prefix.nodes` into it.
+                let last = iter
+                    .next_back()
+                    .expect("non-empty checked above");
+                let prefix_len = prefix.nodes.len();
+                for ext in iter {
+                    let ext_len = ext.nodes.len();
+                    let mut combined = Vec::with_capacity(prefix_len + ext_len);
+                    combined.extend(prefix.nodes.iter().cloned());
+                    combined.extend(ext.nodes);
+                    next.push(Match::new(combined, ext.start));
+                }
+                let last_len = last.nodes.len();
+                let mut combined = prefix.nodes;
+                combined.reserve(last_len);
+                combined.extend(last.nodes);
+                next.push(Match::new(combined, last.start));
             }
             if next.is_empty() {
                 return Err(ParseError::new("Concatenation", start));

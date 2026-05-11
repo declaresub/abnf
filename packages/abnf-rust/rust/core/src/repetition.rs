@@ -54,6 +54,12 @@ impl Repetition {
             }
         }
 
+        // The repetition's match set is deduplicated by *end position*
+        // (i.e. `Match.start`).  Mirroring Python's `set` semantics
+        // requires `(value, start)` equality, but two matches with the
+        // same starting position consume the same source span and
+        // therefore have the same `value`; using `start` alone avoids
+        // O(N²) cost from materialising and comparing match values.
         let mut match_set: Vec<Match> = if self.repeat.min == 0 {
             vec![Match::new(Vec::new(), start)]
         } else {
@@ -69,7 +75,9 @@ impl Repetition {
                 }
             }
         };
-        dedupe(&mut match_set);
+        let mut seen_starts: std::collections::HashSet<usize> =
+            std::collections::HashSet::new();
+        match_set.retain(|m| seen_starts.insert(m.start));
         let mut last_match_set = match_set.clone();
         let mut match_count = self.repeat.min;
 
@@ -80,29 +88,45 @@ impl Repetition {
                 }
             }
             let mut new_match_set: Vec<Match> = Vec::new();
-            for prefix in &last_match_set {
-                if let Ok(extensions) = self.element.lparse(source, prefix.start) {
-                    for ext in extensions {
-                        let mut combined = prefix.nodes.clone();
-                        combined.extend(ext.nodes);
-                        new_match_set.push(Match::new(combined, ext.start));
-                    }
+            for prefix in last_match_set.drain(..) {
+                let extensions = match self.element.lparse(source, prefix.start) {
+                    Ok(e) => e,
+                    Err(_) => continue,
+                };
+                // Filter out extensions whose end position is already
+                // covered, then iterate.  We move `prefix.nodes` into
+                // the last surviving extension and clone for the rest.
+                let mut surviving: Vec<Match> = extensions
+                    .into_iter()
+                    .filter(|ext| !seen_starts.contains(&ext.start))
+                    .collect();
+                if surviving.is_empty() {
+                    continue;
                 }
+                let last = surviving.pop().expect("non-empty checked above");
+                for ext in surviving {
+                    let mut combined = prefix.nodes.clone();
+                    combined.extend(ext.nodes);
+                    new_match_set.push(Match::new(combined, ext.start));
+                }
+                let mut combined = prefix.nodes;
+                combined.extend(last.nodes);
+                new_match_set.push(Match::new(combined, last.start));
             }
-            dedupe(&mut new_match_set);
+            // De-dupe within new_match_set by end position.
+            let mut local_seen: std::collections::HashSet<usize> =
+                std::collections::HashSet::new();
+            new_match_set.retain(|m| local_seen.insert(m.start));
 
-            let progressed = new_match_set.iter().any(|m| !match_set.contains(m));
-            if progressed {
-                match_count += 1;
-                for m in &new_match_set {
-                    if !match_set.contains(m) {
-                        match_set.push(m.clone());
-                    }
-                }
-                last_match_set = new_match_set;
-            } else {
+            if new_match_set.is_empty() {
                 break;
             }
+            match_count += 1;
+            for m in &new_match_set {
+                seen_starts.insert(m.start);
+            }
+            match_set.extend(new_match_set.iter().cloned());
+            last_match_set = new_match_set;
         }
 
         sort_by_longest(&mut match_set);
@@ -112,26 +136,5 @@ impl Repetition {
             cache.put(source, start, CachedResult::Matches(match_set.clone()));
         }
         Ok(match_set)
-    }
-}
-
-fn dedupe(matches: &mut Vec<Match>) {
-    use std::collections::HashSet;
-    let mut seen: HashSet<MatchKey> = HashSet::new();
-    matches.retain(|m| seen.insert(MatchKey::from(m)));
-}
-
-#[derive(Debug, PartialEq, Eq, Hash)]
-struct MatchKey {
-    value: String,
-    start: usize,
-}
-
-impl MatchKey {
-    fn from(m: &Match) -> Self {
-        Self {
-            value: m.value(),
-            start: m.start,
-        }
     }
 }
