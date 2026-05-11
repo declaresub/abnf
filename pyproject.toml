@@ -54,6 +54,10 @@ dev = [
 
 [tool.check-manifest]
 ignore = [
+    # The packages/abnf-rust subtree builds the companion `abnf-rust`
+    # distribution and is intentionally excluded from the `abnf` sdist.
+    "packages",
+    "packages/**",
     "tests/notes",
 ]
 

@@ -49,6 +49,12 @@ else:
     try:
         import abnf_rust as _abnf_rust  # type: ignore[import-not-found]
 
+        if not getattr(_abnf_rust, "BACKEND_READY", False):
+            # The companion package is installed but its compiled
+            # extension does not yet expose the full combinator surface
+            # (e.g. an in-development build).  Fall back silently.
+            msg = "abnf_rust backend not ready"
+            raise ImportError(msg)
         _backend = _abnf_rust
         _BACKEND = "rust"
     except ImportError:

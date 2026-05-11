@@ -1,0 +1,38 @@
+[build-system]
+build-backend = "maturin"
+requires = ["maturin>=1.7,<2.0"]
+
+[project]
+authors = [
+    { email = "charles@declaresub.com", name = "Charles Yeomans" },
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Rust",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: Software Development :: Interpreters",
+]
+description = "Rust-backed parser engine for the abnf package."
+dynamic = ["version"]
+keywords = ["abnf", "parser"]
+name = "abnf-rust"
+readme = "README.md"
+requires-python = ">=3.10"
+
+[project.urls]
+Homepage = "https://github.com/declaresub/abnf"
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+manifest-path = "rust/pyo3/Cargo.toml"
+module-name = "abnf_rust._ext"
+python-source = "src"
