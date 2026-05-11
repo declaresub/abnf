@@ -49,6 +49,15 @@ dev = [
 'setuptools_scm==9.2.2',
 'tox==4.31.0',
 ]
+# `pip install abnf[rust]` pulls in the companion `abnf-rust`
+# distribution, which provides the compiled extension that
+# `abnf.parser` routes its combinator primitives through.  The
+# pure-Python `abnf` package on its own remains the default and a
+# fully working fallback (also forced via the ABNF_NO_RUST=1
+# environment variable when the extra is installed).
+rust = [
+    'abnf-rust>=0.1,<1',
+]
 
 [tool.black]
 
