@@ -65,7 +65,7 @@ class ParseCache(typing.MutableMapping[ParseCacheKey, ParseCacheValue]):
         cls.objects.add(obj)
         return obj
 
-    def __init__(self, max_size: typing.Union[int, None] = None):
+    def __init__(self, max_size: int | None = None):
         self.dict: OrderedDict[ParseCacheKey, MatchSet | ParseError] = OrderedDict()
         if max_size is None:
             max_size = self.max_cache_size
@@ -192,7 +192,7 @@ class Concatenation:
 class Repeat:
     """Implements the ABNF Repeat operator for Repetition."""
 
-    def __init__(self, min: int = 0, max: typing.Union[int, None] = None):
+    def __init__(self, min: int = 0, max: int | None = None):
         self.min = min
         self.max = max
 
@@ -289,11 +289,11 @@ class Option:
 
 
 class Literal:
-    """Represents a terminal literal value."""
+    """Represents a terminal literal value."""    
 
     def __init__(
         self,
-        value: typing.Union[str, tuple[str, str]],
+        value: str | tuple[str, str],
         case_sensitive: bool = False,
     ):
         """
@@ -387,7 +387,7 @@ class Rule:
 
     _obj_map: typing.ClassVar[dict[tuple[type[Rule], str], Rule]] = {}
 
-    def __new__(cls, name: str, definition: typing.Union[Parser, None] = None):
+    def __new__(cls, name: str, definition: Parser | None = None):
         """Overrides super().__new__ to implement a symbol table via object caching."""
 
         rule = cls.get(name)
@@ -398,7 +398,7 @@ class Rule:
         assert rule is not None
         return rule
 
-    def __init__(self, name: str, definition: typing.Union[Parser, None] = None):
+    def __init__(self, name: str, definition: Parser | None = None):
         try:
             _ = self.name
         except AttributeError:
@@ -406,7 +406,7 @@ class Rule:
         try:
             _ = self.exclude
         except AttributeError:
-            self.exclude: typing.Optional[Rule] = None
+            self.exclude: Rule | None = None
 
         if definition is not None:
             # when defined-as = '=/', we'll need to overwrite existing definition.
@@ -564,7 +564,7 @@ class Rule:
         visitor.visit(node)
 
     @classmethod
-    def from_file(cls, path: typing.Union[str, pathlib.Path]) -> None:
+    def from_file(cls, path: str | pathlib.Path) -> None:
         """Loads the contents of path and attempts to parse it as a rulelist. If successful,
         cls is populated with the rules in the rulelist."""
 
@@ -579,8 +579,8 @@ class Rule:
 
     @classmethod
     def get(
-        cls: type[T], name: str, default: typing.Optional[T] = None
-    ) -> typing.Optional[Rule]:
+        cls: type[T], name: str, default: T | None = None
+    ) -> Rule | None:
         """Retrieves Rule by name.  If a Rule object matching name is found, it is returned.
         Otherwise default is returned, and no Rule object is
         created, as would be the case when invoking Rule(name).
@@ -608,7 +608,7 @@ class Rule:
 class Node:
     """Node objects are used to build parse trees."""
 
-    __slots__ = ("name", "children", "_value")
+    __slots__ = ("_value", "children", "name")
 
     def __init__(self, name: str, *children: Node) -> None:
         super().__init__()
@@ -639,7 +639,7 @@ class Node:
 class LiteralNode:
     """LiteralNode objects are used to build parse trees."""
 
-    __slots__ = ("name", "value", "offset", "length")
+    __slots__ = ("length", "name", "offset", "value")
 
     def __init__(self, value: str, offset: int, length: int):
         super().__init__()
@@ -1081,12 +1081,12 @@ class NumValVisitor(NodeVisitor):
 
     def _read_value(
         self, digit_nodes: list[Node], digit_node_name: str, base: int
-    ) -> typing.Union[str, tuple[str, str]]:
+    ) -> str | tuple[str, str]:
         """Reads the character from the child nodes of the num-val node.
         Returns either a string, or a tuple representing a character range."""
 
         # type specification needed for mypy to know that value can be either type.
-        value: typing.Union[str, tuple[str, str]]
+        value: str | tuple[str, str]
         range_op = "-"
         buffer = ""
         iter_nodes = iter(digit_nodes)
