@@ -31,7 +31,11 @@ static BRIDGE: Lazy<Mutex<HashMap<usize, Arc<NamedRule>>>> =
 /// [`set_definition_for`].
 pub fn get_or_create(py_rule: &Bound<'_, PyAny>) -> PyResult<Arc<NamedRule>> {
     let id = py_rule.as_ptr() as usize;
-    let mut guard = BRIDGE.lock().expect("BRIDGE poisoned");
+    // Tolerate a poisoned lock: the registry is a cache mapping
+    // Python `Rule` ids → Rust `NamedRule` handles, with no
+    // cross-entry invariants.  A panic in an earlier caller can leave
+    // the lock poisoned, but the data is still a valid `HashMap`.
+    let mut guard = BRIDGE.lock().unwrap_or_else(|e| e.into_inner());
     if let Some(existing) = guard.get(&id) {
         return Ok(existing.clone());
     }
@@ -54,4 +58,30 @@ pub fn set_definition_for(
     let handle = get_or_create(py_rule)?;
     handle.set_definition(parser);
     Ok(())
+}
+
+/// Drop every entry in the bridge registry.
+///
+/// The registry holds one `Arc<NamedRule>` (plus its parser tree) for
+/// every Python `Rule` instance the engine has ever seen.  Long-lived
+/// processes that load grammars dynamically (e.g. via repeated
+/// `Rule.create(...)` on freshly-constructed classes) will accumulate
+/// entries indefinitely, since Python's class-level `_obj_map` keeps
+/// rule classes alive for the duration of the process.
+///
+/// Exposed as `abnf_rust._ext.clear_bridge()` so callers with that
+/// usage pattern can periodically drop the Rust-side shadow state.
+/// Subsequent parses re-populate the registry lazily.
+#[pyfunction]
+pub fn clear_bridge() {
+    let mut guard = BRIDGE.lock().unwrap_or_else(|e| e.into_inner());
+    guard.clear();
+}
+
+/// Current size of the bridge registry.  Primarily useful in tests
+/// and diagnostics; not part of the public API contract.
+#[pyfunction]
+pub fn bridge_size() -> usize {
+    let guard = BRIDGE.lock().unwrap_or_else(|e| e.into_inner());
+    guard.len()
 }

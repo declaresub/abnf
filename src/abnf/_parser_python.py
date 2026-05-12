@@ -75,11 +75,30 @@ class Parser(Protocol):
 
 
 ParseCacheKey = tuple[str, int]
+
+
+class _CachedParseError:
+    """Lightweight failure marker stored in `ParseCache`.
+
+    Caching the original `ParseError` instance and re-raising it on every
+    hit accumulates traceback frames on a shared exception object and
+    leaks any user-attached state across cache hits.  We instead record
+    the constructor arguments and rebuild a fresh `ParseError` each time.
+    """
+
+    __slots__ = ("args", "parser", "start")
+
+    def __init__(self, parser: Parser, start: int, args: tuple[typing.Any, ...]):
+        self.parser = parser
+        self.start = start
+        self.args = args
+
+
 # Repetition now stores its match list as an ordered `list[Match]`
 # (deduplicated by end position) rather than `set[Match]`, sidestepping
 # the per-Match value-hashing cost.  `MatchSet` remains in the union
 # for backward compatibility with any external code that stored sets.
-ParseCacheValue = typing.Union[list[Match], MatchSet, "ParseError"]
+ParseCacheValue = list[Match] | MatchSet | _CachedParseError
 
 
 class ParseCache(typing.MutableMapping[ParseCacheKey, ParseCacheValue]):
@@ -262,8 +281,12 @@ class Repetition:
         except KeyError:
             pass
         else:
-            if isinstance(cached_matchset, ParseError):
-                raise cached_matchset
+            if isinstance(cached_matchset, _CachedParseError):
+                raise ParseError(
+                    cached_matchset.parser,
+                    cached_matchset.start,
+                    *cached_matchset.args,
+                )
             yield from next_longest(cached_matchset)
             return
 
@@ -285,7 +308,9 @@ class Repetition:
                 # If this raises a ParseError the minimum match was not reached.
                 match_list = list(concat_parser.lparse(source, start))
             except ParseError as exc:
-                self.lparse_cache[cache_key] = exc
+                self.lparse_cache[cache_key] = _CachedParseError(
+                    exc.parser, exc.start, exc.args
+                )
                 raise
             seen_starts = set()
             deduped: list[Match] = []

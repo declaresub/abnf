@@ -52,7 +52,7 @@ pub fn lparse_iter(
 ) -> PyResult<Py<LparseIter>> {
     let (matches, pending_error) = match result {
         Ok(ms) => (ms, None),
-        Err(e) => (SmallVec::new(), Some(parse_error_to_pyerr(py, e))),
+        Err(e) => (SmallVec::new(), Some(parse_error_to_pyerr(py, e, source))),
     };
     Py::new(
         py,

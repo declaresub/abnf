@@ -115,22 +115,28 @@ impl ParseCache {
 
     fn bind(&mut self, source: &str) {
         let token = (source.as_ptr(), source.len());
-        // Compute a cheap O(1) content fingerprint from a short
-        // sample of the source.  Hashing the whole source on every
-        // cache use was catastrophic on large inputs (a 138KB fuzz
-        // case slowed the Rust backend by ~3x relative to the
-        // Python implementation); sampling is fast enough that
-        // there's no observable overhead on small inputs and
-        // detects content changes in practice.
-        let fingerprint = content_fingerprint(source);
-        if self.bound_token == Some(token) && self.bound_hash == Some(fingerprint) {
-            return;
-        }
-        if self.bound_hash != Some(fingerprint) {
+        // Fast path: same source object as last call.  Verify content
+        // didn't change underneath us — Python sometimes places a
+        // different string at a freed address with the same length,
+        // and the sampled fingerprint catches that.
+        if self.bound_token == Some(token) {
+            let fingerprint = content_fingerprint(source);
+            if self.bound_hash == Some(fingerprint) {
+                return;
+            }
             self.inner.reset();
             self.bound_hash = Some(fingerprint);
+            return;
         }
+        // Different source buffer: always reset.  Cached `Match`
+        // objects embed byte offsets and `Arc<str>` snapshots that
+        // belong to the previous source; reusing them across distinct
+        // sources is incorrect even when the contents happen to
+        // fingerprint the same.  Skipping the reset on fingerprint
+        // collision (H1) caused silent cross-source corruption.
+        self.inner.reset();
         self.bound_token = Some(token);
+        self.bound_hash = Some(content_fingerprint(source));
     }
 
     pub fn get(&mut self, source: &str, start: usize) -> Option<CachedResult> {
@@ -190,4 +196,59 @@ fn content_fingerprint(s: &str) -> u64 {
     }
     bytes.len().hash(&mut h);
     h.finish()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::error::ParseError;
+    use std::sync::Arc;
+
+    /// H1 regression: two distinct sources whose 64-byte head and
+    /// 64-byte tail are identical produce the same `content_fingerprint`
+    /// but must NOT share cache entries.  Cached `Match` objects embed
+    /// byte offsets and `Arc<str>` values tied to a specific source;
+    /// reusing them across distinct source buffers is silent corruption.
+    #[test]
+    fn token_mismatch_invalidates_cache_even_on_fingerprint_collision() {
+        let head: String = "A".repeat(64);
+        let tail: String = "D".repeat(64);
+        let s1 = format!("{head}BC{tail}");
+        let s2 = format!("{head}XY{tail}");
+        assert_eq!(s1.len(), s2.len());
+        assert_eq!(content_fingerprint(&s1), content_fingerprint(&s2));
+        assert_ne!(s1.as_ptr(), s2.as_ptr());
+
+        let mut cache = ParseCache::new(None);
+        let marker = CachedResult::Failed(ParseError::new(
+            Arc::<str>::from("from-s1"),
+            64,
+        ));
+        cache.put(&s1, 64, marker);
+        assert_eq!(cache.len(), 1, "entry should be installed against s1");
+
+        // The lookup against s2 must miss: distinct source objects
+        // with colliding fingerprints share a token mismatch and that
+        // alone must reset the cache.
+        let hit = cache.get(&s2, 64);
+        assert!(
+            hit.is_none(),
+            "stale s1 entry leaked into a lookup against s2 \
+             (fingerprint collision was treated as identity)"
+        );
+    }
+
+    /// Sanity-check the inverse: same source object across two calls
+    /// reuses the cache.
+    #[test]
+    fn same_source_reuses_cache() {
+        let s = "hello world".to_string();
+        let mut cache = ParseCache::new(None);
+        let marker = CachedResult::Failed(ParseError::new(
+            Arc::<str>::from("static"),
+            0,
+        ));
+        cache.put(&s, 0, marker);
+        assert!(cache.get(&s, 0).is_some());
+    }
 }

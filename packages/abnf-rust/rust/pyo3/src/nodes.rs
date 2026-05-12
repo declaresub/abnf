@@ -21,6 +21,8 @@ use pyo3::types::PyList;
 
 use abnf_core::{LiteralNode, Match, Node, NodeKind};
 
+use crate::offset::{byte_to_cp, cp_to_byte};
+
 // ----------------------------------------------------------------
 // LiteralNode
 // ----------------------------------------------------------------
@@ -205,6 +207,11 @@ fn node_kind_to_py_with_value(
 pub struct PyMatch {
     /// Match nodes as Python objects.
     pub nodes: Vec<Py<PyAny>>,
+    /// Match end position as a **code-point** offset (Python `str`
+    /// index semantics).  `PyMatch::from_rust` translates from the
+    /// byte offset used by the Rust core; `PyMatch::new` accepts the
+    /// code-point offset directly because Python callers always pass
+    /// code-point indices.
     #[pyo3(get)]
     pub start: usize,
     /// Cached concatenated value across all nodes, populated at
@@ -258,41 +265,55 @@ impl PyMatch {
             cached_value.push_str(&v);
             nodes.push(obj);
         }
-        Ok(Self { nodes, start: m.start, cached_value })
+        // Translate the byte offset returned by the core into a
+        // code-point offset so it lines up with Python `str` indices.
+        let start = byte_to_cp(source, m.start);
+        Ok(Self { nodes, start, cached_value })
     }
 }
 
 /// Convert a Python `Match`-like object back into a Rust `Match`.
-pub fn py_match_to_rust(py_match: &Bound<'_, PyAny>) -> PyResult<Match> {
+///
+/// The Python `Match.start` is a code-point offset (per Python `str`
+/// semantics); the Rust core expects a byte offset.  `source` is the
+/// original UTF-8 string the parse is running against and is used to
+/// translate.
+pub fn py_match_to_rust(py_match: &Bound<'_, PyAny>, source: &str) -> PyResult<Match> {
     use abnf_core::NodeList;
     use smallvec::SmallVec;
-    let start: usize = py_match.getattr("start")?.extract()?;
+    let cp_start: usize = py_match.getattr("start")?.extract()?;
+    let start = cp_to_byte(source, cp_start);
     let nodes_py = py_match.getattr("nodes")?;
     let mut nodes: NodeList = SmallVec::new();
     for item in nodes_py.iter()? {
         let item = item?;
-        nodes.push(py_to_node_kind(&item)?);
+        nodes.push(py_to_node_kind(&item, source)?);
     }
     Ok(Match::new(nodes, start))
 }
 
-fn py_to_node_kind(obj: &Bound<'_, PyAny>) -> PyResult<NodeKind> {
+fn py_to_node_kind(obj: &Bound<'_, PyAny>, source: &str) -> PyResult<NodeKind> {
     // Distinguish terminal vs internal by Python type, not by the
     // `name` attribute: ABNF rule names like `literal` in RFC 9051
     // collide with the conventional `"literal"` node-name terminal
     // nodes use, so a string-based check would misclassify rule
     // wrappers as terminals.
+    //
+    // Terminal `offset`/`length` are code-point units on the Python
+    // side and byte units on the Rust side; translate via `source`.
     if let Ok(lit) = obj.downcast::<PyLiteralNode>() {
         let lit = lit.borrow();
         let arc: Arc<str> = Arc::from(lit.value.as_str());
-        return Ok(NodeKind::Literal(LiteralNode::new(arc, lit.offset, lit.length)));
+        let byte_offset = cp_to_byte(source, lit.offset);
+        let byte_length = cp_to_byte(source, lit.offset + lit.length) - byte_offset;
+        return Ok(NodeKind::Literal(LiteralNode::new(arc, byte_offset, byte_length)));
     }
     if let (Ok(value_obj), Ok(offset_obj), Ok(length_obj)) = (
         obj.getattr("value"),
         obj.getattr("offset"),
         obj.getattr("length"),
     ) {
-        if let (Ok(value), Ok(offset), Ok(length)) = (
+        if let (Ok(value), Ok(cp_offset), Ok(cp_length)) = (
             value_obj.extract::<String>(),
             offset_obj.extract::<usize>(),
             length_obj.extract::<usize>(),
@@ -303,7 +324,9 @@ fn py_to_node_kind(obj: &Bound<'_, PyAny>) -> PyResult<NodeKind> {
                 .unwrap_or_else(|_| "literal".to_string());
             if name == "literal" {
                 let arc: Arc<str> = Arc::from(value);
-                return Ok(NodeKind::Literal(LiteralNode::new(arc, offset, length)));
+                let byte_offset = cp_to_byte(source, cp_offset);
+                let byte_length = cp_to_byte(source, cp_offset + cp_length) - byte_offset;
+                return Ok(NodeKind::Literal(LiteralNode::new(arc, byte_offset, byte_length)));
             }
         }
     }
@@ -312,7 +335,7 @@ fn py_to_node_kind(obj: &Bound<'_, PyAny>) -> PyResult<NodeKind> {
     let mut children: Vec<NodeKind> = Vec::new();
     for item in children_py.iter()? {
         let item = item?;
-        children.push(py_to_node_kind(&item)?);
+        children.push(py_to_node_kind(&item, source)?);
     }
     Ok(NodeKind::Internal(Node::new(Arc::from(name), children)))
 }

@@ -77,7 +77,9 @@ impl PyAlternation {
     }
 
     fn lparse(&self, py: Python<'_>, source: &str, start: usize) -> PyResult<Py<LparseIter>> {
-        lparse_iter(py, self.inner.lparse(source, start), source)
+        let byte_start = crate::offset::cp_to_byte(source, start);
+        let result = crate::recursion::call_lparse(|| self.inner.lparse(source, byte_start))?;
+        lparse_iter(py, result, source)
     }
 
     #[getter]
@@ -123,7 +125,9 @@ impl PyConcatenation {
     }
 
     fn lparse(&self, py: Python<'_>, source: &str, start: usize) -> PyResult<Py<LparseIter>> {
-        lparse_iter(py, self.inner.lparse(source, start), source)
+        let byte_start = crate::offset::cp_to_byte(source, start);
+        let result = crate::recursion::call_lparse(|| self.inner.lparse(source, byte_start))?;
+        lparse_iter(py, result, source)
     }
 
     fn __str__(&self) -> String {
@@ -152,7 +156,9 @@ impl PyRepetition {
     }
 
     fn lparse(&self, py: Python<'_>, source: &str, start: usize) -> PyResult<Py<LparseIter>> {
-        lparse_iter(py, self.inner.lparse(source, start), source)
+        let byte_start = crate::offset::cp_to_byte(source, start);
+        let result = crate::recursion::call_lparse(|| self.inner.lparse(source, byte_start))?;
+        lparse_iter(py, result, source)
     }
 
     fn __str__(&self) -> String {
@@ -181,7 +187,9 @@ impl PyOption {
     }
 
     fn lparse(&self, py: Python<'_>, source: &str, start: usize) -> PyResult<Py<LparseIter>> {
-        lparse_iter(py, self.inner.lparse(source, start), source)
+        let byte_start = crate::offset::cp_to_byte(source, start);
+        let result = crate::recursion::call_lparse(|| self.inner.lparse(source, byte_start))?;
+        lparse_iter(py, result, source)
     }
 
     fn __str__(&self) -> String {
@@ -230,7 +238,9 @@ impl PyLiteral {
     }
 
     fn lparse(&self, py: Python<'_>, source: &str, start: usize) -> PyResult<Py<LparseIter>> {
-        lparse_iter(py, self.inner.lparse(source, start), source)
+        let byte_start = crate::offset::cp_to_byte(source, start);
+        let result = crate::recursion::call_lparse(|| self.inner.lparse(source, byte_start))?;
+        lparse_iter(py, result, source)
     }
 
     fn __str__(&self) -> String {
@@ -280,9 +290,10 @@ impl PyProse {
     /// call.  Mirror that here so `with pytest.raises(ParseError):
     /// Prose().lparse(...)` works as written.
     fn lparse(&self, py: Python<'_>, source: &str, start: usize) -> PyResult<Py<LparseIter>> {
-        match self.inner.lparse(source, start) {
+        let byte_start = crate::offset::cp_to_byte(source, start);
+        match crate::recursion::call_lparse(|| self.inner.lparse(source, byte_start))? {
             Ok(_) => lparse_iter(py, Ok(smallvec::SmallVec::new()), source),
-            Err(err) => Err(parse_error_to_pyerr(py, err)),
+            Err(err) => Err(parse_error_to_pyerr(py, err, source)),
         }
     }
 
