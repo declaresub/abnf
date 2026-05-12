@@ -1,5 +1,12 @@
 name: Build Package
 on: workflow_dispatch
+
+# Minimal default token permissions.  Building the wheel only needs
+# read access; `upload-artifact` within the same workflow run does
+# not require special permissions.
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Build distribution

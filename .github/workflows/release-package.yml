@@ -1,8 +1,16 @@
 name: Build Package
-on: 
+on:
   push:
     tags:
       - v*
+
+# Minimal default token permissions for the build job.  Each
+# downstream job that needs more (id-token for trusted publishing,
+# contents:write for GitHub releases) declares its own job-level
+# permissions block, which overrides this default.
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Build abnf distribution

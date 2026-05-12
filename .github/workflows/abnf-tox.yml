@@ -9,6 +9,11 @@ on:
   pull_request:
     branches: [ master ]
 
+# Minimal default token permissions.  No job in this workflow needs
+# anything beyond reading the source tree to run tests.
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
