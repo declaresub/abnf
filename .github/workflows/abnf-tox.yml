@@ -22,9 +22,10 @@ concurrency:
 
 jobs:
   build:
-    name: Test on Python ${{ matrix.python-version }}
+    name: Python backend / Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
 
@@ -45,4 +46,59 @@ jobs:
         pip install pytest-cov
         pip install tox
         tox -e py
+
+  rust-backend:
+    # Companion of the `build` job above.  The Python-backend tests
+    # exercise `abnf._parser_python`; this job builds the compiled
+    # `abnf-rust` extension and runs the same suite against the
+    # dispatch shim's Rust path.  Both backends must stay parity-
+    # equivalent, so any regression on either side fails CI.
+    name: Rust backend / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
+
+    steps:
+    - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v5
+      with:
+        persist-credentials: false
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Cache Cargo registry and target/
+      # Cache hit rate is high (keyed by Cargo.lock) so subsequent
+      # runs build only what changed.  Unlike the release workflow
+      # — where we deliberately disable build caches to seal source —
+      # tests can use a cache: a poisoned cache would surface as a
+      # test failure rather than as a tampered release artifact.
+      uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae  # v2
+      with:
+        workspaces: packages/abnf-rust -> target
+
+    - name: Install test dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install pytest pytest-cov
+
+    - name: Install abnf (editable)
+      run: python -m pip install -e .
+
+    - name: Build and install abnf-rust
+      # `pip install` reads `packages/abnf-rust/pyproject.toml`,
+      # which declares maturin as the PEP 517 build backend; maturin
+      # builds the wheel in an isolated environment and pip installs
+      # it.  No need to call maturin directly.
+      run: python -m pip install ./packages/abnf-rust
+
+    - name: Confirm the Rust backend is active
+      run: |
+        python -c "import abnf.parser; assert abnf.parser._BACKEND == 'rust', abnf.parser._BACKEND; print('backend:', abnf.parser._BACKEND)"
+
+    - name: Run tests
+      run: pytest --ignore=tests/fuzz --ignore=tests/benchmarks
 
