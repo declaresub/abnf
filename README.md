@@ -366,10 +366,33 @@ ABNF expression
 
     "foo" / "bar"
 
-The whole mess is bootstrapped by writing out the parsers for the grammar and core rules 
-by hand.  The ABNFGrammarRule class represents the ABNF grammar, and is used to parse other
-grammars.  It is also capable of parsing its own grammar.
- 
+The parser bootstraps itself: the RFC 5234 core rules and the ABNF meta-grammar are
+constructed directly from these combinator classes in code, with no parser available yet
+to read them from text. `ABNFGrammarRule` holds the resulting meta-grammar — it is the
+parser used to read every other grammar, and it can parse its own ABNF source as a
+self-check.
+
+### Backends
+
+abnf has two interchangeable parser implementations behind the same public API:
+
+* **Pure Python** (`abnf._parser_python`) — the default. Always available, depends only on
+  the standard library, and serves as the executable reference for the combinator
+  semantics.
+* **Rust** (`abnf_rust._ext`, installed via `pip install abnf[rust]`) — a PyO3 extension
+  that reimplements the combinator engine and the ABNF meta-grammar in Rust. When
+  importable, `abnf.parser` rebinds its combinator primitives (`Alternation`,
+  `Concatenation`, `Repetition`, `Option`, `Literal`, `Prose`, `Repeat`, `Match`, `Node`,
+  `LiteralNode`) to the Rust pyclasses. `Rule`, `NodeVisitor`, `ParseError`, and
+  `GrammarError` remain Python in either case so that subclassing, the per-class rule
+  registry, and reflective visitor dispatch continue to work unchanged. See
+  [The Rust backend](#the-rust-backend) above for benchmark numbers and the kinds of
+  grammars each implementation handles best.
+
+The dispatch happens once at import time in `abnf.parser`, based on whether the
+companion `abnf_rust` extension is importable. Set `ABNF_NO_RUST=1` in the environment
+to force the pure-Python backend even when the extension is installed.
+
 ### Alternation
 
 RFC 5234 does not specify the precise behavior of alternation.  The ABNF definition of 
