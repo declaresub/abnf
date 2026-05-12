@@ -47,7 +47,7 @@ dev = [
 'ruff==0.15.4',
 'setuptools==82.0.1',
 'tox==4.46.3',
-'setuptools_scm==9.2.2',
+'setuptools_scm==10.0.5',
 ]
 # `pip install abnf[rust]` pulls in the companion `abnf-rust`
 # distribution, which provides the compiled extension that
