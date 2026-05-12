@@ -95,7 +95,7 @@ jobs:
         print(f"Set abnf-rust version to {version}")
 
     - name: Build sdist
-      uses: PyO3/maturin-action@423a6347767a8b16e65c2a7a7042e4a921528da8  # v1
+      uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b  # v1
       with:
         working-directory: packages/abnf-rust
         command: sdist
@@ -165,7 +165,7 @@ jobs:
     - name: Build wheel
       # sccache OFF on release builds: seal source rather than risk
       # a poisoned compilation cache reaching a release wheel.
-      uses: PyO3/maturin-action@423a6347767a8b16e65c2a7a7042e4a921528da8  # v1
+      uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b  # v1
       with:
         working-directory: packages/abnf-rust
         target: ${{ matrix.target.maturin-target }}
