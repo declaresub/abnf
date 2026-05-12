@@ -159,7 +159,7 @@ impl PyNode {
     pub fn from_rust(py: Python<'_>, n: &Node, source: &str) -> PyResult<Self> {
         let mut children: Vec<Py<PyAny>> = Vec::with_capacity(n.children.len());
         let mut value = String::new();
-        for child in &n.children {
+        for child in n.children.iter() {
             let (py_child, child_value) = node_kind_to_py_with_value(py, child, source)?;
             value.push_str(&child_value);
             children.push(py_child);
@@ -195,9 +195,6 @@ fn node_kind_to_py_with_value(
     })
 }
 
-pub fn node_kind_to_py(py: Python<'_>, kind: &NodeKind, source: &str) -> PyResult<Py<PyAny>> {
-    Ok(node_kind_to_py_with_value(py, kind, source)?.0)
-}
 
 // ----------------------------------------------------------------
 // Match
@@ -263,18 +260,6 @@ impl PyMatch {
         }
         Ok(Self { nodes, start: m.start, cached_value })
     }
-}
-
-/// Convert a `Vec<Match>` from Rust into a `Vec<Py<PyMatch>>`.
-pub fn rust_matches_to_py(
-    py: Python<'_>,
-    matches: Vec<Match>,
-    source: &str,
-) -> PyResult<Vec<Py<PyMatch>>> {
-    matches
-        .into_iter()
-        .map(|m| Py::new(py, PyMatch::from_rust(py, &m, source)?))
-        .collect()
 }
 
 /// Convert a Python `Match`-like object back into a Rust `Match`.

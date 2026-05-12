@@ -8,22 +8,33 @@
 use std::sync::Arc;
 
 /// Internal (non-terminal) parse-tree node.
+///
+/// `children` is stored behind an `Arc` so cloning a `Node` (and
+/// therefore cloning a `NodeKind::Internal`) is an atomic pointer
+/// bump rather than a deep recursive copy of the entire sub-tree.
+/// `Concatenation` and `Repetition` clone prefix node lists on
+/// every extension step; with a plain `Vec<NodeKind>` those clones
+/// fan out into O(tree) work per extension, which dominates on
+/// ambiguous grammars (e.g. RFC 3986 URI).
 #[derive(Debug, Clone)]
 pub struct Node {
     pub name: Arc<str>,
-    pub children: Vec<NodeKind>,
+    pub children: Arc<Vec<NodeKind>>,
 }
 
 impl Node {
     pub fn new(name: Arc<str>, children: Vec<NodeKind>) -> Self {
-        Self { name, children }
+        Self {
+            name,
+            children: Arc::new(children),
+        }
     }
 
     /// Concatenated text of all descendant literals.  Equivalent to
     /// Python's `Node.value` property.
     pub fn value(&self) -> String {
         let mut out = String::new();
-        for child in &self.children {
+        for child in self.children.iter() {
             child.append_value(&mut out);
         }
         out
@@ -58,7 +69,7 @@ impl NodeKind {
     pub fn append_value(&self, out: &mut String) {
         match self {
             NodeKind::Internal(n) => {
-                for c in &n.children {
+                for c in n.children.iter() {
                     c.append_value(out);
                 }
             }

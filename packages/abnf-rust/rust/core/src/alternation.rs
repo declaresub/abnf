@@ -12,6 +12,7 @@
 
 use std::sync::atomic::{AtomicBool, Ordering};
 
+use crate::concatenation::sort_by_longest;
 use crate::error::ParseError;
 use crate::matcher::Match;
 use crate::parser::{ArcParser, ParseResult};
@@ -71,6 +72,11 @@ impl Alternation {
             }
         }
         if found {
+            // Sort longest-first so downstream consumers (notably
+            // `Rule.lparse`, which yields the first match it sees)
+            // observe the longest candidate immediately and can
+            // short-circuit without materialising the rest.
+            sort_by_longest(&mut all);
             Ok(all)
         } else {
             Err(ParseError::new("Alternation", start))

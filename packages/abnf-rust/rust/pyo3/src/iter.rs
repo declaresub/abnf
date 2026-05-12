@@ -1,24 +1,28 @@
 //! `LparseIter` — Python iterator wrapping a Rust combinator's
 //! `lparse` result.
 //!
-//! The Python tests treat `parser.lparse(source, start)` as a
-//! generator: they call `next(...)` on it, expect `ParseError` on
-//! the first iteration when no match exists, and let it be consumed
-//! via `set(...)` / `list(...)` for the success case.  To match
-//! those semantics from Rust we materialise the match list eagerly,
-//! then return a pyclass iterator that lazily yields each match (or
-//! raises the stored `ParseError` once before raising
-//! `StopIteration`).
+//! Materialisation is lazy: the Rust `Vec<Match>` is stored
+//! verbatim and each `__next__` call converts one match into its
+//! Python pyclass representation.  Callers that only need the
+//! longest match (e.g. `Rule.parse`) pay for just one
+//! materialisation instead of all of them; on ambiguous grammars
+//! like RFC 3986 URI this avoids dozens of throwaway tree builds
+//! per parse.
 
 use pyo3::exceptions::PyStopIteration;
 use pyo3::prelude::*;
 
+use abnf_core::Match;
+
 use crate::errors::parse_error_to_pyerr;
-use crate::nodes::{rust_matches_to_py, PyMatch};
+use crate::nodes::PyMatch;
 
 #[pyclass]
 pub struct LparseIter {
-    iter: std::vec::IntoIter<Py<PyMatch>>,
+    matches: std::vec::IntoIter<Match>,
+    /// Reference-counted source kept alive for the duration of
+    /// iteration so the literal-value `Arc<str>`s remain valid.
+    source: std::sync::Arc<str>,
     pending_error: Option<PyErr>,
 }
 
@@ -28,13 +32,14 @@ impl LparseIter {
         slf
     }
 
-    fn __next__(&mut self) -> PyResult<Py<PyMatch>> {
+    fn __next__(&mut self, py: Python<'_>) -> PyResult<Py<PyMatch>> {
         if let Some(err) = self.pending_error.take() {
             return Err(err);
         }
-        self.iter
-            .next()
-            .ok_or_else(|| PyStopIteration::new_err(()))
+        match self.matches.next() {
+            Some(m) => Py::new(py, PyMatch::from_rust(py, &m, &self.source)?),
+            None => Err(PyStopIteration::new_err(())),
+        }
     }
 }
 
@@ -45,13 +50,14 @@ pub fn lparse_iter(
     source: &str,
 ) -> PyResult<Py<LparseIter>> {
     let (matches, pending_error) = match result {
-        Ok(ms) => (rust_matches_to_py(py, ms, source)?, None),
+        Ok(ms) => (ms, None),
         Err(e) => (Vec::new(), Some(parse_error_to_pyerr(py, e))),
     };
     Py::new(
         py,
         LparseIter {
-            iter: matches.into_iter(),
+            matches: matches.into_iter(),
+            source: std::sync::Arc::from(source),
             pending_error,
         },
     )

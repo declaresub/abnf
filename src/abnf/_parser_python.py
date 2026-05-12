@@ -4,7 +4,6 @@ import pathlib
 import typing
 from collections import OrderedDict
 from collections.abc import Generator
-from itertools import filterfalse
 from weakref import WeakSet
 
 from .typing import Protocol, runtime_checkable
@@ -135,20 +134,31 @@ class Alternation:
         self.first_match = first_match
 
     def lparse(self, source: Source, start: int) -> Matches:
+        # Collect matches from every alternative, then yield them
+        # longest-first.  Doing the sort here (rather than once per
+        # `Rule.parse` call as `set + next_longest`) lets downstream
+        # consumers — notably `Rule.lparse` — short-circuit on the
+        # first (longest) match without losing alternatives that
+        # might be longer.
+        accumulated: list[Match] = []
         match_found = False
         for parser in self.parsers:
             try:
-                # note that parser,lparse could return an empty list, say from
-                # something like *"a" .
                 for item in parser.lparse(source, start):
+                    accumulated.append(item)
                     match_found = True
-                    yield (item)
             except ParseError:
                 continue
             if self.first_match:
+                # First-match mode: preserve the parser-order of the
+                # first matching parser; don't reorder by length.
+                if match_found:
+                    yield from accumulated
                 return
         if not match_found:
             raise ParseError(self, start)
+        accumulated.sort(key=lambda m: m.start, reverse=True)
+        yield from accumulated
 
     def __str__(self):
         return self.str_template % ", ".join(map(str, self.parsers))
@@ -494,12 +504,27 @@ class Rule:
             msg = f'Undefined rule "{self.name}"'
             raise GrammarError(msg) from exc
 
-        matches = set(filterfalse(exclude, g))
-        if matches:
-            yield from [
-                Match([Node(self.name, *match.nodes)], match.start) for match in matches
-            ]
-        else:
+        # Yield matches lazily so callers that only need the first
+        # (longest) match don't pay to materialise the entire
+        # candidate set.  De-duplicate by end position: two matches
+        # ending at the same offset consume the same source span and
+        # therefore have the same value, mirroring the original
+        # `set(filterfalse(exclude, g))` dedup semantics without the
+        # set materialisation.
+        seen_starts: set[int] = set()
+        yielded = False
+        for match in g:
+            if match.start in seen_starts:
+                continue
+            if exclude(match):
+                continue
+            seen_starts.add(match.start)
+            yielded = True
+            yield Match(
+                [Node(self.name, *match.nodes)],
+                match.start,
+            )
+        if not yielded:
             raise ParseError(self, start) from None
 
     def parse(self, source: str, start: int) -> tuple[Node, int]:
@@ -515,11 +540,14 @@ class Rule:
         """
 
         g = self.lparse(source, start)
-        matches = set(g)
-        assert matches
-        # we return the longest match.  It is possible that there is more than one
-        # match of maximal length.  Call lparse to see all amatches
-        longest_match = next(next_longest(matches))
+        # `lparse` yields matches longest-first (the upstream
+        # combinators sort by `start` descending), so the first
+        # value is the longest match.  Pulling only the first lets
+        # ambiguous grammars short-circuit the materialisation of
+        # losing candidates.  If `g` yields nothing it has already
+        # raised `ParseError`; the `next` here therefore never sees
+        # `StopIteration` in practice.
+        longest_match = next(g)
         return (longest_match.nodes[0], longest_match.start)
 
     def parse_all(self, source: str) -> Node:

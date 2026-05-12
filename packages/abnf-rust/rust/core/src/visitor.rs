@@ -23,7 +23,7 @@ pub enum DefinedAs {
 /// Walk a `rulelist` node, installing each rule into `registry`.
 pub fn visit_rulelist(node: &Node, registry: &mut RuleRegistry) -> Vec<Arc<NamedRule>> {
     let mut result = Vec::new();
-    for child in &node.children {
+    for child in node.children.iter() {
         if let NodeKind::Internal(inner) = child {
             if inner.name.as_ref() == "rule" {
                 result.push(visit_rule(inner, registry));
@@ -39,7 +39,7 @@ pub fn visit_rule(node: &Node, registry: &mut RuleRegistry) -> Arc<NamedRule> {
     let mut defined_as: DefinedAs = DefinedAs::Define;
     let mut elements_parser: Option<ArcParser> = None;
 
-    for child in &node.children {
+    for child in node.children.iter() {
         let NodeKind::Internal(inner) = child else { continue };
         match inner.name.as_ref() {
             "rulename" => name = Some(rulename_text(inner)),
@@ -76,7 +76,7 @@ fn visit_defined_as(node: &Node) -> DefinedAs {
 }
 
 fn visit_elements(node: &Node, registry: &mut RuleRegistry) -> ArcParser {
-    for child in &node.children {
+    for child in node.children.iter() {
         let NodeKind::Internal(inner) = child else { continue };
         if inner.name.as_ref() == "alternation" {
             return visit_alternation(inner, registry);
@@ -87,7 +87,7 @@ fn visit_elements(node: &Node, registry: &mut RuleRegistry) -> ArcParser {
 
 fn visit_alternation(node: &Node, registry: &mut RuleRegistry) -> ArcParser {
     let mut parts: Vec<ArcParser> = Vec::new();
-    for child in &node.children {
+    for child in node.children.iter() {
         let NodeKind::Internal(inner) = child else { continue };
         if inner.name.as_ref() == "concatenation" {
             parts.push(visit_concatenation(inner, registry));
@@ -102,7 +102,7 @@ fn visit_alternation(node: &Node, registry: &mut RuleRegistry) -> ArcParser {
 
 fn visit_concatenation(node: &Node, registry: &mut RuleRegistry) -> ArcParser {
     let mut parts: Vec<ArcParser> = Vec::new();
-    for child in &node.children {
+    for child in node.children.iter() {
         let NodeKind::Internal(inner) = child else { continue };
         if inner.name.as_ref() == "repetition" {
             parts.push(visit_repetition(inner, registry));
@@ -118,7 +118,7 @@ fn visit_concatenation(node: &Node, registry: &mut RuleRegistry) -> ArcParser {
 fn visit_repetition(node: &Node, registry: &mut RuleRegistry) -> ArcParser {
     let mut repeat: Option<Repeat> = None;
     let mut element: Option<ArcParser> = None;
-    for child in &node.children {
+    for child in node.children.iter() {
         let NodeKind::Internal(inner) = child else { continue };
         match inner.name.as_ref() {
             "repeat" => repeat = Some(visit_repeat(inner)),
@@ -137,7 +137,7 @@ fn visit_repeat(node: &Node) -> Repeat {
     let mut min_src = String::new();
     let mut saw_star = false;
     let mut max_src = String::new();
-    for child in &node.children {
+    for child in node.children.iter() {
         match child {
             NodeKind::Internal(inner) => {
                 if inner.name.as_ref() == "DIGIT" {
@@ -173,7 +173,7 @@ fn visit_repeat(node: &Node) -> Repeat {
 }
 
 fn visit_element(node: &Node, registry: &mut RuleRegistry) -> ArcParser {
-    for child in &node.children {
+    for child in node.children.iter() {
         let NodeKind::Internal(inner) = child else { continue };
         return match inner.name.as_ref() {
             "rulename" => visit_rulename(inner, registry),
@@ -193,7 +193,7 @@ fn visit_rulename(node: &Node, registry: &mut RuleRegistry) -> ArcParser {
 }
 
 fn visit_group(node: &Node, registry: &mut RuleRegistry) -> ArcParser {
-    for child in &node.children {
+    for child in node.children.iter() {
         let NodeKind::Internal(inner) = child else { continue };
         if inner.name.as_ref() == "alternation" {
             return visit_alternation(inner, registry);
@@ -203,7 +203,7 @@ fn visit_group(node: &Node, registry: &mut RuleRegistry) -> ArcParser {
 }
 
 fn visit_option(node: &Node, registry: &mut RuleRegistry) -> ArcParser {
-    for child in &node.children {
+    for child in node.children.iter() {
         let NodeKind::Internal(inner) = child else { continue };
         if inner.name.as_ref() == "alternation" {
             let alt = visit_alternation(inner, registry);
@@ -238,7 +238,7 @@ fn looks_like_rulename(s: &str) -> bool {
 // ---------- char-val (RFC 7405) ----------
 
 fn visit_char_val(node: &Node) -> ArcParser {
-    for child in &node.children {
+    for child in node.children.iter() {
         let NodeKind::Internal(inner) = child else { continue };
         return match inner.name.as_ref() {
             "case-insensitive-string" => {
@@ -256,7 +256,7 @@ fn visit_char_val(node: &Node) -> ArcParser {
 }
 
 fn quoted_string_value(node: &Node) -> String {
-    for child in &node.children {
+    for child in node.children.iter() {
         let NodeKind::Internal(inner) = child else { continue };
         if inner.name.as_ref() == "quoted-string" {
             let raw = inner.value();
@@ -272,7 +272,7 @@ fn quoted_string_value(node: &Node) -> String {
 // ---------- num-val ----------
 
 fn visit_num_val(node: &Node) -> ArcParser {
-    for child in &node.children {
+    for child in node.children.iter() {
         let NodeKind::Internal(inner) = child else { continue };
         return match inner.name.as_ref() {
             "bin-val" => parse_num_val(inner, "BIT", 2),
