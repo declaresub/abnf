@@ -17,13 +17,22 @@ use crate::parser::{ArcParser, MatchList, ParseResult};
 pub struct NamedRule {
     pub name: Arc<str>,
     definition: RwLock<Option<ArcParser>>,
+    /// Pre-formatted error description (`"Rule(<name>)"`), computed
+    /// once at construction and cloned cheaply (Arc bump) on every
+    /// failed parse.  Without this, alternation backtracking through
+    /// a rule reference paid a `format!` allocation per discarded
+    /// `ParseError`.
+    error_label: Arc<str>,
 }
 
 impl NamedRule {
     pub fn new(name: impl Into<Arc<str>>) -> Self {
+        let name: Arc<str> = name.into();
+        let error_label: Arc<str> = format!("Rule({name})").into();
         Self {
-            name: name.into(),
+            name,
             definition: RwLock::new(None),
+            error_label,
         }
     }
 
@@ -38,10 +47,12 @@ impl NamedRule {
             .clone()
     }
 
+    fn parse_error(&self, start: usize) -> ParseError {
+        ParseError::new(self.error_label.clone(), start)
+    }
+
     pub fn lparse(&self, source: &str, start: usize) -> ParseResult {
-        let def = self.definition().ok_or_else(|| {
-            ParseError::new(format!("Rule({})", self.name), start)
-        })?;
+        let def = self.definition().ok_or_else(|| self.parse_error(start))?;
         let inner = def.lparse(source, start)?;
 
         // Hot path: most rules produce exactly one match.  Skip the
@@ -56,10 +67,6 @@ impl NamedRule {
         }
 
         // Multi-match (ambiguous grammar): dedup by end position.
-        // Matches with the same end consume the same source span and
-        // therefore have the same value, so dedup-by-start mirrors
-        // Python's `(value, start)` set semantics without
-        // materialising every match value.
         let mut seen: HashSet<usize> = HashSet::new();
         let mut wrapped: MatchList = SmallVec::with_capacity(inner.len());
         for m in inner {
@@ -73,7 +80,7 @@ impl NamedRule {
             ));
         }
         if wrapped.is_empty() {
-            Err(ParseError::new(format!("Rule({})", self.name), start))
+            Err(self.parse_error(start))
         } else {
             Ok(wrapped)
         }

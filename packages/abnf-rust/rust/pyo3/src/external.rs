@@ -20,11 +20,11 @@ pub struct PyCallbackParser {
     obj: Py<PyAny>,
     /// A short description (used to populate `ParseError.parser` when
     /// the Python side raises).
-    description: String,
+    description: std::sync::Arc<str>,
 }
 
 impl PyCallbackParser {
-    pub fn new(obj: Py<PyAny>, description: impl Into<String>) -> Self {
+    pub fn new(obj: Py<PyAny>, description: impl Into<std::sync::Arc<str>>) -> Self {
         Self {
             obj,
             description: description.into(),

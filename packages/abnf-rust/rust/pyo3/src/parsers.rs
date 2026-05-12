@@ -249,7 +249,7 @@ impl PyLiteral {
                 let s: &str = value.as_ref();
                 s.into_py(py)
             }
-            LiteralKind::Range { lo, hi } => {
+            LiteralKind::Range { lo, hi, .. } => {
                 (lo.to_string(), hi.to_string()).into_py(py)
             }
         })

@@ -17,7 +17,7 @@ pub fn parse_error_to_pyerr(py: Python<'_>, err: ParseError) -> PyErr {
         Ok(c) => c,
         Err(e) => return e,
     };
-    let exc = match cls.call1((err.parser.clone(), err.start)) {
+    let exc = match cls.call1((err.parser.as_str(), err.start)) {
         Ok(o) => o,
         Err(e) => return e,
     };
