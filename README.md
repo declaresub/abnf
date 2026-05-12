@@ -24,14 +24,21 @@ ABNF is tested with Python 3.10-14.
 The abnf package is available from [PyPI](https://pypi.org/project/abnf/). As of version 2.3.1, abnf uses
 trusted publishing.
 
-Install it in the usual way.
+Install it with the Python installer of your choice:
 
     pip install abnf
+    uv pip install abnf            # uv
+    uv add abnf                    # uv, inside a project
+    poetry add abnf                # poetry
 
 For substantially faster parsing, install the optional Rust backend with the `rust` extra:
 
-    pip install abnf[rust]
+    pip install 'abnf[rust]'
+    uv pip install 'abnf[rust]'
+    uv add 'abnf[rust]'
+    poetry add 'abnf[rust]'
 
+(Most shells require the quotes around `abnf[rust]` because `[...]` is a glob pattern.)
 See [The Rust backend](#the-rust-backend) for details and benchmark numbers.
 
 
