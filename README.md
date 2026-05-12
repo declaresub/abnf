@@ -419,35 +419,53 @@ limit cache size.
         
 ## Development, Testing, etc.
 
-Should you wish to tinker with the code, install in a virtual environment and have at it. The requirements for a dev environment
-are specifed in pyproject.toml.  To install using pip:
+To set up a development environment, install in editable mode with the `dev` extra.  Pick whichever installer you prefer:
 
-    pip install .[dev]
+    pip install -e '.[dev]'
 
-A good starting point would be to run pytest and see that all tests pass.
+or, with [uv](https://docs.astral.sh/uv/) (which the project's lockfile and CI both use):
 
-    pytest --cov-report term-missing --cov=abnf 
+    uv sync --extra dev
+
+A good starting point is to run pytest and see that all tests pass:
+
+    pytest --cov-report term-missing --cov=abnf
 
 The test suite includes fuzz testing with test data generated using [abnfgen](http://www.quut.com/abnfgen/).
-Some of the test rules are long and gruesome.  Thus the tests take a bit of time to complete.
-Skip the fuzz tests with 
+Some of the test rules are long and gruesome, so the tests take a bit of time to complete.
+Skip the fuzz tests with:
 
-        pytest --cov-report term-missing --cov=abnf --ignore=tests/fuzz
+    pytest --cov-report term-missing --cov=abnf --ignore=tests/fuzz
 
-Following changes, run 
+### Code quality
 
-    pylint abnf
+Pre-commit hooks run ruff, pyright, check-manifest, and tox automatically.  Install them once:
 
-to resolve any problems found, then 
+    pre-commit install
 
-    tox
-    
-to execute tests for python 3.10-3.14.
+To invoke the checks manually:
 
+    ruff check src/abnf       # Lint
+    pyright                   # Type-check
+    tox                       # Run pytest across python 3.10-3.14
 
-The code is formatted using black.
+### Working with the Rust backend
 
-    black src/abnf
+To build and install the Rust extension against your dev venv:
+
+    pip install -e ./packages/abnf-rust
+
+or, with uv:
+
+    uv pip install -e ./packages/abnf-rust
+
+This drives [maturin](https://www.maturin.rs/) (declared as the PEP 517 build backend) to compile and install the extension; subsequent runs rebuild only what changed.  To force the pure-Python backend even with `abnf-rust` installed:
+
+    ABNF_NO_RUST=1 pytest
+
+To run the Rust crate's own unit tests:
+
+    cargo test --manifest-path packages/abnf-rust/Cargo.toml
 
 
 
