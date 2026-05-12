@@ -13,13 +13,25 @@ Nodes = list["Node"]
 
 
 class Match:
+    __slots__ = ("_hash", "nodes", "start")
+
     def __init__(self, nodes: Nodes, start: int):
         self.nodes = nodes
         self.start = start
 
     def __hash__(self) -> int:
-        value = "".join(n.value for n in self.nodes)
-        return hash((value, self.start))
+        # Cache the hash on first access.  Match objects participate
+        # in `set` operations inside Repetition / Rule.lparse where
+        # they're hashed repeatedly; without caching, every hash
+        # call rebuilds the concatenated value string by walking
+        # every descendant node.
+        try:
+            return self._hash
+        except AttributeError:
+            value = "".join(n.value for n in self.nodes)
+            h = hash((value, self.start))
+            self._hash = h
+            return h
 
     def __str__(self):
         return (
@@ -27,7 +39,14 @@ class Match:
         )
 
     def __eq__(self, __o: object) -> bool:
-        return isinstance(__o, self.__class__) and hash(self) == hash(__o)
+        if not isinstance(__o, self.__class__):
+            return False
+        # Fast inequality short-circuit before the value-building
+        # hash comparison — different end positions can never be
+        # equal under our value-and-start semantics anyway.
+        if self.start != __o.start:
+            return False
+        return hash(self) == hash(__o)
 
 
 MatchSet = set[Match]
@@ -38,8 +57,12 @@ def sorted_by_longest_match(matches: typing.Iterable[Match]) -> list[Match]:
     return sorted(matches, key=lambda item: item.start, reverse=True)
 
 
-def next_longest(matches: MatchSet) -> Generator[Match, None, None]:
-    yield from sorted_by_longest_match(list(matches))
+def next_longest(matches: typing.Iterable[Match]) -> Generator[Match, None, None]:
+    materialised = list(matches)
+    if len(materialised) > 1:
+        yield from sorted_by_longest_match(materialised)
+    else:
+        yield from materialised
 
 
 @runtime_checkable
@@ -52,7 +75,11 @@ class Parser(Protocol):
 
 
 ParseCacheKey = tuple[str, int]
-ParseCacheValue = typing.Union[MatchSet, "ParseError"]
+# Repetition now stores its match list as an ordered `list[Match]`
+# (deduplicated by end position) rather than `set[Match]`, sidestepping
+# the per-Match value-hashing cost.  `MatchSet` remains in the union
+# for backward compatibility with any external code that stored sets.
+ParseCacheValue = typing.Union[list[Match], MatchSet, "ParseError"]
 
 
 class ParseCache(typing.MutableMapping[ParseCacheKey, ParseCacheValue]):
@@ -65,7 +92,7 @@ class ParseCache(typing.MutableMapping[ParseCacheKey, ParseCacheValue]):
         return obj
 
     def __init__(self, max_size: int | None = None):
-        self.dict: OrderedDict[ParseCacheKey, MatchSet | ParseError] = OrderedDict()
+        self.dict: OrderedDict[ParseCacheKey, ParseCacheValue] = OrderedDict()
         if max_size is None:
             max_size = self.max_cache_size
         if max_size and max_size < 0:
@@ -157,7 +184,12 @@ class Alternation:
                 return
         if not match_found:
             raise ParseError(self, start)
-        accumulated.sort(key=lambda m: m.start, reverse=True)
+        # Skip the sort on the common deterministic single-match
+        # case — most rules in real grammars take a single
+        # alternative and the sort overhead adds up across nested
+        # combinators.
+        if len(accumulated) > 1:
+            accumulated.sort(key=lambda m: m.start, reverse=True)
         yield from accumulated
 
     def __str__(self):
@@ -193,7 +225,10 @@ class Concatenation:
                 match_list = current_match_list
             else:
                 raise ParseError(self, start)
-        yield from sorted_by_longest_match(match_list)
+        if len(match_list) > 1:
+            yield from sorted_by_longest_match(match_list)
+        else:
+            yield from match_list
 
     def __str__(self):
         return self.str_template % ", ".join(map(str, self.parsers))
@@ -232,43 +267,67 @@ class Repetition:
             yield from next_longest(cached_matchset)
             return
 
+        # De-duplicate by `Match.start` (i.e. by end position) rather
+        # than via `set[Match]` membership.  Two matches that consume
+        # the same source span end at the same offset, so dedup-by-
+        # start mirrors `(value, start)` set semantics without paying
+        # the per-Match value-string materialisation that
+        # `Match.__hash__` requires.  `match_list` preserves order
+        # for the final longest-first yield.
+        match_list: list[Match]
+        seen_starts: set[int]
         if self.repeat.min == 0:
-            match_set: MatchSet = {Match([], start)}
+            match_list = [Match([], start)]
+            seen_starts = {start}
         else:
             concat_parser = Concatenation(*([self.element] * self.repeat.min))
             try:
-                # if this raises a ParseError, then the minimum match was not reached.
-                match_set = set(concat_parser.lparse(source, start))
+                # If this raises a ParseError the minimum match was not reached.
+                match_list = list(concat_parser.lparse(source, start))
             except ParseError as exc:
                 self.lparse_cache[cache_key] = exc
                 raise
+            seen_starts = set()
+            deduped: list[Match] = []
+            for m in match_list:
+                if m.start in seen_starts:
+                    continue
+                seen_starts.add(m.start)
+                deduped.append(m)
+            match_list = deduped
 
-        last_match_set = set(match_set)
+        last_match_set = list(match_list)
         match_count = self.repeat.min
 
         while True:
             if self.repeat.max is not None and match_count == self.repeat.max:
                 break
 
-            new_match_set: MatchSet = set()
+            new_match_set: list[Match] = []
+            new_seen_starts: set[int] = set()
             for match in last_match_set:
-                g = self.element.lparse(source, match.start)
-                try:  # noqa: SIM105
-                    new_match_set.update(
-                        [Match(match.nodes + m.nodes, m.start) for m in g]
-                    )
+                try:
+                    g = self.element.lparse(source, match.start)
+                    for m in g:
+                        if m.start in seen_starts or m.start in new_seen_starts:
+                            continue
+                        new_seen_starts.add(m.start)
+                        new_match_set.append(
+                            Match(match.nodes + m.nodes, m.start)
+                        )
                 except ParseError:
                     pass
 
-            if not new_match_set <= match_set:
+            if new_match_set:
                 match_count = match_count + 1
-                match_set = match_set | new_match_set
+                seen_starts.update(new_seen_starts)
+                match_list.extend(new_match_set)
                 last_match_set = new_match_set
             else:
                 break
 
-        self.lparse_cache[cache_key] = match_set
-        yield from next_longest(match_set)
+        self.lparse_cache[cache_key] = match_list
+        yield from next_longest(match_list)
 
     def __str__(self):
         return f"Repetition({self.repeat}, {self.element})"
