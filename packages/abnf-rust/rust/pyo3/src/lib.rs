@@ -4,6 +4,14 @@
 //! package wrapper in `src/abnf_rust/__init__.py` re-exports its
 //! symbols.
 
+// Replace the system allocator with mimalloc.  ABNF parsing
+// produces many short-lived small allocations (per-Match node
+// lists, per-Node children Vecs, Arc<str> for literal matches);
+// mimalloc's segregated free-list design tends to beat
+// system mallocs on this workload by a meaningful margin.
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 mod bootstrap;
 mod bridge;
 mod errors;
