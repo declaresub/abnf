@@ -24,9 +24,102 @@ ABNF is tested with Python 3.10-14.
 The abnf package is available from [PyPI](https://pypi.org/project/abnf/). As of version 2.3.1, abnf uses
 trusted publishing.
 
-Install it in the usual way.
+Install it with the Python installer of your choice:
 
     pip install abnf
+    uv pip install abnf            # uv
+    uv add abnf                    # uv, inside a project
+    poetry add abnf                # poetry
+
+For substantially faster parsing, install the optional Rust backend with the `rust` extra:
+
+    pip install 'abnf[rust]'
+    uv pip install 'abnf[rust]'
+    uv add 'abnf[rust]'
+    poetry add 'abnf[rust]'
+
+(Most shells require the quotes around `abnf[rust]` because `[...]` is a glob pattern.)
+See [The Rust backend](#the-rust-backend) for details and benchmark numbers.
+
+
+## The Rust backend
+
+When the `abnf-rust` companion is installed (via `pip install abnf[rust]`), `abnf.parser`
+transparently dispatches its combinator primitives to a Rust extension built with PyO3.
+The public API is unchanged in either case, including every RFC grammar module and every
+example in this README; set the environment variable `ABNF_NO_RUST=1` to force the
+pure-Python backend at runtime.
+
+Representative benchmarks (median of three runs of `pytest tests/benchmarks/`, Apple Silicon):
+
+| Grammar / input | Pure Python | Rust | Speed-up |
+|---|---|---|---|
+| RFC 3986 URI&nbsp;&nbsp; `https://user:pass@example.com:8080/a/b/c?q=1&r=2#frag` | 190 µs | 28.4 µs | **6.7×** |
+| RFC 5322 mailbox&nbsp;&nbsp; `Charles Yeomans <charles@example.com>` | 422 µs | 44.9 µs | **9.4×** |
+| RFC 7230 request-line&nbsp;&nbsp; `GET /index.html HTTP/1.1\r\n` | 73 µs | 10.4 µs | **7.0×** |
+| RFC 9051 astring&nbsp;&nbsp; `HelloWorld42` | 5.9 µs | 4.0 µs | **1.5×** |
+| Fuzz suite (512 cases, inputs up to 138 KB) | 9.1 s | 1.42 s | **6.4×** |
+
+### Where the Rust backend helps most
+
+The Rust backend's biggest advantage is **how cheaply it rejects parses that don't match**.
+ABNF parsing is built around alternation and optional groups: on every backtracking step
+the algorithm tries an alternative, watches it fail, and moves on. The Python combinator's
+failure path raises a `ParseError`, propagates it through generator exception machinery, and
+unwinds Python frames — all comparatively expensive. The Rust equivalent is a single
+`Err(...)` return value with no string formatting. Grammars that exercise this path heavily
+— RFC 5322's deeply-nested `FWS` and `CFWS` whitespace handling is the classic example —
+see the biggest wins.
+
+The advantage compounds with the number of candidate parses the algorithm considers at each
+step. RFC 3986's URI grammar enumerates dozens of partial-parse candidates (optional
+`[ "?" query ]`, optional `[ "#" fragment ]`, multiple `hier-part` alternatives); each
+candidate that ends up losing costs only a few hundred nanoseconds in Rust.
+
+### Where the gap narrows
+
+The Rust backend is *less* dominant on tight grammars whose work is mostly *successful*
+tree-building rather than backtracking. The clearest example among our benchmarks is the
+RFC 9051 `astring` row above: parsing `"HelloWorld42"` against
+
+    astring = 1*ASTRING-CHAR / string
+
+is essentially twelve successful `ASTRING-CHAR` matches plus a single near-instant failure
+on the `string` arm. Each successful match builds a small parse-tree node, and CPython
+optimises that build path extremely well: a small list allocation goes through CPython's
+`list` freelist and costs only a handful of nanoseconds. The Rust equivalent allocates an
+`Arc<Vec<NodeKind>>` per node and crosses the PyO3 boundary — both fast, but still a few
+times more expensive than CPython's open-coded path. The Rust backend still wins on
+`astring`, but only modestly.
+
+Roughly:
+
+| Grammar shape | Typical Rust speed-up |
+|---|---|
+| Heavy alternation / optional / deep backtracking | 6–10× |
+| Mixed: moderate alternation with tree-building | 3–6× |
+| Pure linear success with few alternatives | 1.5–2× |
+
+In other words: the more an ABNF grammar exercises backtracking — which most real RFC
+grammars do — the bigger the win. We have not observed a grammar on which the Rust backend
+is slower than the pure-Python implementation.
+
+### When to skip the Rust backend
+
+For most workloads, `pip install abnf[rust]` is the right choice and is fully transparent
+after install. The pure-Python implementation remains a complete and supported parser, and
+is the right choice when:
+
+* The deployment target rejects compiled extensions (e.g. zip-deployed AWS Lambda layers,
+  some constrained container images).
+* You want to debug or step through parser internals — the pure-Python code is shorter,
+  generator-based, and trivially traceable.
+* `ABNF_NO_RUST=1` is convenient for an A/B comparison.
+
+Much of the optimisation work motivated by the Rust port (lazy `Rule.lparse`, sorted
+`Alternation`, `Match` hash caching, dedup-by-end-position in `Repetition`) also landed in
+the pure-Python implementation, so even without the `[rust]` extra `abnf` parses
+meaningfully faster than its historical baseline.
 
 
 ## Usage
@@ -273,10 +366,33 @@ ABNF expression
 
     "foo" / "bar"
 
-The whole mess is bootstrapped by writing out the parsers for the grammar and core rules 
-by hand.  The ABNFGrammarRule class represents the ABNF grammar, and is used to parse other
-grammars.  It is also capable of parsing its own grammar.
- 
+The parser bootstraps itself: the RFC 5234 core rules and the ABNF meta-grammar are
+constructed directly from these combinator classes in code, with no parser available yet
+to read them from text. `ABNFGrammarRule` holds the resulting meta-grammar — it is the
+parser used to read every other grammar, and it can parse its own ABNF source as a
+self-check.
+
+### Backends
+
+abnf has two interchangeable parser implementations behind the same public API:
+
+* **Pure Python** (`abnf._parser_python`) — the default. Always available, depends only on
+  the standard library, and serves as the executable reference for the combinator
+  semantics.
+* **Rust** (`abnf_rust._ext`, installed via `pip install abnf[rust]`) — a PyO3 extension
+  that reimplements the combinator engine and the ABNF meta-grammar in Rust. When
+  importable, `abnf.parser` rebinds its combinator primitives (`Alternation`,
+  `Concatenation`, `Repetition`, `Option`, `Literal`, `Prose`, `Repeat`, `Match`, `Node`,
+  `LiteralNode`) to the Rust pyclasses. `Rule`, `NodeVisitor`, `ParseError`, and
+  `GrammarError` remain Python in either case so that subclassing, the per-class rule
+  registry, and reflective visitor dispatch continue to work unchanged. See
+  [The Rust backend](#the-rust-backend) above for benchmark numbers and the kinds of
+  grammars each implementation handles best.
+
+The dispatch happens once at import time in `abnf.parser`, based on whether the
+companion `abnf_rust` extension is importable. Set `ABNF_NO_RUST=1` in the environment
+to force the pure-Python backend even when the extension is installed.
+
 ### Alternation
 
 RFC 5234 does not specify the precise behavior of alternation.  The ABNF definition of 
@@ -303,35 +419,53 @@ limit cache size.
         
 ## Development, Testing, etc.
 
-Should you wish to tinker with the code, install in a virtual environment and have at it. The requirements for a dev environment
-are specifed in pyproject.toml.  To install using pip:
+To set up a development environment, install in editable mode with the `dev` extra.  Pick whichever installer you prefer:
 
-    pip install .[dev]
+    pip install -e '.[dev]'
 
-A good starting point would be to run pytest and see that all tests pass.
+or, with [uv](https://docs.astral.sh/uv/) (which the project's lockfile and CI both use):
 
-    pytest --cov-report term-missing --cov=abnf 
+    uv sync --extra dev
+
+A good starting point is to run pytest and see that all tests pass:
+
+    pytest --cov-report term-missing --cov=abnf
 
 The test suite includes fuzz testing with test data generated using [abnfgen](http://www.quut.com/abnfgen/).
-Some of the test rules are long and gruesome.  Thus the tests take a bit of time to complete.
-Skip the fuzz tests with 
+Some of the test rules are long and gruesome, so the tests take a bit of time to complete.
+Skip the fuzz tests with:
 
-        pytest --cov-report term-missing --cov=abnf --ignore=tests/fuzz
+    pytest --cov-report term-missing --cov=abnf --ignore=tests/fuzz
 
-Following changes, run 
+### Code quality
 
-    pylint abnf
+Pre-commit hooks run ruff, pyright, check-manifest, and tox automatically.  Install them once:
 
-to resolve any problems found, then 
+    pre-commit install
 
-    tox
-    
-to execute tests for python 3.10-3.14.
+To invoke the checks manually:
 
+    ruff check src/abnf       # Lint
+    pyright                   # Type-check
+    tox                       # Run pytest across python 3.10-3.14
 
-The code is formatted using black.
+### Working with the Rust backend
 
-    black src/abnf
+To build and install the Rust extension against your dev venv:
+
+    pip install -e ./packages/abnf-rust
+
+or, with uv:
+
+    uv pip install -e ./packages/abnf-rust
+
+This drives [maturin](https://www.maturin.rs/) (declared as the PEP 517 build backend) to compile and install the extension; subsequent runs rebuild only what changed.  To force the pure-Python backend even with `abnf-rust` installed:
+
+    ABNF_NO_RUST=1 pytest
+
+To run the Rust crate's own unit tests:
+
+    cargo test --manifest-path packages/abnf-rust/Cargo.toml
 
 
 

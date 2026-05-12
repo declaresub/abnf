@@ -1,0 +1,20 @@
+[package]
+authors.workspace = true
+description = "PyO3 bindings exposing the abnf-core engine as a Python extension module."
+edition.workspace = true
+license.workspace = true
+name = "abnf-rust-ext"
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+name = "_ext"
+
+[dependencies]
+abnf-core.workspace = true
+mimalloc.workspace = true
+once_cell.workspace = true
+pyo3 = { workspace = true, features = ["abi3-py310"] }
+smallvec.workspace = true

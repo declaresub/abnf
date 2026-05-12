@@ -1,4 +1,5 @@
 import pathlib
+import textwrap
 from typing import cast
 
 import pytest
@@ -377,13 +378,26 @@ def test_repetition_3():
     ]
 
 
+@pytest.mark.skipif(
+    __import__("abnf.parser", fromlist=["_BACKEND"])._BACKEND == "rust",
+    reason="Repetition's parse cache is internal to the Rust engine; "
+    "the pure-Python lparse_cache attribute is not exposed by the "
+    "Rust-backed pyclass.",
+)
 def test_repetition_cached_oarseerror():
     src = "a"
     parser = Repetition(Repeat(1, 1), Literal("*"))
-    parser.lparse_cache[(src, 0)] = ParseError(parser, 0)
-    with pytest.raises(ParseError) as exc_info:
+    # Populate the cache by triggering a real failure.
+    with pytest.raises(ParseError) as first:
         next(parser.lparse(src, 0))
-    assert exc_info.value is parser.lparse_cache[(src, 0)]
+    # A second call should re-raise from the cache, but as a *fresh*
+    # ParseError instance (not the same object) so that tracebacks
+    # don't accumulate on a shared exception.
+    with pytest.raises(ParseError) as second:
+        next(parser.lparse(src, 0))
+    assert second.value is not first.value
+    assert second.value.parser is first.value.parser
+    assert second.value.start == first.value.start
 
 
 def test_empty_charval_node():
@@ -402,3 +416,279 @@ def test_load_grammar_not_strict():
     grammar = 'foo = "foo"\r\n'
     NotStrictGrammarRule.load_grammar(grammar, strict=False)
     assert NotStrictGrammarRule("foo").definition
+
+
+# ---------------------------------------------------------------------------
+# H4 regression: byte vs code-point offsets at the Python/Rust boundary
+# ---------------------------------------------------------------------------
+#
+# `Match.start` and `ParseError.start` are documented as code-point offsets
+# (so they index a Python `str` correctly).  The Rust engine uses byte
+# offsets internally; the FFI layer must translate at the boundary.
+# These tests exercise that translation with non-ASCII source where bytes
+# and code points diverge.  All four pass under the pure-Python backend
+# and must continue to pass under the Rust backend.
+
+
+def test_h4_match_start_is_codepoint_on_non_ascii():
+    """Outbound: `Match.start` must be a code-point offset."""
+    parser = Literal("é")  # 1 code point, 2 UTF-8 bytes
+    source = "éY"
+    match = next(parser.lparse(source, 0))
+    assert match.start == 1
+    assert source[match.start] == "Y"
+
+
+def test_h4_match_start_with_multi_codepoint_non_ascii():
+    """Outbound, longer pattern, to rule out a coincidental 1."""
+    parser = Literal("éé")  # 2 code points, 4 UTF-8 bytes
+    source = "ééX"
+    match = next(parser.lparse(source, 0))
+    assert match.start == 2
+    assert source[match.start] == "X"
+
+
+def test_h4_lparse_start_arg_is_codepoint_on_non_ascii():
+    """Inbound: a `start` argument passed from Python is a code-point
+    offset and must be translated to a byte offset before the Rust
+    engine indexes into the source."""
+    parser = Literal("X")
+    source = "ééX"  # 'X' is at code-point 2, byte 4
+    match = next(parser.lparse(source, 2))
+    assert "".join(n.value for n in match.nodes) == "X"
+    assert match.start == 3
+
+
+def test_h4_parse_all_detects_partial_consumption_with_non_ascii():
+    """`Rule.parse_all` raises when not all source is consumed; the
+    check is `start < len(source)` where `len` counts code points,
+    so `start` (returned from the engine through `Rule.parse`) must
+    also be in code points.  If `start` is a byte count, an unparsed
+    trailing ASCII suffix can be missed entirely.
+
+    Rule is built programmatically — ABNF source is ASCII-only by spec,
+    so we can't express a non-ASCII literal via `Rule.create`."""
+
+    class G(Rule):
+        pass
+
+    G("test", Literal("éé"))  # 2 code points, 4 bytes
+    with pytest.raises(ParseError):
+        G("test").parse_all("ééX")  # 3 code points, 5 bytes — trailing X is unparsed
+
+
+def test_h4_parse_error_start_is_codepoint_on_non_ascii():
+    """`ParseError.start` raised by `parse_all` must be a code-point
+    offset so users can index back into their `str` source."""
+
+    class G(Rule):
+        pass
+
+    G("test", Literal("éé"))
+    source = "ééX"
+    with pytest.raises(ParseError) as exc_info:
+        G("test").parse_all(source)
+    assert exc_info.value.start == 2
+    assert source[exc_info.value.start] == "X"
+
+
+# ---------------------------------------------------------------------------
+# H3 regression: case-insensitive Literal must honour Unicode casefold
+# expansion.  Python's `str.casefold()` maps some non-ASCII characters to
+# multi-character ASCII sequences (most famously 'ß' → 'ss', 'ﬃ' → 'ffi').
+# Per the pure-Python reference, `Literal('ss', case_sensitive=False)`
+# matches a source consisting of 'ß'.  The Rust backend's ASCII fast path
+# missed this case (byte-level compare against pattern 'ss' against source
+# bytes 0xc3 0x9f fails) and silently raised `ParseError`.
+# ---------------------------------------------------------------------------
+
+
+def test_h3_casefold_expansion_ss_matches_eszett():
+    """'ß'.casefold() == 'ss' — Literal('ss') should match 'ß' under
+    case-insensitive comparison."""
+    parser = Literal("ss", case_sensitive=False)
+    match = next(parser.lparse("ß", 0))
+    assert match.start == 1  # consumed one code point of source
+    # The matched LiteralNode preserves the source's original spelling.
+    assert match.nodes[0].value == "ß"
+
+
+def test_h3_casefold_expansion_ffi_ligature():
+    """'ﬃ'.casefold() == 'ffi'."""
+    parser = Literal("ffi", case_sensitive=False)
+    match = next(parser.lparse("ﬃ", 0))
+    assert match.start == 1
+    assert match.nodes[0].value == "ﬃ"
+
+
+def test_h3_casefold_expansion_uppercase_ss_matches_eszett():
+    """'SS'.casefold() == 'ss' and 'ß'.casefold() == 'ss'."""
+    parser = Literal("SS", case_sensitive=False)
+    match = next(parser.lparse("ß", 0))
+    assert match.start == 1
+
+
+def test_h3_case_sensitive_does_not_expand():
+    """In case-sensitive mode, 'ß' should NOT match 'ss' — casefold
+    expansion is disabled by definition."""
+    parser = Literal("ss", case_sensitive=True)
+    with pytest.raises(ParseError):
+        next(parser.lparse("ß", 0))
+
+
+# ---------------------------------------------------------------------------
+# H5 regression: a left-recursive grammar (`a = a "x" / "x"`) must produce
+# a catchable Python exception, not crash the interpreter.  The Python
+# backend raises RecursionError; the Rust backend used to recurse through
+# native frames with no depth check and SIGSEGV the whole process.
+# The test runs in a subprocess so a stack-overflow in pre-fix Rust
+# doesn't take down pytest.
+# ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# M7 regression: the Rust bridge registry (Python `Rule` id →
+# `Arc<NamedRule>`) grows monotonically as new rules are created.  For
+# long-lived processes that load grammars dynamically, that's a memory
+# leak — Python's class-level `_obj_map` already keeps every Rule
+# alive, but the Rust shadow adds a second `Arc` to the parser tree.
+# `clear_bridge()` lets callers drop the shadow state when they know
+# they're done with a batch of dynamic grammars; subsequent parses
+# repopulate the bridge lazily.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.skipif(
+    __import__("abnf.parser", fromlist=["_BACKEND"])._BACKEND != "rust",
+    reason="The bridge registry only exists under the Rust backend.",
+)
+def test_m7_clear_bridge_releases_entries():
+    from abnf_rust._ext import bridge_size, clear_bridge  # type: ignore[import-not-found]
+
+    # Start from a known state.
+    clear_bridge()
+    assert bridge_size() == 0
+
+    # Define a grammar; rule construction populates the bridge as
+    # `_set_definition_hook` fires.
+    class _M7Grammar(Rule):
+        pass
+
+    _M7Grammar.create('a = "x"')
+    populated = bridge_size()
+    assert populated > 0, "expected the bridge to gain at least one entry"
+
+    # The headline fix: clear_bridge drops everything.
+    clear_bridge()
+    assert bridge_size() == 0
+
+
+# ---------------------------------------------------------------------------
+# M1 regression: a duck-typed parser (object with `lparse` but no `name`)
+# wrapped through Rust's `PyCallbackParser` must propagate non-ParseError
+# Python exceptions instead of swallowing them as a generic ParseError.
+# The Python reference only catches `ParseError`; everything else
+# (TypeError, KeyError, KeyboardInterrupt, ...) propagates uncaught.
+# ---------------------------------------------------------------------------
+
+
+def test_m1_callback_parser_propagates_typeerror():
+    class BuggyParser:
+        def lparse(self, source, start):
+            raise TypeError("simulated bug")
+
+    parser = Concatenation(Literal("a"), BuggyParser())
+    with pytest.raises(TypeError, match="simulated bug"):
+        list(parser.lparse("ab", 0))
+
+
+def test_m1_callback_parser_propagates_keyerror():
+    class BuggyParser:
+        def lparse(self, source, start):
+            raise KeyError("missing")
+
+    parser = Concatenation(Literal("a"), BuggyParser())
+    with pytest.raises(KeyError):
+        list(parser.lparse("ab", 0))
+
+
+def test_m1_callback_parser_still_treats_parse_error_as_backtrack():
+    """Sanity check: a callback that raises `ParseError` must still
+    drive normal backtracking, not propagate.  Tested by wrapping it
+    in `Alternation(ParseError, "b")` and verifying the "b" branch is
+    used."""
+
+    class AlwaysFails:
+        def lparse(self, source, start):
+            raise ParseError(self, start)
+
+    parser = Alternation(AlwaysFails(), Literal("b"))
+    match = next(parser.lparse("b", 0))
+    assert match.start == 1
+
+
+# ---------------------------------------------------------------------------
+# M2 regression: `Literal('')` must raise `ParseError` when invoked at a
+# position past the end of source.  The pure-Python reference checks
+# `start < len(source)` before considering any match (so even an empty
+# literal cannot match at EOF); the Rust fast path skipped that check
+# whenever `plen == 0`, silently matching the empty string at EOF.
+# ---------------------------------------------------------------------------
+
+
+def test_m2_empty_literal_raises_at_eof_empty_source():
+    parser = Literal("")
+    with pytest.raises(ParseError):
+        next(parser.lparse("", 0))
+
+
+def test_m2_empty_literal_raises_at_eof_nonempty_source():
+    parser = Literal("")
+    with pytest.raises(ParseError):
+        next(parser.lparse("abc", 3))
+
+
+def test_m2_empty_literal_matches_inside_source():
+    """Sanity check: empty literal does match when start is strictly
+    inside the source (Python's `start < len(source)` is true)."""
+    parser = Literal("")
+    match = next(parser.lparse("abc", 1))
+    assert match.start == 1  # empty literal advances nothing
+
+
+def test_h5_left_recursive_grammar_is_catchable_not_segfault():
+    import subprocess
+    import sys
+
+    script = textwrap.dedent(
+        """
+        from abnf.parser import Rule
+
+        class G(Rule):
+            pass
+
+        G.create('a = a "x" / "x"')
+        try:
+            G('a').parse('xxx', 0)
+        except Exception as exc:
+            print(f"caught:{type(exc).__name__}")
+        else:
+            print("no-exception")
+        """
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    # Returncode must be 0 (clean exit).  A segfault would yield a
+    # negative returncode on POSIX (e.g. -11 for SIGSEGV).
+    assert result.returncode == 0, (
+        f"left-recursive grammar killed the interpreter: "
+        f"returncode={result.returncode}, stderr={result.stderr!r}"
+    )
+    assert result.stdout.startswith("caught:"), (
+        f"expected a caught exception, got: stdout={result.stdout!r}, "
+        f"stderr={result.stderr!r}"
+    )

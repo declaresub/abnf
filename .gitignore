@@ -8,6 +8,7 @@ __pycache__
 .pytest*
 .python-version
 .venv
+.benchmarks/
 
 build/
 dist/
@@ -16,3 +17,4 @@ dist/
 .vscode
 pypi-notes
 profile_rule.py
+.claude

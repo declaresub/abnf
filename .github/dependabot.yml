@@ -1,9 +1,24 @@
 version: 2
 updates:
-  - package-ecosystem: pip
+  - package-ecosystem: uv
     # Files stored in repository root
     directory: "/"
     schedule:
       interval: daily
+      time: "04:00"
+      timezone: America/Kentucky/Monticello
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      time: "04:00"
+      timezone: America/Kentucky/Monticello
+
+  - package-ecosystem: cargo
+    # Rust workspace for the optional `abnf-rust` companion package.
+    directory: "/packages/abnf-rust"
+    schedule:
+      interval: weekly
       time: "04:00"
       timezone: America/Kentucky/Monticello

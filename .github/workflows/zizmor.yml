@@ -1,0 +1,74 @@
+name: Workflow audit
+
+# Runs zizmor against the repo's own GitHub Actions workflows on every
+# push / PR to master, and once a week via cron to catch any new
+# checks added in zizmor itself.  Findings are surfaced both in the
+# job log and as SARIF results in the repo's Code Scanning tab.
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/**'
+      - '.github/dependabot.yml'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/**'
+      - '.github/dependabot.yml'
+  schedule:
+    # Weekly catch-all: zizmor may add new checks that the path-
+    # filtered triggers above would miss.
+    - cron: '23 11 * * 1'
+
+# Minimal workflow-level default; the job below overrides with
+# `security-events: write` for the SARIF upload step.
+permissions:
+  contents: read
+
+# Cancel stale runs when a new commit lands on the same branch / PR.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  zizmor:
+    name: Run zizmor (auditor persona)
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read          # Read the workflows being audited.
+      security-events: write  # Upload SARIF results to Code Scanning.
+
+    steps:
+    - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v5
+      with:
+        persist-credentials: false
+
+    - name: Set up Python
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
+      with:
+        python-version: '3.x'
+
+    - name: Install zizmor
+      # Pinned: a new zizmor release adding stricter checks should
+      # come in as a deliberate version bump, not surprise CI.
+      run: pip install 'zizmor==1.24.1'
+
+    - name: Run zizmor (SARIF)
+      # Always produce a SARIF file even if zizmor exits non-zero on
+      # findings, so the upload step still has something to publish.
+      run: zizmor --persona auditor --format sarif .github/workflows/ > zizmor.sarif
+      continue-on-error: true
+
+    - name: Upload SARIF to Code Scanning
+      if: always()
+      uses: github/codeql-action/upload-sarif@52485aec7be33610227643b0fe83936b8b5f061a  # v3
+      with:
+        sarif_file: zizmor.sarif
+        category: zizmor
+
+    - name: Fail the run if zizmor reported any findings
+      # Re-run in default text format so the job log itself shows the
+      # findings; non-zero exit fails the workflow.
+      run: zizmor --persona auditor .github/workflows/

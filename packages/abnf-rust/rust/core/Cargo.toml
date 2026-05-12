@@ -1,0 +1,15 @@
+[package]
+authors.workspace = true
+description = "Pure-Rust ABNF parser engine; consumable from any Rust caller."
+edition.workspace = true
+license.workspace = true
+name = "abnf-core"
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[dependencies]
+caseless.workspace = true
+lru.workspace = true
+once_cell.workspace = true
+smallvec.workspace = true
