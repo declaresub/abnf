@@ -1,5 +1,45 @@
 # Changelog
 
+## 2.5.0
+
+* Add an optional Rust-backed parser engine.  Install via
+  `pip install 'abnf[rust]'` to pull in the companion `abnf-rust`
+  distribution; parses representative grammars 5-10x faster than the
+  pure-Python backend.  Public API and semantics are unchanged.  The
+  pure-Python backend remains the default and is always available as
+  a fallback (force it with `ABNF_NO_RUST=1`).
+
+* Internal refactor: the combinator engine has moved from
+  `abnf.parser` to `abnf._parser_python`.  `abnf.parser` is now a
+  dispatch shim that picks between the Python and Rust backends at
+  import time.  All names re-exported by `abnf` are unchanged.  Code
+  that monkey-patched internals via `abnf.parser` should now target
+  `abnf._parser_python`.
+
+* `abnf` and `abnf-rust` release together on the same `v*` git tag
+  and are version-locked, so `pip install 'abnf[rust]'` always
+  resolves to a matching pair.
+
+* The Rust backend bounds rule-recursion depth, so left-recursive
+  grammars raise `RecursionError` instead of overflowing the native
+  stack.
+
+* Latent bugs fixed: the pure-Python `Repetition` cache no longer
+  accumulates traceback frames on a shared `ParseError` instance
+  across cache hits; the Rust FFI returns code-point offsets (not
+  byte offsets) for non-ASCII source in `Match.start` and
+  `ParseError.start`; the Rust ASCII fast path honours full Unicode
+  casefold expansion (so `Literal('ss', case_sensitive=False)`
+  matches `'ß'` as in the Python reference); empty `Literal` no
+  longer matches at end of source.
+
+* Add `SECURITY.md` documenting how to report vulnerabilities.
+
+* Pin every GitHub Actions reference to a commit SHA, document the
+  minimal permissions each job needs, and add a zizmor workflow that
+  audits the workflows on every change.  Both backends are now
+  exercised in CI across Python 3.10-3.14.
+
 ## 2.4.1
 
 * Add grammar for RFC 7239 (thanks to [alanverresen](https://github.com/alanverresen)).
