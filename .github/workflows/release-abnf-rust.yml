@@ -1,0 +1,242 @@
+name: Build abnf-rust Package
+
+# Triggers off the same `v*` tag as the `abnf` release workflow.
+# Version lock-step is enforced by reading the tag at run time and
+# rewriting `packages/abnf-rust/Cargo.toml`'s `[workspace.package]`
+# version before building, so the wheels published as `abnf-rust`
+# always match the tag (and therefore match the `abnf` wheel built
+# from the same tag).
+
+on:
+  push:
+    tags:
+      - v*
+
+# Workflow-level default; publish jobs override with id-token.
+permissions:
+  contents: read
+
+# Serialize concurrent runs.  Never cancel an in-flight publish:
+# a partial release across five wheels + sdist + Sigstore signing
+# is harder to recover from than a queued run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-wheel:
+    name: Wheel ${{ matrix.target.label }}
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ${{ matrix.target.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - label: linux-x86_64
+            runner: ubuntu-latest
+            maturin-target: x86_64-unknown-linux-gnu
+            manylinux: auto
+          - label: linux-aarch64
+            runner: ubuntu-latest
+            maturin-target: aarch64-unknown-linux-gnu
+            manylinux: auto
+          - label: macos-x86_64
+            runner: macos-13
+            maturin-target: x86_64-apple-darwin
+            manylinux: ""
+          - label: macos-arm64
+            runner: macos-14
+            maturin-target: aarch64-apple-darwin
+            manylinux: ""
+          - label: windows-x86_64
+            runner: windows-latest
+            maturin-target: x86_64-pc-windows-msvc
+            manylinux: ""
+
+    steps:
+    - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v5
+      with:
+        ref: ${{ github.ref }}
+        persist-credentials: false
+
+    - name: Set abnf-rust crate version from the tag
+      # The Cargo.toml's `[workspace.package].version` and the
+      # `abnf-core` dep ref both have to match the tag, otherwise
+      # maturin emits the wrong wheel filename.  We do this in
+      # Python so the same step works on Linux, macOS, and Windows.
+      shell: python
+      run: |
+        import os, re, pathlib
+        version = os.environ["GITHUB_REF_NAME"].lstrip("v")
+        path = pathlib.Path("packages/abnf-rust/Cargo.toml")
+        text = path.read_text()
+        # Replace `version = "X.Y.Z"` lines in the workspace.package
+        # table and in the inline abnf-core dep ref.
+        text = re.sub(
+            r'^version = "[^"]+"',
+            f'version = "{version}"',
+            text,
+            flags=re.MULTILINE,
+        )
+        text = re.sub(
+            r'(abnf-core = \{ path = "rust/core", version = )"[^"]+"',
+            rf'\1"{version}"',
+            text,
+        )
+        path.write_text(text)
+        print(f"Set abnf-rust version to {version}")
+
+    - name: Build wheel
+      # sccache is intentionally OFF: a release wheel must build
+      # from sealed source, not from a compilation cache that a
+      # previous run could have poisoned.
+      uses: PyO3/maturin-action@423a6347767a8b16e65c2a7a7042e4a921528da8  # v1
+      with:
+        working-directory: packages/abnf-rust
+        target: ${{ matrix.target.maturin-target }}
+        args: --release --out dist
+        manylinux: ${{ matrix.target.manylinux }}
+
+    - name: Upload wheel artifact
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+      with:
+        name: abnf-rust-wheel-${{ matrix.target.label }}
+        path: packages/abnf-rust/dist/*.whl
+
+  build-sdist:
+    name: Source distribution
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v5
+      with:
+        ref: ${{ github.ref }}
+        persist-credentials: false
+
+    - name: Set abnf-rust crate version from the tag
+      shell: python
+      run: |
+        import os, re, pathlib
+        version = os.environ["GITHUB_REF_NAME"].lstrip("v")
+        path = pathlib.Path("packages/abnf-rust/Cargo.toml")
+        text = path.read_text()
+        text = re.sub(
+            r'^version = "[^"]+"',
+            f'version = "{version}"',
+            text,
+            flags=re.MULTILINE,
+        )
+        text = re.sub(
+            r'(abnf-core = \{ path = "rust/core", version = )"[^"]+"',
+            rf'\1"{version}"',
+            text,
+        )
+        path.write_text(text)
+
+    - name: Build sdist
+      uses: PyO3/maturin-action@423a6347767a8b16e65c2a7a7042e4a921528da8  # v1
+      with:
+        working-directory: packages/abnf-rust
+        command: sdist
+        args: --out dist
+
+    - name: Upload sdist artifact
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+      with:
+        name: abnf-rust-sdist
+        path: packages/abnf-rust/dist/*.tar.gz
+
+  publish-to-testpypi:
+    name: Publish abnf-rust to TestPyPI
+    if: startsWith(github.ref, 'refs/tags/')
+    needs:
+    - build-wheel
+    - build-sdist
+    runs-on: ubuntu-latest
+
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/abnf-rust
+
+    permissions:
+      id-token: write  # IMPORTANT: mandatory for trusted publishing
+
+    steps:
+    - name: Download all wheel + sdist artifacts
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
+      with:
+        pattern: abnf-rust-*
+        merge-multiple: true
+        path: dist/
+
+    - name: Publish to TestPyPI
+      uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b  # release/v1
+      with:
+        repository-url: https://test.pypi.org/legacy/
+
+  publish-to-pypi:
+    name: Publish abnf-rust to PyPI
+    if: startsWith(github.ref, 'refs/tags/')
+    needs:
+    - publish-to-testpypi
+    runs-on: ubuntu-latest
+
+    environment:
+      name: pypi
+      url: https://pypi.org/p/abnf-rust
+
+    permissions:
+      id-token: write  # IMPORTANT: mandatory for trusted publishing
+
+    steps:
+    - name: Download all wheel + sdist artifacts
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
+      with:
+        pattern: abnf-rust-*
+        merge-multiple: true
+        path: dist/
+
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b  # release/v1
+
+  github-release:
+    name: Sign abnf-rust dists with Sigstore and attach to release
+    needs:
+    - publish-to-pypi
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write  # Upload to GitHub Release.
+      id-token: write  # Required for Sigstore signing.
+
+    steps:
+    - name: Download all wheel + sdist artifacts
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
+      with:
+        pattern: abnf-rust-*
+        merge-multiple: true
+        path: dist/
+
+    - name: Sign the dists with Sigstore
+      uses: sigstore/gh-action-sigstore-python@f514d46b907ebcd5bedc05145c03b69c1edd8b46  # v3.0.0
+      with:
+        inputs: >-
+          ./dist/*.tar.gz
+          ./dist/*.whl
+
+    - name: Upload to the GitHub Release
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      # The companion `release-package.yml` workflow creates the
+      # release for the `abnf` artifacts; we upload our wheels into
+      # the same release.  `gh release create ... || true` makes the
+      # step idempotent in case this workflow finishes first (in
+      # which case the abnf workflow will upload into our release).
+      run: |
+        gh release create "$GITHUB_REF_NAME" \
+          --repo "$GITHUB_REPOSITORY" \
+          --notes "" \
+          2>/dev/null || true
+        gh release upload "$GITHUB_REF_NAME" dist/* \
+          --repo "$GITHUB_REPOSITORY" \
+          --clobber

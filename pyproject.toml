@@ -56,7 +56,11 @@ dev = [
 # fully working fallback (also forced via the ABNF_NO_RUST=1
 # environment variable when the extra is installed).
 rust = [
-    'abnf-rust>=0.1,<1',
+    # Lock-stepped versioning: `abnf` and `abnf-rust` release under
+    # the same git tag.  Lower bound matches the current minor; upper
+    # bound clamps to the next major so a future `abnf-rust` release
+    # with a breaking change can't silently come in via the extra.
+    'abnf-rust>=2.5,<3',
 ]
 
 [tool.black]

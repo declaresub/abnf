@@ -3,7 +3,10 @@ members = ["rust/core", "rust/pyo3"]
 resolver = "2"
 
 [workspace.package]
-version = "0.1.0"
+# Lock-stepped with the `abnf` distribution; both packages release
+# under the same git tag so the wheels at `pip install abnf==X` and
+# `pip install abnf-rust==X` always come from the same source state.
+version = "2.5.0"
 edition = "2021"
 rust-version = "1.75"
 license = "MIT"
@@ -11,7 +14,7 @@ authors = ["Charles Yeomans <charles@declaresub.com>"]
 repository = "https://github.com/declaresub/abnf"
 
 [workspace.dependencies]
-abnf-core = { path = "rust/core", version = "0.1.0" }
+abnf-core = { path = "rust/core", version = "2.5.0" }
 caseless = "0.2"
 lru = "0.12"
 mimalloc = { version = "0.1", default-features = false }

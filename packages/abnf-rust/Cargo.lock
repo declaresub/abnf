@@ -4,7 +4,7 @@ version = 3
 
 [[package]]
 name = "abnf-core"
-version = "0.1.0"
+version = "2.5.0"
 dependencies = [
  "caseless",
  "lru",
@@ -14,7 +14,7 @@ dependencies = [
 
 [[package]]
 name = "abnf-rust-ext"
-version = "0.1.0"
+version = "2.5.0"
 dependencies = [
  "abnf-core",
  "mimalloc",
