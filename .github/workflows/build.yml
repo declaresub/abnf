@@ -7,6 +7,13 @@ on: workflow_dispatch
 permissions:
   contents: read
 
+# This workflow is manually triggered (workflow_dispatch).  Cancel a
+# previous run if the user re-triggers before it finishes — there's
+# no benefit to keeping a stale build around.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: Build distribution

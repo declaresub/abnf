@@ -20,6 +20,12 @@ on:
   schedule:
     - cron: '16 23 * * 5'
 
+# Cancel stale scans when a new commit lands on the same branch or
+# PR.  Different branches still run in parallel.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   analyze:
     name: Analyze

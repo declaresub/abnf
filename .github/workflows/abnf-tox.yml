@@ -14,6 +14,12 @@ on:
 permissions:
   contents: read
 
+# Cancel stale runs when a new commit lands on the same branch or
+# PR.  Different branches / PRs still run in parallel.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest

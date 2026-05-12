@@ -11,6 +11,13 @@ on:
 permissions:
   contents: read
 
+# Serialize concurrent runs of this workflow but never cancel one
+# already in progress: a partial publish (e.g. uploaded to TestPyPI
+# but not signed yet) is harder to recover from than a queued run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build:
     name: Build abnf distribution
