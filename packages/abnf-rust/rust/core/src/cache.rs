@@ -22,11 +22,11 @@ use std::num::NonZeroUsize;
 use lru::LruCache;
 
 use crate::error::ParseError;
-use crate::matcher::Match;
+use crate::parser::MatchList;
 
 #[derive(Debug, Clone)]
 pub enum CachedResult {
-    Matches(Vec<Match>),
+    Matches(MatchList),
     Failed(ParseError),
 }
 

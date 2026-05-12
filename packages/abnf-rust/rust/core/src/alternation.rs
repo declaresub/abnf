@@ -12,10 +12,11 @@
 
 use std::sync::atomic::{AtomicBool, Ordering};
 
+use smallvec::SmallVec;
+
 use crate::concatenation::sort_by_longest;
 use crate::error::ParseError;
-use crate::matcher::Match;
-use crate::parser::{ArcParser, ParseResult};
+use crate::parser::{ArcParser, MatchList, ParseResult};
 
 #[derive(Debug)]
 pub struct Alternation {
@@ -47,7 +48,7 @@ impl Alternation {
     }
 
     pub fn lparse(&self, source: &str, start: usize) -> ParseResult {
-        let mut all: Vec<Match> = Vec::new();
+        let mut all: MatchList = SmallVec::new();
         let mut found = false;
         let first_match = self.first_match();
         for p in &self.parsers {
@@ -67,7 +68,7 @@ impl Alternation {
                 return if found {
                     Ok(all)
                 } else {
-                    Ok(Vec::new())
+                    Ok(SmallVec::new())
                 };
             }
         }
@@ -75,8 +76,12 @@ impl Alternation {
             // Sort longest-first so downstream consumers (notably
             // `Rule.lparse`, which yields the first match it sees)
             // observe the longest candidate immediately and can
-            // short-circuit without materialising the rest.
-            sort_by_longest(&mut all);
+            // short-circuit without materialising the rest.  Skip
+            // the call entirely when there's nothing to reorder —
+            // deterministic grammars hit this fast path constantly.
+            if all.len() > 1 {
+                sort_by_longest(&mut all);
+            }
             Ok(all)
         } else {
             Err(ParseError::new("Alternation", start))

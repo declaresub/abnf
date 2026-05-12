@@ -264,9 +264,11 @@ impl PyMatch {
 
 /// Convert a Python `Match`-like object back into a Rust `Match`.
 pub fn py_match_to_rust(py_match: &Bound<'_, PyAny>) -> PyResult<Match> {
+    use abnf_core::NodeList;
+    use smallvec::SmallVec;
     let start: usize = py_match.getattr("start")?.extract()?;
     let nodes_py = py_match.getattr("nodes")?;
-    let mut nodes: Vec<NodeKind> = Vec::new();
+    let mut nodes: NodeList = SmallVec::new();
     for item in nodes_py.iter()? {
         let item = item?;
         nodes.push(py_to_node_kind(&item)?);

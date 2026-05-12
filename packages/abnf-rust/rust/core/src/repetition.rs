@@ -3,13 +3,16 @@
 //! Mirrors `abnf.parser.Repeat` / `Repetition`
 //! (`_parser_python.py:192-264`).
 
+use std::collections::HashSet;
 use std::sync::Mutex;
+
+use smallvec::{smallvec, SmallVec};
 
 use crate::cache::{CachedResult, ParseCache};
 use crate::concatenation::{sort_by_longest, Concatenation};
 use crate::error::ParseError;
 use crate::matcher::Match;
-use crate::parser::{ArcParser, ParseResult};
+use crate::parser::{ArcParser, MatchList, NodeList, ParseResult};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Repeat {
@@ -54,14 +57,8 @@ impl Repetition {
             }
         }
 
-        // The repetition's match set is deduplicated by *end position*
-        // (i.e. `Match.start`).  Mirroring Python's `set` semantics
-        // requires `(value, start)` equality, but two matches with the
-        // same starting position consume the same source span and
-        // therefore have the same `value`; using `start` alone avoids
-        // O(N²) cost from materialising and comparing match values.
-        let mut match_set: Vec<Match> = if self.repeat.min == 0 {
-            vec![Match::new(Vec::new(), start)]
+        let mut match_set: MatchList = if self.repeat.min == 0 {
+            smallvec![Match::new(SmallVec::new(), start)]
         } else {
             let parsers = vec![self.element.clone(); self.repeat.min];
             let concat = Concatenation::new(parsers);
@@ -75,8 +72,7 @@ impl Repetition {
                 }
             }
         };
-        let mut seen_starts: std::collections::HashSet<usize> =
-            std::collections::HashSet::new();
+        let mut seen_starts: HashSet<usize> = HashSet::new();
         match_set.retain(|m| seen_starts.insert(m.start));
         let mut last_match_set = match_set.clone();
         let mut match_count = self.repeat.min;
@@ -87,35 +83,25 @@ impl Repetition {
                     break;
                 }
             }
-            let mut new_match_set: Vec<Match> = Vec::new();
+            let mut new_match_set: MatchList = SmallVec::new();
             for prefix in last_match_set.drain(..) {
                 let extensions = match self.element.lparse(source, prefix.start) {
                     Ok(e) => e,
                     Err(_) => continue,
                 };
-                // Filter out extensions whose end position is already
-                // covered, then iterate.  We move `prefix.nodes` into
-                // the last surviving extension and clone for the rest.
-                let mut surviving: Vec<Match> = extensions
-                    .into_iter()
-                    .filter(|ext| !seen_starts.contains(&ext.start))
-                    .collect();
-                if surviving.is_empty() {
-                    continue;
-                }
-                let last = surviving.pop().expect("non-empty checked above");
-                for ext in surviving {
-                    let mut combined = prefix.nodes.clone();
+                for ext in extensions {
+                    if seen_starts.contains(&ext.start) {
+                        continue;
+                    }
+                    let prefix_len = prefix.nodes.len();
+                    let ext_len = ext.nodes.len();
+                    let mut combined: NodeList = SmallVec::with_capacity(prefix_len + ext_len);
+                    combined.extend(prefix.nodes.iter().cloned());
                     combined.extend(ext.nodes);
                     new_match_set.push(Match::new(combined, ext.start));
                 }
-                let mut combined = prefix.nodes;
-                combined.extend(last.nodes);
-                new_match_set.push(Match::new(combined, last.start));
             }
-            // De-dupe within new_match_set by end position.
-            let mut local_seen: std::collections::HashSet<usize> =
-                std::collections::HashSet::new();
+            let mut local_seen: HashSet<usize> = HashSet::new();
             new_match_set.retain(|m| local_seen.insert(m.start));
 
             if new_match_set.is_empty() {
@@ -129,7 +115,9 @@ impl Repetition {
             last_match_set = new_match_set;
         }
 
-        sort_by_longest(&mut match_set);
+        if match_set.len() > 1 {
+            sort_by_longest(&mut match_set);
+        }
 
         {
             let mut cache = self.cache.lock().expect("ParseCache mutex poisoned");

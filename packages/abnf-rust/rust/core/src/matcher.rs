@@ -8,17 +8,20 @@
 
 use std::hash::{Hash, Hasher};
 
-use crate::node::NodeKind;
+use crate::parser::NodeList;
 
 #[derive(Debug, Clone)]
 pub struct Match {
-    pub nodes: Vec<NodeKind>,
+    /// Sequence of parse-tree nodes produced by this match.
+    /// `SmallVec`-backed (see `NodeList`) to keep the typical
+    /// 1–4-node cases off the heap.
+    pub nodes: NodeList,
     /// Byte offset at which the next parser should resume.
     pub start: usize,
 }
 
 impl Match {
-    pub fn new(nodes: Vec<NodeKind>, start: usize) -> Self {
+    pub fn new(nodes: NodeList, start: usize) -> Self {
         Self { nodes, start }
     }
 

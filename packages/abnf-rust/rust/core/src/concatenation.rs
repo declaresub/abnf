@@ -2,9 +2,11 @@
 //!
 //! Mirrors `abnf.parser.Concatenation` (`_parser_python.py:157-189`).
 
+use smallvec::{smallvec, SmallVec};
+
 use crate::error::ParseError;
 use crate::matcher::Match;
-use crate::parser::{ArcParser, ParseResult};
+use crate::parser::{ArcParser, MatchList, NodeList, ParseResult};
 
 #[derive(Debug)]
 pub struct Concatenation {
@@ -17,9 +19,9 @@ impl Concatenation {
     }
 
     pub fn lparse(&self, source: &str, start: usize) -> ParseResult {
-        let mut match_list: Vec<Match> = vec![Match::new(Vec::new(), start)];
+        let mut match_list: MatchList = smallvec![Match::new(SmallVec::new(), start)];
         for parser in &self.parsers {
-            let mut next: Vec<Match> = Vec::new();
+            let mut next: MatchList = SmallVec::new();
             // Consume `match_list` by value so the last extension of
             // each prefix can move — instead of clone — the prefix
             // nodes.  For deterministic grammars (one extension per
@@ -42,7 +44,7 @@ impl Concatenation {
                 let prefix_len = prefix.nodes.len();
                 for ext in iter {
                     let ext_len = ext.nodes.len();
-                    let mut combined = Vec::with_capacity(prefix_len + ext_len);
+                    let mut combined: NodeList = SmallVec::with_capacity(prefix_len + ext_len);
                     combined.extend(prefix.nodes.iter().cloned());
                     combined.extend(ext.nodes);
                     next.push(Match::new(combined, ext.start));
@@ -58,7 +60,9 @@ impl Concatenation {
             }
             match_list = next;
         }
-        sort_by_longest(&mut match_list);
+        if match_list.len() > 1 {
+            sort_by_longest(&mut match_list);
+        }
         Ok(match_list)
     }
 }

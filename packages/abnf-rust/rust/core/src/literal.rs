@@ -13,6 +13,8 @@
 
 use std::sync::Arc;
 
+use smallvec::smallvec;
+
 use crate::casefold::casefold;
 use crate::error::ParseError;
 use crate::matcher::Match;
@@ -96,7 +98,7 @@ impl Literal {
                     let len = ch.len_utf8();
                     let matched: Arc<str> = ch.to_string().into();
                     let node = NodeKind::Literal(LiteralNode::new(matched, start, len));
-                    Ok(vec![Match::new(vec![node], start + len)])
+                    Ok(smallvec![Match::new(smallvec![node], start + len)])
                 } else {
                     Err(self.parse_error(start))
                 }
@@ -132,7 +134,7 @@ impl Literal {
                     let matched: Arc<str> = Arc::from(candidate);
                     let len = byte_end;
                     let node = NodeKind::Literal(LiteralNode::new(matched, start, len));
-                    Ok(vec![Match::new(vec![node], start + len)])
+                    Ok(smallvec![Match::new(smallvec![node], start + len)])
                 } else {
                     Err(self.parse_error(start))
                 }

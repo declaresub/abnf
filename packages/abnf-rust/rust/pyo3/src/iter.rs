@@ -11,6 +11,7 @@
 
 use pyo3::exceptions::PyStopIteration;
 use pyo3::prelude::*;
+use smallvec::SmallVec;
 
 use abnf_core::Match;
 
@@ -19,7 +20,7 @@ use crate::nodes::PyMatch;
 
 #[pyclass]
 pub struct LparseIter {
-    matches: std::vec::IntoIter<Match>,
+    matches: smallvec::IntoIter<[Match; 1]>,
     /// Reference-counted source kept alive for the duration of
     /// iteration so the literal-value `Arc<str>`s remain valid.
     source: std::sync::Arc<str>,
@@ -51,7 +52,7 @@ pub fn lparse_iter(
 ) -> PyResult<Py<LparseIter>> {
     let (matches, pending_error) = match result {
         Ok(ms) => (ms, None),
-        Err(e) => (Vec::new(), Some(parse_error_to_pyerr(py, e))),
+        Err(e) => (SmallVec::new(), Some(parse_error_to_pyerr(py, e))),
     };
     Py::new(
         py,

@@ -16,3 +16,4 @@ name = "_ext"
 abnf-core.workspace = true
 once_cell.workspace = true
 pyo3 = { workspace = true, features = ["abi3-py310"] }
+smallvec.workspace = true

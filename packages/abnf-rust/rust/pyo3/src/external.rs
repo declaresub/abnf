@@ -9,8 +9,9 @@
 //! match list back into Rust.
 
 use pyo3::prelude::*;
+use smallvec::SmallVec;
 
-use abnf_core::{ExternalParser, Match, ParseError, ParseResult};
+use abnf_core::{ExternalParser, ParseError, ParseResult};
 
 use crate::nodes::py_match_to_rust;
 
@@ -41,7 +42,7 @@ impl ExternalParser for PyCallbackParser {
             let iter = result
                 .iter()
                 .map_err(|_| ParseError::new(self.description.clone(), start))?;
-            let mut matches: Vec<Match> = Vec::new();
+            let mut matches: abnf_core::MatchList = SmallVec::new();
             for item in iter {
                 let item = item
                     .map_err(|_| ParseError::new(self.description.clone(), start))?;

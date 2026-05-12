@@ -6,10 +6,12 @@
 use std::collections::HashSet;
 use std::sync::{Arc, RwLock};
 
+use smallvec::{smallvec, SmallVec};
+
 use crate::error::ParseError;
 use crate::matcher::Match;
 use crate::node::{Node, NodeKind};
-use crate::parser::{ArcParser, ParseResult};
+use crate::parser::{ArcParser, MatchList, ParseResult};
 
 #[derive(Debug)]
 pub struct NamedRule {
@@ -46,9 +48,9 @@ impl NamedRule {
         // dedup allocation entirely.
         if inner.len() == 1 {
             let m = inner.into_iter().next().expect("len == 1");
-            let node = Node::new(self.name.clone(), m.nodes);
-            return Ok(vec![Match::new(
-                vec![NodeKind::Internal(node)],
+            let node = Node::new(self.name.clone(), m.nodes.into_vec());
+            return Ok(smallvec![Match::new(
+                smallvec![NodeKind::Internal(node)],
                 m.start,
             )]);
         }
@@ -59,13 +61,16 @@ impl NamedRule {
         // Python's `(value, start)` set semantics without
         // materialising every match value.
         let mut seen: HashSet<usize> = HashSet::new();
-        let mut wrapped: Vec<Match> = Vec::with_capacity(inner.len());
+        let mut wrapped: MatchList = SmallVec::with_capacity(inner.len());
         for m in inner {
             if !seen.insert(m.start) {
                 continue;
             }
-            let node = Node::new(self.name.clone(), m.nodes);
-            wrapped.push(Match::new(vec![NodeKind::Internal(node)], m.start));
+            let node = Node::new(self.name.clone(), m.nodes.into_vec());
+            wrapped.push(Match::new(
+                smallvec![NodeKind::Internal(node)],
+                m.start,
+            ));
         }
         if wrapped.is_empty() {
             Err(ParseError::new(format!("Rule({})", self.name), start))

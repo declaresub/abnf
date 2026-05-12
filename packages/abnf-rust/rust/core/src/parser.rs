@@ -2,17 +2,34 @@
 
 use std::sync::Arc;
 
+use smallvec::SmallVec;
+
 use crate::alternation::Alternation;
 use crate::concatenation::Concatenation;
 use crate::literal::Literal;
 use crate::matcher::Match;
+use crate::node::NodeKind;
 use crate::option::OptionParser;
 use crate::prose::Prose;
 use crate::repetition::Repetition;
 use crate::rule::NamedRule;
 
+/// Inline-stored node list.  Most match boundaries between
+/// combinators carry exactly one node (a `NamedRule` wrap produces
+/// a single-node match), so inlining 1 element covers the hot path
+/// without bloating `Match` enough to hurt cache locality.  Larger
+/// node lists (the growing prefix accumulated inside
+/// `Concatenation`/`Repetition`) spill to the heap, which matches
+/// the original allocation pattern.
+pub type NodeList = SmallVec<[NodeKind; 1]>;
+
+/// Inline-stored match list.  Deterministic grammars (the
+/// overwhelming majority of rules in real RFCs) produce exactly one
+/// match per combinator call; ambiguous grammars spill to the heap.
+pub type MatchList = SmallVec<[Match; 1]>;
+
 /// Result of a single combinator's `lparse`.
-pub type ParseResult = Result<Vec<Match>, crate::error::ParseError>;
+pub type ParseResult = Result<MatchList, crate::error::ParseError>;
 
 /// Shared parser handle used to compose trees.
 pub type ArcParser = Arc<Parser>;

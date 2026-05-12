@@ -281,7 +281,7 @@ impl PyProse {
     /// Prose().lparse(...)` works as written.
     fn lparse(&self, py: Python<'_>, source: &str, start: usize) -> PyResult<Py<LparseIter>> {
         match self.inner.lparse(source, start) {
-            Ok(_) => lparse_iter(py, Ok(Vec::new()), source),
+            Ok(_) => lparse_iter(py, Ok(smallvec::SmallVec::new()), source),
             Err(err) => Err(parse_error_to_pyerr(py, err)),
         }
     }
