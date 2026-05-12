@@ -20,6 +20,13 @@ on:
   schedule:
     - cron: '16 23 * * 5'
 
+# Minimal workflow-level default.  The `analyze` job below overrides
+# with a broader set; any future job added without its own
+# `permissions:` block inherits this restrictive default instead of
+# the runner's default-token permissions.
+permissions:
+  contents: read
+
 # Cancel stale scans when a new commit lands on the same branch or
 # PR.  Different branches still run in parallel.
 concurrency:
@@ -31,9 +38,9 @@ jobs:
     name: Analyze
     runs-on: ubuntu-latest
     permissions:
-      actions: read
-      contents: read
-      security-events: write
+      actions: read           # CodeQL inspects workflow run metadata when scanning Actions-related issues.
+      contents: read          # Read the source tree being analyzed.
+      security-events: write  # Upload SARIF results to the repo's Code Scanning UI.
 
     strategy:
       fail-fast: false
