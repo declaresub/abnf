@@ -14,3 +14,11 @@ updates:
       interval: weekly
       time: "04:00"
       timezone: America/Kentucky/Monticello
+
+  - package-ecosystem: cargo
+    # Rust workspace for the optional `abnf-rust` companion package.
+    directory: "/packages/abnf-rust"
+    schedule:
+      interval: weekly
+      time: "04:00"
+      timezone: America/Kentucky/Monticello
