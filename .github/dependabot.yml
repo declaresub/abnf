@@ -22,3 +22,11 @@ updates:
       interval: weekly
       time: "04:00"
       timezone: America/Kentucky/Monticello
+    ignore:
+      # pyo3 makes breaking API changes on every minor (0.x.y).
+      # Treat each pyo3 bump as a deliberate migration task; do not
+      # auto-propose semver-minor or semver-major updates.
+      - dependency-name: "pyo3"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
