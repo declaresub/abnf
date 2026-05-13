@@ -219,6 +219,12 @@ jobs:
       uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b  # release/v1
       with:
         repository-url: https://test.pypi.org/legacy/
+        # Make re-runs idempotent.  If a previous attempt for this
+        # tag already uploaded the file, we skip rather than fail —
+        # important when half the workflow failed partway through
+        # and we need to retry without yanking what already
+        # published.
+        skip-existing: true
 
   publish-abnf-pypi:
     name: Publish abnf to PyPI
@@ -243,6 +249,11 @@ jobs:
 
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b  # release/v1
+      with:
+        # Idempotent re-runs.  PyPI rejects duplicate filenames at
+        # the project level, so this is purely a "skip what already
+        # uploaded" hatch — version pinning still drives behaviour.
+        skip-existing: true
 
   # ----------------------------------------------------------------
   # Publish abnf-rust
@@ -275,6 +286,7 @@ jobs:
       uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b  # release/v1
       with:
         repository-url: https://test.pypi.org/legacy/
+        skip-existing: true
 
   publish-abnf-rust-pypi:
     name: Publish abnf-rust to PyPI
@@ -300,6 +312,8 @@ jobs:
 
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b  # release/v1
+      with:
+        skip-existing: true
 
   # ----------------------------------------------------------------
   # Final fan-in: Sigstore-sign everything and create the release
