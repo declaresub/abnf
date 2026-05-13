@@ -115,14 +115,21 @@ jobs:
       fail-fast: false
       matrix:
         target:
+          # Use `manylinux: 2_28` (CentOS 8 / gcc 8+) rather than the
+          # default `auto` (which picks manylinux2014 / gcc 4.8.5).
+          # libmimalloc-sys's build script passes `-Werror=date-time`,
+          # which references the `-Wdate-time` option added in gcc 4.9
+          # — the older toolchain fails to compile.  2_28 is the
+          # recommended baseline since 2023; cost is dropping glibc
+          # < 2.28 support (~CentOS 7 era).
           - label: linux-x86_64
             runner: ubuntu-latest
             maturin-target: x86_64-unknown-linux-gnu
-            manylinux: auto
+            manylinux: "2_28"
           - label: linux-aarch64
             runner: ubuntu-latest
             maturin-target: aarch64-unknown-linux-gnu
-            manylinux: auto
+            manylinux: "2_28"
           - label: macos-x86_64
             runner: macos-13
             maturin-target: x86_64-apple-darwin
