@@ -130,12 +130,17 @@ jobs:
             runner: ubuntu-latest
             maturin-target: aarch64-unknown-linux-gnu
             manylinux: "2_28"
+          # macos-13 is deprecated and `macos-14` is one major behind.
+          # `macos-15-intel` and `macos-15` are the current GA Intel
+          # and Apple Silicon labels per actions/runner-images; pin
+          # explicitly rather than using `macos-latest`, which can
+          # shift under us without warning.
           - label: macos-x86_64
-            runner: macos-13
+            runner: macos-15-intel
             maturin-target: x86_64-apple-darwin
             manylinux: ""
           - label: macos-arm64
-            runner: macos-14
+            runner: macos-15
             maturin-target: aarch64-apple-darwin
             manylinux: ""
           - label: windows-x86_64
