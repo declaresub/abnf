@@ -24,6 +24,11 @@ classifiers = [
 description = "Rust-backed parser engine for the abnf package."
 dynamic = ["version"]
 keywords = ["abnf", "parser"]
+# Maturin auto-detects LICENSE.txt for the wheel METADATA and the
+# `License-File` PKG-INFO header, but does not actually copy the
+# file into the sdist tarball.  Listing it explicitly here forces
+# inclusion and keeps the wheel/sdist content in sync.
+license-files = ["LICENSE.txt"]
 name = "abnf-rust"
 readme = "README.md"
 requires-python = ">=3.10"
