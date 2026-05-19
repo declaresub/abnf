@@ -43,7 +43,7 @@ dev = [
 'pre-commit==4.6.0',
 'pyright[nodejs]==1.1.409',
 'pytest==9.0.3',
-'pytest-cov==7.0.0',
+'pytest-cov==7.1.0',
 'ruff==0.15.13',
 'setuptools==82.0.1',
 'tox==4.46.3',
