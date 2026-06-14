@@ -1,0 +1,8 @@
+# Code owners for abnf.
+#
+# Documents ownership and routes review requests to the maintainer.
+# The default-branch ruleset does not currently *require* code-owner
+# review (require_code_owner_review is off, appropriate for a solo
+# project), so this file is advisory: it auto-requests @declaresub on
+# pull requests rather than blocking merges.
+* @declaresub
