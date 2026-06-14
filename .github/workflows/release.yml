@@ -52,11 +52,38 @@ jobs:
       # setuptools-scm picks the version up from the tag itself.
       run: python3 -m build
 
+    - name: Generate CycloneDX SBOM
+      # Describes the runtime dependency closure a user actually
+      # installs (`pip install abnf[rust]`), read from the committed
+      # uv.lock — NOT the dev toolchain.  Written to sbom/ rather than
+      # dist/ so it is never swept into the PyPI upload (a stray file
+      # in dist/ would be published to the index and can break the
+      # publish).  It is attached to the GitHub release at the end.
+      # uv and cyclonedx-bom are version-pinned for reproducibility.
+      run: |
+        python3 -m pip install --user 'uv==0.11.8'
+        export PATH="$HOME/.local/bin:$PATH"
+        mkdir -p sbom
+        uv export --no-dev --extra rust --no-hashes --no-emit-project \
+          --format requirements-txt -o sbom/requirements.txt
+        uvx --from 'cyclonedx-bom==7.3.0' cyclonedx-py requirements \
+          sbom/requirements.txt --output-format JSON > sbom/abnf.cdx.json
+
     - name: Upload abnf dists
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
       with:
         name: abnf-dists
         path: dist/
+
+    - name: Upload SBOM
+      # Separate artifact (not abnf-dists) so the publish jobs, which
+      # download only abnf-dists / abnf-rust-*, never see it.  Only the
+      # final github-release job (which downloads every artifact) picks
+      # it up and attaches it to the release.
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      with:
+        name: abnf-sbom
+        path: sbom/abnf.cdx.json
 
   build-abnf-rust-sdist:
     name: Build abnf-rust sdist
@@ -225,6 +252,10 @@ jobs:
         # and we need to retry without yanking what already
         # published.
         skip-existing: true
+        # Generate & upload PEP 740 attestations (default, made
+        # explicit so a future action default change can't silently
+        # drop release provenance).
+        attestations: true
 
   publish-abnf-pypi:
     name: Publish abnf to PyPI
@@ -254,6 +285,7 @@ jobs:
         # the project level, so this is purely a "skip what already
         # uploaded" hatch — version pinning still drives behaviour.
         skip-existing: true
+        attestations: true
 
   # ----------------------------------------------------------------
   # Publish abnf-rust
@@ -287,6 +319,7 @@ jobs:
       with:
         repository-url: https://test.pypi.org/legacy/
         skip-existing: true
+        attestations: true
 
   publish-abnf-rust-pypi:
     name: Publish abnf-rust to PyPI
@@ -314,6 +347,7 @@ jobs:
       uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b  # release/v1
       with:
         skip-existing: true
+        attestations: true
 
   # ----------------------------------------------------------------
   # Final fan-in: Sigstore-sign everything and create the release
