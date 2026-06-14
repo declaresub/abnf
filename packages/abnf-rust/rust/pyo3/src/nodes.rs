@@ -27,7 +27,7 @@ use crate::offset::{byte_to_cp, cp_to_byte};
 // LiteralNode
 // ----------------------------------------------------------------
 
-#[pyclass(name = "LiteralNode", module = "abnf_rust._ext")]
+#[pyclass(name = "LiteralNode", module = "abnf_rust._ext", from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyLiteralNode {
     #[pyo3(get)]
@@ -53,7 +53,7 @@ impl PyLiteralNode {
     /// Always an empty list — terminal nodes have no children.
     #[getter]
     fn children<'py>(&self, py: Python<'py>) -> Bound<'py, PyList> {
-        PyList::empty_bound(py)
+        PyList::empty(py)
     }
 
     fn __repr__(&self) -> String {
@@ -134,8 +134,8 @@ impl PyNode {
     }
 
     #[getter]
-    fn children<'py>(&self, py: Python<'py>) -> Bound<'py, PyList> {
-        PyList::new_bound(py, &self.children)
+    fn children<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyList>> {
+        PyList::new(py, &self.children)
     }
 
     fn __repr__(&self) -> String {
@@ -234,8 +234,8 @@ impl PyMatch {
     }
 
     #[getter]
-    fn nodes<'py>(&self, py: Python<'py>) -> Bound<'py, PyList> {
-        PyList::new_bound(py, &self.nodes)
+    fn nodes<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyList>> {
+        PyList::new(py, &self.nodes)
     }
 
     fn __hash__(&self) -> u64 {
@@ -285,7 +285,7 @@ pub fn py_match_to_rust(py_match: &Bound<'_, PyAny>, source: &str) -> PyResult<M
     let start = cp_to_byte(source, cp_start);
     let nodes_py = py_match.getattr("nodes")?;
     let mut nodes: NodeList = SmallVec::new();
-    for item in nodes_py.iter()? {
+    for item in nodes_py.try_iter()? {
         let item = item?;
         nodes.push(py_to_node_kind(&item, source)?);
     }
@@ -301,7 +301,7 @@ fn py_to_node_kind(obj: &Bound<'_, PyAny>, source: &str) -> PyResult<NodeKind> {
     //
     // Terminal `offset`/`length` are code-point units on the Python
     // side and byte units on the Rust side; translate via `source`.
-    if let Ok(lit) = obj.downcast::<PyLiteralNode>() {
+    if let Ok(lit) = obj.cast::<PyLiteralNode>() {
         let lit = lit.borrow();
         let arc: Arc<str> = Arc::from(lit.value.as_str());
         let byte_offset = cp_to_byte(source, lit.offset);
@@ -333,7 +333,7 @@ fn py_to_node_kind(obj: &Bound<'_, PyAny>, source: &str) -> PyResult<NodeKind> {
     let name: String = obj.getattr("name")?.extract()?;
     let children_py = obj.getattr("children")?;
     let mut children: Vec<NodeKind> = Vec::new();
-    for item in children_py.iter()? {
+    for item in children_py.try_iter()? {
         let item = item?;
         children.push(py_to_node_kind(&item, source)?);
     }

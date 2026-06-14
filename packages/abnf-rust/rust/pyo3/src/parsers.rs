@@ -24,7 +24,7 @@ use crate::iter::{lparse_iter, LparseIter};
 // Repeat (config object)
 // ----------------------------------------------------------------
 
-#[pyclass(name = "Repeat", module = "abnf_rust._ext")]
+#[pyclass(name = "Repeat", module = "abnf_rust._ext", from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyRepeat {
     #[pyo3(get)]
@@ -60,7 +60,7 @@ impl PyRepeat {
 // Alternation
 // ----------------------------------------------------------------
 
-#[pyclass(name = "Alternation", module = "abnf_rust._ext")]
+#[pyclass(name = "Alternation", module = "abnf_rust._ext", from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyAlternation {
     pub inner: ArcParser,
@@ -107,7 +107,7 @@ impl PyAlternation {
 // Concatenation
 // ----------------------------------------------------------------
 
-#[pyclass(name = "Concatenation", module = "abnf_rust._ext")]
+#[pyclass(name = "Concatenation", module = "abnf_rust._ext", from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyConcatenation {
     pub inner: ArcParser,
@@ -139,7 +139,7 @@ impl PyConcatenation {
 // Repetition
 // ----------------------------------------------------------------
 
-#[pyclass(name = "Repetition", module = "abnf_rust._ext")]
+#[pyclass(name = "Repetition", module = "abnf_rust._ext", from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyRepetition {
     pub inner: ArcParser,
@@ -170,7 +170,7 @@ impl PyRepetition {
 // Option
 // ----------------------------------------------------------------
 
-#[pyclass(name = "Option", module = "abnf_rust._ext")]
+#[pyclass(name = "Option", module = "abnf_rust._ext", from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyOption {
     pub inner: ArcParser,
@@ -201,7 +201,7 @@ impl PyOption {
 // Literal
 // ----------------------------------------------------------------
 
-#[pyclass(name = "Literal", module = "abnf_rust._ext")]
+#[pyclass(name = "Literal", module = "abnf_rust._ext", from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyLiteral {
     pub inner: ArcParser,
@@ -257,10 +257,13 @@ impl PyLiteral {
         Ok(match &lit.kind {
             LiteralKind::String { value, .. } => {
                 let s: &str = value.as_ref();
-                s.into_py(py)
+                s.into_pyobject(py)?.into_any().unbind()
             }
             LiteralKind::Range { lo, hi, .. } => {
-                (lo.to_string(), hi.to_string()).into_py(py)
+                (lo.to_string(), hi.to_string())
+                    .into_pyobject(py)?
+                    .into_any()
+                    .unbind()
             }
         })
     }
@@ -270,7 +273,7 @@ impl PyLiteral {
 // Prose
 // ----------------------------------------------------------------
 
-#[pyclass(name = "Prose", module = "abnf_rust._ext")]
+#[pyclass(name = "Prose", module = "abnf_rust._ext", from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyProse {
     pub inner: ArcParser,
@@ -312,22 +315,22 @@ impl PyProse {
 /// Python `Rule` instance) that exposes a `lparse(source, start)`
 /// method.
 pub fn extract_parser(obj: &Bound<'_, PyAny>) -> PyResult<ArcParser> {
-    if let Ok(p) = obj.downcast::<PyAlternation>() {
+    if let Ok(p) = obj.cast::<PyAlternation>() {
         return Ok(p.borrow().inner.clone());
     }
-    if let Ok(p) = obj.downcast::<PyConcatenation>() {
+    if let Ok(p) = obj.cast::<PyConcatenation>() {
         return Ok(p.borrow().inner.clone());
     }
-    if let Ok(p) = obj.downcast::<PyRepetition>() {
+    if let Ok(p) = obj.cast::<PyRepetition>() {
         return Ok(p.borrow().inner.clone());
     }
-    if let Ok(p) = obj.downcast::<PyOption>() {
+    if let Ok(p) = obj.cast::<PyOption>() {
         return Ok(p.borrow().inner.clone());
     }
-    if let Ok(p) = obj.downcast::<PyLiteral>() {
+    if let Ok(p) = obj.cast::<PyLiteral>() {
         return Ok(p.borrow().inner.clone());
     }
-    if let Ok(p) = obj.downcast::<PyProse>() {
+    if let Ok(p) = obj.cast::<PyProse>() {
         return Ok(p.borrow().inner.clone());
     }
     // If the value is a Python Rule (or anything else carrying a

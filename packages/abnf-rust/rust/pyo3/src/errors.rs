@@ -29,12 +29,12 @@ pub fn parse_error_to_pyerr(py: Python<'_>, err: ParseError, source: &str) -> Py
         Ok(o) => o,
         Err(e) => return e,
     };
-    PyErr::from_value_bound(exc)
+    PyErr::from_value(exc)
 }
 
 fn get_parse_error_class(py: Python<'_>) -> PyResult<Bound<'_, PyType>> {
-    let module = py.import_bound("abnf.parser")?;
+    let module = py.import("abnf.parser")?;
     let cls = module.getattr("ParseError")?;
-    cls.downcast_into::<PyType>()
+    cls.cast_into::<PyType>()
         .map_err(|e| e.into())
 }

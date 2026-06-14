@@ -41,7 +41,7 @@ pub fn bootstrap(py: Python<'_>, rule_cls: &Bound<'_, PyType>) -> PyResult<()> {
     // The base `Rule` class is `rule_cls.__mro__[1]` (since rule_cls
     // is expected to be `ABNFGrammarRule`, a direct subclass).
     let mro = rule_cls.getattr("__mro__")?;
-    let rule_base = mro.get_item(1)?.downcast_into::<PyType>()?;
+    let rule_base = mro.get_item(1)?.cast_into::<PyType>()?;
 
     for (name, named_rule) in registry.iter() {
         let definition = match named_rule.definition() {

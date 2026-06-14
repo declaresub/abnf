@@ -36,7 +36,7 @@ impl PyCallbackParser {
 
 impl ExternalParser for PyCallbackParser {
     fn lparse(&self, source: &str, start: usize) -> ParseResult {
-        Python::with_gil(|py| -> ParseResult {
+        Python::attach(|py| -> ParseResult {
             // The Rust core hands us a byte offset; the Python parser
             // expects a code-point offset.  The translation is also
             // inverted on the way back in `py_match_to_rust`.
@@ -46,7 +46,7 @@ impl ExternalParser for PyCallbackParser {
                 Ok(r) => r,
                 Err(e) => return Err(handle_pyerr(py, e, &self.description, start)),
             };
-            let iter = match result.iter() {
+            let iter = match result.try_iter() {
                 Ok(it) => it,
                 Err(e) => return Err(handle_pyerr(py, e, &self.description, start)),
             };
@@ -97,7 +97,7 @@ fn handle_pyerr(
 /// as non-`ParseError` so it propagates rather than silently
 /// converting into a backtrackable failure.
 fn is_parse_error(py: Python<'_>, err: &PyErr) -> bool {
-    let module = match py.import_bound("abnf.parser") {
+    let module = match py.import("abnf.parser") {
         Ok(m) => m,
         Err(_) => return false,
     };
@@ -105,9 +105,13 @@ fn is_parse_error(py: Python<'_>, err: &PyErr) -> bool {
         Ok(c) => c,
         Err(_) => return false,
     };
-    let cls = match cls.downcast_into::<PyType>() {
+    let cls = match cls.cast_into::<PyType>() {
         Ok(c) => c,
         Err(_) => return false,
     };
-    err.matches(py, &cls)
+    // `PyErr::matches` is fallible since pyo3 0.23 (the isinstance check
+    // can itself raise).  On error, conservatively treat the exception
+    // as non-`ParseError` so it propagates rather than silently becoming
+    // a backtrackable failure.
+    err.matches(py, &cls).unwrap_or(false)
 }
