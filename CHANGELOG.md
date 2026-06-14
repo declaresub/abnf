@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.5.1
+
+* Migrate the `abnf-rust` bindings from pyo3 0.22 to pyo3 0.29.  This
+  is an internal API migration only (the pyo3 `Bound` API rename:
+  `from_value_bound` -> `from_value`, `import_bound` -> `import`,
+  `downcast_into` -> `cast_into`); there is no change to the public
+  API or to parser behavior in either package.
+
+* Security / supply-chain hygiene: the pyo3 0.22 dependency shipped
+  in `abnf-rust` 2.5.0 carried two RustSec advisories —
+  RUSTSEC-2025-0020 (risk of buffer overflow in
+  `PyString::from_object`) and RUSTSEC-2026-0177 (missing `Sync`
+  bound on `PyCFunction::new_closure` closures).  `abnf-rust` never
+  called either API, so prior releases were not exploitable through
+  it; the bump to 0.29 clears both advisories so `cargo audit` and
+  SBOM scanners report the dependency tree clean.
+
+* The pure-Python `abnf` package has no source changes in this
+  release.  It is republished at 2.5.1 only to keep the
+  version-locked `abnf` / `abnf-rust` pair resolvable, since both
+  publish together from the same `v*` tag.
+
 ## 2.5.0
 
 * Add an optional Rust-backed parser engine.  Install via
