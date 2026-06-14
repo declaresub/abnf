@@ -7,6 +7,11 @@ updates:
       interval: daily
       time: "04:00"
       timezone: America/Kentucky/Monticello
+    # Wait 7 days after a release before proposing it. Dodges the
+    # window in which a freshly-published malicious version is live
+    # but not yet caught/yanked.
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: github-actions
     directory: "/"
@@ -14,6 +19,8 @@ updates:
       interval: weekly
       time: "04:00"
       timezone: America/Kentucky/Monticello
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: cargo
     # Rust workspace for the optional `abnf-rust` companion package.
@@ -22,6 +29,8 @@ updates:
       interval: weekly
       time: "04:00"
       timezone: America/Kentucky/Monticello
+    cooldown:
+      default-days: 7
     ignore:
       # pyo3 makes breaking API changes on every minor (0.x.y).
       # Treat each pyo3 bump as a deliberate migration task; do not
