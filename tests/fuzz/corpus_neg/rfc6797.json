@@ -1,0 +1,91 @@
+{
+ "OWS": [
+  "\u0000",
+  "\t\u0000",
+  " \u0000"
+ ],
+ "Strict-Transport-Security": [
+  "STRICT-tranSpO\u0000RT-SECUritY:!=!",
+  "STRICT-tranSpORT-SECUritY:!=!\u0000",
+  "STRICT-transp\u0000OrT-SECUritY:\t",
+  "STRICT-transpO\u0000RT-SECUritY:!=!",
+  "STRICT-transpO\u0000RT-SECUritY:#=!",
+  "STRICT-transpO\u0000rT-SECUritY:\t ;",
+  "STRICT-transpO\u0000rT-SECUritY:\t;*",
+  "STRICT-transpORT-SECUritY:!=!\u0000",
+  "STRICT-transpORT-SECUritY:#=!\u0000",
+  "STRICT-transpOrT-SECUritY:\t\u0000",
+  "STRICT-transpOrT-SECUritY:\t ;\u0000",
+  "STRICT-transpOrT-SECUritY:\t;*\u0000"
+ ],
+ "directive": [
+  "!\u0000",
+  "!\u0000!",
+  "!\u0000%",
+  "!\u0000.",
+  "!\u0000=!",
+  "!!\u0000",
+  "!%\u0000",
+  "!%\u0000=\"\"",
+  "!%=\"\"\u0000",
+  "!'\u0000=\"\"",
+  "!'=\"\"\u0000",
+  "!.\u0000"
+ ],
+ "directive-name": [
+  "!\u0000",
+  "!\u0000!",
+  "!\u0000#",
+  "!\u0000+",
+  "!\u0000-",
+  "!\u0000_",
+  "!!\u0000",
+  "!#\u0000",
+  "!+\u0000",
+  "!-\u0000",
+  "!_\u0000",
+  "#\u0000#"
+ ],
+ "directive-value": [
+  "!\u0000",
+  "!\u0000!",
+  "!!\u0000",
+  "\"\u0000\t\"",
+  "\"\u0000 \"",
+  "\"\u0000!\"",
+  "\"\u0000\"",
+  "\"\u0000#\"",
+  "\"\t\"\u0000",
+  "\" \"\u0000",
+  "\"!\"\u0000",
+  "\"\"\u0000"
+ ],
+ "quoted-string": [
+  "\"\u0000\t\"",
+  "\"\u0000 \"",
+  "\"\u0000!\"",
+  "\"\u0000\"",
+  "\"\u0000#\"",
+  "\"\u0000%\"",
+  "\"\t\"\u0000",
+  "\" \"\u0000",
+  "\"!\"\u0000",
+  "\"\"\u0000",
+  "\"#\"\u0000",
+  "\"%\"\u0000"
+ ],
+ "token": [
+  "!\u0000",
+  "!\u0000!",
+  "!\u0000#",
+  "!\u0000+",
+  "!\u0000-",
+  "!\u0000_",
+  "!!\u0000",
+  "!#\u0000",
+  "!+\u0000",
+  "!-\u0000",
+  "!_\u0000",
+  "#\u0000#"
+ ]
+}
