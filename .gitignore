@@ -7,6 +7,7 @@ __pycache__
 .tox
 *.egg-info
 .pytest*
+.hypothesis/
 .python-version
 .venv
 .benchmarks/
