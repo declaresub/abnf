@@ -19,7 +19,7 @@ tox                                                   # Matrix across Python 3.1
 **Linting & Formatting:**
 ```bash
 ruff check src/abnf    # Lint
-black src/abnf         # Format
+ruff format src/abnf   # Format
 pyright                # Type check
 ```
 

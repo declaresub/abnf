@@ -36,7 +36,7 @@ class Match:
 
     def __str__(self):
         return (
-            f'Match(value={"".join(n.value for n in self.nodes)}, start={self.start})'
+            f"Match(value={''.join(n.value for n in self.nodes)}, start={self.start})"
         )
 
     def __eq__(self, __o: object) -> bool:
@@ -338,9 +338,7 @@ class Repetition:
                         if m.start in seen_starts or m.start in new_seen_starts:
                             continue
                         new_seen_starts.add(m.start)
-                        new_match_set.append(
-                            Match(match.nodes + m.nodes, m.start)
-                        )
+                        new_match_set.append(Match(match.nodes + m.nodes, m.start))
                 except ParseError:
                     pass
 
@@ -384,7 +382,7 @@ class Option:
 
 
 class Literal:
-    """Represents a terminal literal value."""    
+    """Represents a terminal literal value."""
 
     def __init__(
         self,
@@ -717,9 +715,7 @@ class Rule:
         cls.load_grammar(src)
 
     @classmethod
-    def get(
-        cls: type[T], name: str, default: T | None = None
-    ) -> Rule | None:
+    def get(cls: type[T], name: str, default: T | None = None) -> Rule | None:
         """Retrieves Rule by name.  If a Rule object matching name is found, it is returned.
         Otherwise default is returned, and no Rule object is
         created, as would be the case when invoking Rule(name).

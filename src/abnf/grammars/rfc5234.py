@@ -5,7 +5,7 @@ Collected rules from RFC 5234
 https://tools.ietf.org/html/rfc5234
 """
 
-from typing import ClassVar, Union
+from typing import ClassVar
 
 from abnf.parser import Rule as _Rule
 
@@ -16,7 +16,7 @@ from .misc import load_grammar_rules
 class Rule(_Rule):
     """Rule objects generated from ABNF in RFC 5234."""
 
-    grammar: ClassVar[Union[list[str], str]] = [
+    grammar: ClassVar[list[str] | str] = [
         "rulelist = 1*( rule / (*c-wsp c-nl) )",
         "rule = rulename defined-as elements c-nl\
                                         ; continues if next line starts\

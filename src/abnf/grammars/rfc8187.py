@@ -3,7 +3,7 @@ Collected rules from RFC 8187
 https://tools.ietf.org/html/rfc8187
 """
 
-from typing import ClassVar, Union
+from typing import ClassVar
 
 from abnf.parser import Rule as _Rule
 
@@ -15,7 +15,7 @@ from .misc import load_grammar_rules
 class Rule(_Rule):
     """Rules from RFC 8187."""
 
-    grammar: ClassVar[Union[list[str], str]] = [
+    grammar: ClassVar[list[str] | str] = [
         'ext-value = charset "\'" [ language ] "\'" value-chars',
         'charset = "UTF-8" / mime-charset',
         "mime-charset = 1*mime-charsetc",

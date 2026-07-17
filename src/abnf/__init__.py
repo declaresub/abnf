@@ -1,6 +1,5 @@
 """Parser generator for ABNF grammars."""
 
-
 from importlib.metadata import PackageNotFoundError, metadata  # pragma: no cover
 
 from abnf.parser import (
