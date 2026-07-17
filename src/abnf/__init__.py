@@ -3,15 +3,24 @@
 
 from importlib.metadata import PackageNotFoundError, metadata  # pragma: no cover
 
-from abnf.parser import GrammarError, LiteralNode, Node, NodeVisitor, ParseError, Rule
+from abnf.parser import (
+    GrammarError,
+    GrammarWarning,
+    LiteralNode,
+    Node,
+    NodeVisitor,
+    ParseError,
+    Rule,
+)
 
 __all__ = [
-    "Rule",
-    "Node",
+    "GrammarError",
+    "GrammarWarning",
     "LiteralNode",
+    "Node",
     "NodeVisitor",
     "ParseError",
-    "GrammarError",
+    "Rule",
     "__version__",
 ]
 

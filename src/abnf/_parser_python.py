@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pathlib
 import typing
+import warnings
 from collections import OrderedDict
 from collections.abc import Generator
 from weakref import WeakSet
@@ -857,6 +858,11 @@ class GrammarError(Exception):
     """Raised in response to errors detected in the grammar."""
 
 
+class GrammarWarning(UserWarning):
+    """Emitted for suspect (but not fatal) conditions detected in a grammar,
+    such as a rule that is defined more than once with '='."""
+
+
 #### Bootstrappery ####
 # To get parsing for parser generation started, the ABNF grammar from RFC 5234 and
 # RFC 7405, plus the core rules from RFC 5234, are defined ab initio.
@@ -1370,6 +1376,31 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
         # this assertion tells mypy that rule should actually be an object. Without, mypy
         # returns 'error: <nothing> has no attribute "definition"'
         assert rule
+        # A plain '=' redefinition silently discards the rule's existing definition
+        # (RFC 5234, Section 3.3, allows incremental definition only via '=/').  Because
+        # ABNF rule names are case-insensitive, names differing only in case -- e.g.
+        # 'Origin' and 'origin' -- resolve to the same rule and collide this way too.
+        if defined_as == "=" and getattr(rule, "_definition", None) is not None:
+            new_name = next(
+                (c.value for c in node.children if c.name == "rulename"), rule.name
+            )
+            existing_name = rule.name
+            # This branch is reached only when the names already match under
+            # casefold, so an inexact spelling match means they differ only in case.
+            detail = (
+                f"redefines {existing_name!r}"
+                if new_name == existing_name
+                else (
+                    f"redefines {existing_name!r}, whose name differs only in case "
+                    "(ABNF rule names are case-insensitive)"
+                )
+            )
+            warnings.warn(
+                f"rule {new_name!r} {detail}; the earlier definition is discarded. "
+                "Use '=/' to add an incremental alternative instead of '='.",
+                GrammarWarning,
+                stacklevel=2,
+            )
         rule.definition = (
             elements if defined_as == "=" else Alternation(rule.definition, elements)
         )
