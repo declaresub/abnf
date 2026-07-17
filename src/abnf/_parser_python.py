@@ -758,10 +758,8 @@ class Node:
         return self._value
 
     def __str__(self) -> str:
-        return "Node(name={}, children=[{}])".format(
-            self.name,
-            ", ".join(x.__str__() for x in self.children),
-        )
+        children = ", ".join(x.__str__() for x in self.children)
+        return f"Node(name={self.name}, children=[{children}])"
 
     def __eq__(self, other: typing.Any):
         return (
@@ -789,11 +787,8 @@ class LiteralNode:
         return []
 
     def __str__(self):
-        return 'Node(name={}, offset={}, value="{}")'.format(
-            self.name,
-            self.offset,
-            self.value.replace("\r", r"\r").replace("\n", r"\n"),
-        )
+        value = self.value.replace("\r", r"\r").replace("\n", r"\n")
+        return f'Node(name={self.name}, offset={self.offset}, value="{value}")'
 
     def __eq__(self, other: typing.Any):
         return (

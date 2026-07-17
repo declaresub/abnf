@@ -1,6 +1,5 @@
 """Miscellaneous functions."""
 
-
 from abnf.parser import ABNFGrammarNodeVisitor, ABNFGrammarRule, Rule
 
 __all__ = ["load_grammar_rulelist", "load_grammar_rules"]
