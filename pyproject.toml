@@ -44,6 +44,7 @@ dev = [
 'pyright[nodejs]==1.1.410',
 'pytest==9.1.0',
 'pytest-cov==7.1.0',
+'hypothesis==6.156.6',
 'ruff==0.15.17',
 'setuptools==82.0.1',
 'tox==4.55.1',
@@ -73,7 +74,7 @@ ignore = [
 ]
 
 [tool.pytest.ini_options]
-norecursedirs = [".tox", "venv"]
+norecursedirs = [".tox", "venv", ".hypothesis"]
 testpaths = ["tests"]
 
 [tool.pyright]
@@ -109,6 +110,10 @@ select = [
     "T20",
     "UP",
 ]
+
+[tool.ruff.lint.per-file-ignores]
+# gen_corpus.py is a developer CLI utility; print() is its output channel.
+"tests/fuzz/gen_corpus.py" = ["T201"]
 
 [tool.ruff.lint.flake8-pytest-style]
 fixture-parentheses = false
