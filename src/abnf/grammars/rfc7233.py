@@ -2,11 +2,11 @@
 Collected rules from RFC 7233
 https://tools.ietf.org/html/rfc7233
 
-Note that this RFC is obsolete as of June 2022, replaced by 
+Note that this RFC is obsolete as of June 2022, replaced by
 https://www.rfc-editor.org/rfc/rfc9110.
 """
 
-from typing import ClassVar, Union
+from typing import ClassVar
 
 from abnf.parser import Rule as _Rule
 
@@ -25,7 +25,7 @@ from .misc import load_grammar_rules
 class Rule(_Rule):
     """Rules from RFC 7233."""
 
-    grammar: ClassVar[Union[list[str], str]] = [
+    grammar: ClassVar[list[str] | str] = [
         "Accept-Ranges = acceptable-ranges",
         "Content-Range = byte-content-range / other-content-range",
         # HTTP-date = <HTTP-date, see [RFC7231], Section 7.1.1.1>',

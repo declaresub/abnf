@@ -1,12 +1,11 @@
 """Miscellaneous functions."""
 
-from typing import Optional
-
 from abnf.parser import ABNFGrammarNodeVisitor, ABNFGrammarRule, Rule
 
-__all__ = ['load_grammar_rules', 'load_grammar_rulelist']
+__all__ = ["load_grammar_rulelist", "load_grammar_rules"]
 
-def load_grammar_rules(imported_rules: Optional[list[tuple[str, Rule]]] = None):
+
+def load_grammar_rules(imported_rules: list[tuple[str, Rule]] | None = None):
     """A decorator that loads grammar rules following class declaration.  The code assumes
     that cls is a Rule subclass with a grammar attribute.
     The imported_rules parameter allows one to import rules from other modules. For examples,
@@ -17,7 +16,7 @@ def load_grammar_rules(imported_rules: Optional[list[tuple[str, Rule]]] = None):
         """The function returned by decorator."""
 
         if isinstance(cls.grammar, str):
-            msg = 'This decorator must be used with a grammar of type list'
+            msg = "This decorator must be used with a grammar of type list"
             raise TypeError(msg)
 
         for src in cls.grammar:
@@ -30,7 +29,7 @@ def load_grammar_rules(imported_rules: Optional[list[tuple[str, Rule]]] = None):
     return rule_decorator
 
 
-def load_grammar_rulelist(imported_rules: Optional[list[tuple[str, Rule]]] = None):
+def load_grammar_rulelist(imported_rules: list[tuple[str, Rule]] | None = None):
     """A decorator that loads grammar rules following class declaration.  The code assumes
     that cls is a Rule subclass with a grammar attribute.
     The imported_rules parameter allows one to import rules from other modules. For examples,
@@ -40,7 +39,7 @@ def load_grammar_rulelist(imported_rules: Optional[list[tuple[str, Rule]]] = Non
     def rule_decorator(cls: type[Rule]):
         """The function returned by decorator."""
         assert isinstance(cls.grammar, str)
-        src = cls.grammar.rstrip().replace("\r", "").replace("\n", "\r\n") + '\r\n'
+        src = cls.grammar.rstrip().replace("\r", "").replace("\n", "\r\n") + "\r\n"
         node = ABNFGrammarRule("rulelist").parse_all(src)
         visitor = ABNFGrammarNodeVisitor(cls)
         visitor.visit(node)

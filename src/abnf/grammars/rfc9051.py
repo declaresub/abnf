@@ -1,4 +1,4 @@
-from typing import ClassVar, Union
+from typing import ClassVar
 
 from abnf.grammars import rfc3629
 from abnf.parser import Rule as _Rule
@@ -21,24 +21,21 @@ from .misc import load_grammar_rules
 class Rule(_Rule):
     """Rules for RFC 9051 parsing."""
 
-    grammar: ClassVar[Union[list[str], str]] = [
+    grammar: ClassVar[list[str] | str] = [
         'address = "(" addr-name SP addr-adl SP addr-mailbox SP addr-host ")"',
         "addr-adl = nstring",
         "addr-host = nstring",
         "addr-mailbox = nstring",
         "addr-name = nstring",
-        'append = "APPEND" SP mailbox [SP flag-list] [SP date-time] SP '
-        "literal",
+        'append = "APPEND" SP mailbox [SP flag-list] [SP date-time] SP literal',
         "append-uid = uniqueid",
         "astring = 1*ASTRING-CHAR / string",
         "ASTRING-CHAR = ATOM-CHAR / resp-specials",
         "atom = 1*ATOM-CHAR",
-        "ATOM-CHAR = %x21 / %x23-24 / %x26-27 / %x2B-39 / %x3B-5B / "
-        "%x5E-7A / %x7C",
+        "ATOM-CHAR = %x21 / %x23-24 / %x26-27 / %x2B-39 / %x3B-5B / %x5E-7A / %x7C",
         'atom-specials = "(" / ")" / "{" / SP / CTL / list-wildcards / '
         "quoted-specials / resp-specials",
-        'authenticate = "AUTHENTICATE" SP auth-type [SP initial-resp] '
-        "*(CRLF base64)",
+        'authenticate = "AUTHENTICATE" SP auth-type [SP initial-resp] *(CRLF base64)',
         "auth-type = atom",
         "base64 = *(4base64-char) [base64-terminal]",
         'base64-char = ALPHA / DIGIT / "+" / "/"',
@@ -62,8 +59,7 @@ class Rule(_Rule):
         "body-fld-lines = number64",
         "body-fld-md5 = nstring",
         "body-fld-octets = number",
-        'body-fld-param = "(" string SP string *(SP string SP string) ")" / '
-        "nil",
+        'body-fld-param = "(" string SP string *(SP string SP string) ")" / nil',
         "body-type-1part = (body-type-basic / body-type-msg / body-type-text) "
         "[SP body-ext-1part]",
         "body-type-basic = media-basic SP body-fields",
@@ -172,16 +168,14 @@ class Rule(_Rule):
         "DQUOTE / nil) SP mailbox [SP mbx-list-extended]",
         'mbx-list-extended = "(" [mbox-list-extended-item '
         '*(SP mbox-list-extended-item)] ")"',
-        "mbox-list-extended-item = mbox-list-extended-item-tag SP "
-        "tagged-ext-val",
+        "mbox-list-extended-item = mbox-list-extended-item-tag SP tagged-ext-val",
         "mbox-list-extended-item-tag = astring",
         "mbox-or-pat =  list-mailbox / patterns",
         "mbx-list-flags = *(mbx-list-oflag SP) mbx-list-sflag "
         "*(SP mbx-list-oflag) / mbx-list-oflag *(SP mbx-list-oflag)",
         'mbx-list-oflag = "\\Noinferiors" / child-mbox-flag / '
         '"\\Subscribed" / "\\Remote" / flag-extension',
-        'mbx-list-sflag = "\\NonExistent" / "\\Noselect" / "\\Marked" / '
-        '"\\Unmarked"',
+        'mbx-list-sflag = "\\NonExistent" / "\\Noselect" / "\\Marked" / "\\Unmarked"',
         'media-basic = ((DQUOTE ("APPLICATION" / "AUDIO" / "IMAGE" / '
         '"FONT" / "MESSAGE" / "MODEL" / "VIDEO") DQUOTE) / string) SP '
         "media-subtype",
@@ -206,10 +200,8 @@ class Rule(_Rule):
         "[namespace-response-extensions] "
         '")"',
         "namespace-response-extensions = *namespace-response-extension",
-        'namespace-response-extension = SP string SP "(" string '
-        '*(SP string) ")"',
-        'namespace-response = "NAMESPACE" SP namespace SP namespace SP '
-        "namespace",
+        'namespace-response-extension = SP string SP "(" string *(SP string) ")"',
+        'namespace-response = "NAMESPACE" SP namespace SP namespace SP namespace',
         'nil = "NIL"',
         "nstring = string / nil",
         "number = 1*DIGIT",
@@ -261,8 +253,7 @@ class Rule(_Rule):
         '"CANNOT" / "LIMIT" / "OVERQUOTA" / "ALREADYEXISTS" / '
         '"NONEXISTENT" / "NOTSAVED" / "HASCHILDREN" / "CLOSED" / '
         '"UNKNOWN-CTE" / atom [SP 1*<any TEXT-CHAR except "]">]',
-        'return-option = "SUBSCRIBED" / "CHILDREN" / status-option / '
-        "option-extension",
+        'return-option = "SUBSCRIBED" / "CHILDREN" / status-option / option-extension',
         'search = "SEARCH" [search-return-opts] SP search-program',
         'search-correlator = SP "(" "TAG" SP tag-string ")"',
         'search-key = "ALL" / "ANSWERED" / "BCC" SP astring / "BEFORE" SP '
@@ -278,8 +269,7 @@ class Rule(_Rule):
         'sequence-set / "(" search-key *(SP search-key) ")"',
         "search-modifier-name = tagged-ext-label",
         "search-mod-params = tagged-ext-val",
-        'search-program = ["CHARSET" SP charset SP] search-key '
-        "*(SP search-key)",
+        'search-program = ["CHARSET" SP charset SP] search-key *(SP search-key)',
         "search-ret-data-ext = search-modifier-name SP search-return-value",
         'search-return-data = "MIN" SP nz-number / "MAX" SP nz-number / '
         '"ALL" SP sequence-set / "COUNT" SP number / search-ret-data-ext',
@@ -291,16 +281,14 @@ class Rule(_Rule):
         "search-return-value = tagged-ext-val",
         'section = "[" [section-spec] "]"',
         'section-binary = "[" [section-part] "]"',
-        'section-msgtext = "HEADER" / "HEADER.FIELDS" [".NOT"] SP '
-        'header-list / "TEXT"',
+        'section-msgtext = "HEADER" / "HEADER.FIELDS" [".NOT"] SP header-list / "TEXT"',
         'section-part = nz-number *("." nz-number)',
         'section-spec = section-msgtext / (section-part ["." section-text])',
         'section-text = section-msgtext / "MIME"',
         'select = "SELECT" SP mailbox',
         'seq-number = nz-number / "*"',
         'seq-range = seq-number ":" seq-number',
-        'sequence-set = (seq-number / seq-range) ["," sequence-set] / '
-        "seq-last-command",
+        'sequence-set = (seq-number / seq-range) ["," sequence-set] / seq-last-command',
         'seq-last-command = "$"',
         'status = "STATUS" SP mailbox SP "(" status-att *(SP status-att) ")"',
         'status-att = "MESSAGES" / "UIDNEXT" / "UIDVALIDITY" / "UNSEEN" / '

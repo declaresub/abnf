@@ -2,11 +2,11 @@
 Collected rules from RFC 7230, Appendix B.
 https://tools.ietf.org/html/rfc7230#appendix-B
 
-Note that this RFC is obsolete as of June 2022, replaced by 
+Note that this RFC is obsolete as of June 2022, replaced by
 https://www.rfc-editor.org/rfc/rfc9110.
 """
 
-from typing import ClassVar, Union
+from typing import ClassVar
 
 from abnf.parser import Rule as _Rule
 
@@ -32,7 +32,7 @@ from .misc import load_grammar_rules
 class Rule(_Rule):
     """Parser rules for grammar from RFC 7230."""
 
-    grammar: ClassVar[Union[list[str], str]] = [
+    grammar: ClassVar[list[str] | str] = [
         "BWS = OWS",
         'Connection = *( "," OWS ) connection-option *( OWS "," [ OWS connection-option ] )',
         "Content-Length = 1*DIGIT",

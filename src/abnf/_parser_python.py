@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pathlib
 import typing
+import warnings
 from collections import OrderedDict
 from collections.abc import Generator
 from weakref import WeakSet
@@ -35,7 +36,7 @@ class Match:
 
     def __str__(self):
         return (
-            f'Match(value={"".join(n.value for n in self.nodes)}, start={self.start})'
+            f"Match(value={''.join(n.value for n in self.nodes)}, start={self.start})"
         )
 
     def __eq__(self, __o: object) -> bool:
@@ -337,9 +338,7 @@ class Repetition:
                         if m.start in seen_starts or m.start in new_seen_starts:
                             continue
                         new_seen_starts.add(m.start)
-                        new_match_set.append(
-                            Match(match.nodes + m.nodes, m.start)
-                        )
+                        new_match_set.append(Match(match.nodes + m.nodes, m.start))
                 except ParseError:
                     pass
 
@@ -383,7 +382,7 @@ class Option:
 
 
 class Literal:
-    """Represents a terminal literal value."""    
+    """Represents a terminal literal value."""
 
     def __init__(
         self,
@@ -716,9 +715,7 @@ class Rule:
         cls.load_grammar(src)
 
     @classmethod
-    def get(
-        cls: type[T], name: str, default: T | None = None
-    ) -> Rule | None:
+    def get(cls: type[T], name: str, default: T | None = None) -> Rule | None:
         """Retrieves Rule by name.  If a Rule object matching name is found, it is returned.
         Otherwise default is returned, and no Rule object is
         created, as would be the case when invoking Rule(name).
@@ -761,10 +758,8 @@ class Node:
         return self._value
 
     def __str__(self) -> str:
-        return "Node(name={}, children=[{}])".format(
-            self.name,
-            ", ".join(x.__str__() for x in self.children),
-        )
+        children = ", ".join(x.__str__() for x in self.children)
+        return f"Node(name={self.name}, children=[{children}])"
 
     def __eq__(self, other: typing.Any):
         return (
@@ -792,11 +787,8 @@ class LiteralNode:
         return []
 
     def __str__(self):
-        return 'Node(name={}, offset={}, value="{}")'.format(
-            self.name,
-            self.offset,
-            self.value.replace("\r", r"\r").replace("\n", r"\n"),
-        )
+        value = self.value.replace("\r", r"\r").replace("\n", r"\n")
+        return f'Node(name={self.name}, offset={self.offset}, value="{value}")'
 
     def __eq__(self, other: typing.Any):
         return (
@@ -855,6 +847,11 @@ class ParseError(Exception):
 
 class GrammarError(Exception):
     """Raised in response to errors detected in the grammar."""
+
+
+class GrammarWarning(UserWarning):
+    """Emitted for suspect (but not fatal) conditions detected in a grammar,
+    such as a rule that is defined more than once with '='."""
 
 
 #### Bootstrappery ####
@@ -1370,6 +1367,31 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
         # this assertion tells mypy that rule should actually be an object. Without, mypy
         # returns 'error: <nothing> has no attribute "definition"'
         assert rule
+        # A plain '=' redefinition silently discards the rule's existing definition
+        # (RFC 5234, Section 3.3, allows incremental definition only via '=/').  Because
+        # ABNF rule names are case-insensitive, names differing only in case -- e.g.
+        # 'Origin' and 'origin' -- resolve to the same rule and collide this way too.
+        if defined_as == "=" and getattr(rule, "_definition", None) is not None:
+            new_name = next(
+                (c.value for c in node.children if c.name == "rulename"), rule.name
+            )
+            existing_name = rule.name
+            # This branch is reached only when the names already match under
+            # casefold, so an inexact spelling match means they differ only in case.
+            detail = (
+                f"redefines {existing_name!r}"
+                if new_name == existing_name
+                else (
+                    f"redefines {existing_name!r}, whose name differs only in case "
+                    "(ABNF rule names are case-insensitive)"
+                )
+            )
+            warnings.warn(
+                f"rule {new_name!r} {detail}; the earlier definition is discarded. "
+                "Use '=/' to add an incremental alternative instead of '='.",
+                GrammarWarning,
+                stacklevel=2,
+            )
         rule.definition = (
             elements if defined_as == "=" else Alternation(rule.definition, elements)
         )

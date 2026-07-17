@@ -3,7 +3,7 @@ Collected rules from RFC 6266
 https://tools.ietf.org/html/rfc6266
 """
 
-from typing import ClassVar, Union
+from typing import ClassVar
 
 from abnf.parser import Rule as _Rule
 
@@ -26,7 +26,7 @@ class Rule(_Rule):
     # uses | instead of / for alternation, and white space here and there is implicit in RFC 2616.
     # The grammar below is updated to follow RFC 5234.
 
-    grammar: ClassVar[Union[list[str], str]] = [
+    grammar: ClassVar[list[str] | str] = [
         'content-disposition = "Content-Disposition" ":" OWS disposition-type *(OWS  ";"  OWS disposition-parm )',
         'disposition-type    = "inline" / "attachment" / disp-ext-type',  # case-insensitive
         "disp-ext-type       = token",

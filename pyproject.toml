@@ -63,8 +63,6 @@ rust = [
     'abnf-rust>=2.5,<3',
 ]
 
-[tool.black]
-
 [tool.check-manifest]
 ignore = [
     # The packages/abnf-rust subtree builds the companion `abnf-rust`
@@ -74,8 +72,9 @@ ignore = [
     "tests/notes",
 ]
 
-[tool.isort]
-profile = "black"
+[tool.pytest.ini_options]
+norecursedirs = [".tox", "venv"]
+testpaths = ["tests"]
 
 [tool.pyright]
 pythonVersion = "3.10"
