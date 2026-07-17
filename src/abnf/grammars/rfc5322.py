@@ -3,7 +3,7 @@ Collected rules from RFC 5322
 https://tools.ietf.org/html/rfc5322
 """
 
-from typing import ClassVar, Union
+from typing import ClassVar
 
 from abnf.parser import Rule as _Rule
 
@@ -14,7 +14,7 @@ from .misc import load_grammar_rules
 class Rule(_Rule):
     """Rule objects generated from ABNF in RFC 5322."""
 
-    grammar: ClassVar[Union[list[str], str]] = [
+    grammar: ClassVar[list[str] | str] = [
         'quoted-pair = ("\\" (VCHAR / WSP)) / obs-qp',
         "FWS = ([*WSP CRLF] 1*WSP) / obs-FWS ",
         "ctext = %d33-39 / %d42-91 / %d93-126 / obs-ctext",
@@ -102,7 +102,7 @@ class Rule(_Rule):
         'obs-qp = "\\" (%d0 / obs-NO-WS-CTL / LF / CR)',
         "obs-body = *((*LF *CR *((%d0 / text) *LF *CR)) / CRLF)",
         # See https://www.rfc-editor.org/errata/eid1905.
-        #"obs-unstruct = *((*LF *CR *(obs-utext *LF *CR)) / FWS)",
+        # "obs-unstruct = *((*LF *CR *(obs-utext *LF *CR)) / FWS)",
         "obs-unstruct = *( (*CR 1*(obs-utext / FWS)) / 1*LF ) *CR",
         'obs-phrase = word *(word / "." / CFWS)',
         'obs-phrase-list = [phrase / CFWS] *("," [phrase / CFWS])',
@@ -153,4 +153,4 @@ class Rule(_Rule):
     ]
 
 
-#Rule('unstructured').first_match_alternation = True
+# Rule('unstructured').first_match_alternation = True

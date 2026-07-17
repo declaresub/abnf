@@ -25,7 +25,7 @@ class Rule(_Rule):
         'Forwarded         = forwarded-element *( OWS "," OWS forwarded-element )',
         'forwarded-element = [ forwarded-pair ] *( ";" [ forwarded-pair ] )',
         'forwarded-pair    = token "=" value',
-        'value             = token / quoted-string',
+        "value             = token / quoted-string",
         # OWS              = <OWS, see [RFC7230], Section 3.2.3>',
         # token            = <token, see [RFC7230], Section 3.2.6>',
         # quoted-string    = <quoted-string, see [RFC7230], Section 3.2.6>',
