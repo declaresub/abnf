@@ -72,6 +72,10 @@ ignore = [
     "tests/notes",
 ]
 
+[tool.pytest.ini_options]
+norecursedirs = [".tox", "venv"]
+testpaths = ["tests"]
+
 [tool.pyright]
 pythonVersion = "3.10"
 
