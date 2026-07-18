@@ -658,6 +658,35 @@ class Rule:
         :raises ParseError: if source cannot be parsed using rule.
         :raises GrammarError: if rule has no definition.  This usually means that a
             non-terminal in the grammar is not defined or imported.
+
+        .. note::
+            The pure-Python backend is recursive-descent, so input nested more
+            deeply than the Python recursion limit permits is reported as a
+            ParseError rather than crashing with RecursionError.  The Rust
+            backend is not subject to this limit.  If you must parse very deeply
+            nested input on the pure-Python backend, run the parse on a worker
+            thread with a larger stack and a raised recursion limit -- both
+            levers are needed, as ``setrecursionlimit`` alone would overflow the
+            C stack::
+
+                import sys, threading
+
+                def parse_all_deep(rule, source, *, limit=100_000,
+                                   stack=256 * 1024 * 1024):
+                    threading.stack_size(stack)
+                    box = {}
+                    def run():
+                        sys.setrecursionlimit(limit)  # process-global while running
+                        try:
+                            box["node"] = rule.parse_all(source)
+                        except BaseException as exc:  # re-raised on the caller
+                            box["exc"] = exc
+                    t = threading.Thread(target=run)
+                    t.start()
+                    t.join()
+                    if "exc" in box:
+                        raise box["exc"]
+                    return box["node"]
         """
 
         node, start = self.parse(source, 0)
