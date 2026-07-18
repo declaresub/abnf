@@ -107,6 +107,9 @@ def test_generated_input_round_trips(module_name: str, rule_name: str):
     @settings(
         max_examples=50,
         database=None,
+        # Parse cost varies a lot across grammars (complex RFC 9051 IMAP inputs
+        # can take a few hundred ms), so the per-example deadline would flake.
+        deadline=None,
         suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow],
     )
     def check(src: str):
@@ -114,16 +117,13 @@ def test_generated_input_round_trips(module_name: str, rule_name: str):
         try:
             node = rule.parse_all(src)
         except ParseError:
-            # Grammar-derivation vs longest-match mismatch on an ambiguous rule;
-            # not a member of the language as the parser defines it.  assume(False)
-            # raises to discard the example; the return keeps `node` definitely
-            # bound for the assertion below (pyright can't see assume never returns).
-            assume(False)
-            return
-        except RecursionError:
-            # Deeply nested input overflows the pure-Python parser's stack — a
-            # known limitation, see .claude/finding-recursionerror-deep-nesting.md.
-            # Tolerated here; any *other* exception type is a real crash and fails.
+            # Grammar-derivation vs longest-match mismatch on an ambiguous rule
+            # (or deeply-nested input, which the parser converts to ParseError,
+            # issue #144); not a member of the language as the parser defines
+            # it.  assume(False) raises to discard the example; the return keeps
+            # `node` definitely bound for the assertion below (pyright can't see
+            # assume never returns).  Any *other* exception type is a real crash
+            # and fails the test.
             assume(False)
             return
         assert node.value == src
@@ -131,7 +131,7 @@ def test_generated_input_round_trips(module_name: str, rule_name: str):
     try:
         check()
     except Unsatisfiable:
-        # Every generated input was filtered (unparseable derivation, deep
-        # recursion, or over-length) — the rule is effectively ungeneratable by
-        # this walker, same as the cases gen_corpus.py skips.  Not a failure.
+        # Every generated input was filtered (unparseable derivation or
+        # over-length) — the rule is effectively ungeneratable by this walker,
+        # same as the cases gen_corpus.py skips.  Not a failure.
         pytest.skip(f"{rule_name}: no parseable input could be generated")
