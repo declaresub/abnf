@@ -114,7 +114,6 @@ def generate_module(
         kept: list[str] = []
         rejected = 0
         too_long = 0
-        recursion_hits = 0
         mismatches: list[str] = []
         for src in candidates:
             if len(src) > MAX_INPUT_LEN:
@@ -125,14 +124,9 @@ def generate_module(
             try:
                 node = rule.parse_all(src)
             except ParseError:
+                # Includes deeply-nested input, which the parser converts to
+                # ParseError (issue #144); such inputs are simply not accepted.
                 rejected += 1
-                continue
-            except RecursionError:
-                # Deeply nested input overflows the recursive-descent parser's
-                # Python stack.  A depth limit, not a length one — the input can
-                # be short (e.g. "((((...))))").  Drop it from the corpus and
-                # report; see the design doc's robustness note.
-                recursion_hits += 1
                 continue
             if node.value == src:
                 kept.append(src)
@@ -154,8 +148,6 @@ def generate_module(
             notes.append(f"{rejected} unparseable")
         if too_long:
             notes.append(f"{too_long} over {MAX_INPUT_LEN} chars")
-        if recursion_hits:
-            notes.append(f"{recursion_hits} RecursionError")
         note = f" ({', '.join(notes)} filtered)" if notes else ""
         print(f"  {rule.name}: {len(kept)} cases{note}")
 
@@ -196,8 +188,6 @@ def build_negatives(
                     rule.parse_all(mutated)
                 except ParseError:
                     negatives.setdefault(rule_name, []).append(mutated)
-                except RecursionError:
-                    pass
                 else:
                     accepted_bugs.append((rule_name, mutated))
                 if len(negatives.get(rule_name, ())) >= NEG_PER_RULE:
