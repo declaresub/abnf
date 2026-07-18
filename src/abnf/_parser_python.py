@@ -630,7 +630,19 @@ class Rule:
         # losing candidates.  If `g` yields nothing it has already
         # raised `ParseError`; the `next` here therefore never sees
         # `StopIteration` in practice.
-        longest_match = next(g)
+        try:
+            longest_match = next(g)
+        except RecursionError as exc:
+            # Deeply-nested input exhausts the Python call stack (the parser is
+            # recursive-descent).  Convert to ParseError so the documented
+            # exception contract holds instead of leaking RecursionError, and
+            # so callers guarding untrusted input with `except ParseError` are
+            # not crashed by it.  See GitHub issue #144.  `parse` is the
+            # outermost frame, so by the time RecursionError has unwound to
+            # here there is stack headroom to raise; and because RecursionError
+            # is not a ParseError, the intermediate `except ParseError` handlers
+            # in Alternation/Repetition do not swallow it on the way up.
+            raise ParseError(self, start) from exc
         return (longest_match.nodes[0], longest_match.start)
 
     def parse_all(self, source: str) -> Node:

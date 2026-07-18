@@ -145,6 +145,31 @@ def test_backtracking():
     assert "".join(n.value for n in match.nodes) == src
 
 
+def test_deeply_nested_input_does_not_leak_recursionerror():
+    """Regression for issue #144: deeply-nested input must not escape as an
+    uncaught RecursionError.  The recursive-descent pure-Python parser converts
+    it to a ParseError (the documented contract); the Rust backend parses it."""
+
+    class DeepGrammar(Rule):
+        pass
+
+    DeepGrammar.create('nested = "(" [ nested ] ")"')
+    depth = 1000
+    src = "(" * depth + ")" * depth
+
+    raised_parse_error = False
+    try:
+        DeepGrammar("nested").parse_all(src)
+    except ParseError:
+        raised_parse_error = True
+    # RecursionError is not caught here, so if the fix regresses it propagates
+    # and fails the test.
+
+    if __import__("abnf.parser", fromlist=["_BACKEND"])._BACKEND == "python":
+        # nesting well beyond the Python recursion limit must convert cleanly.
+        assert raised_parse_error
+
+
 def test_alternation_first_match():
     parser = Alternation(Literal("a"), Literal("ab"), first_match=True)
     result = parser.lparse("ab", 0)
