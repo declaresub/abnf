@@ -556,14 +556,16 @@ class Rule:
 
     def exclude_rule(self, rule: Rule) -> None:
         """
-        Exclude values which match rule.  For example, suppose we have the following
-        grammar.
-        foo = %x66.6f.6f
-        keyword = foo
-        identifier = ALPHA *(ALPHA / DIGIT )
+        Exclude values which match ``rule``.  For example, suppose we have the
+        following grammar::
 
-        We don't want to allow a keyword to be an identifier.  To do this,
-        Rule('identifier').exclude_rule(Rule('keyword'))
+            foo = %x66.6f.6f
+            keyword = foo
+            identifier = ALPHA *(ALPHA / DIGIT )
+
+        We don't want to allow a keyword to be an identifier.  To do this::
+
+            Rule('identifier').exclude_rule(Rule('keyword'))
 
         Then attempting to use "foo" as an identifier would result in a ParseError.
         """
