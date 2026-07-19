@@ -3,6 +3,7 @@
 [![PyPI](https://img.shields.io/pypi/v/abnf)](https://pypi.org/project/abnf/)
 ![abnf-tox](https://github.com/declaresub/abnf/workflows/abnf-tox/badge.svg)
 [![CodeQL](https://github.com/declaresub/abnf/actions/workflows/codeql-analysis.yml/badge.svg?branch=master)](https://github.com/declaresub/abnf/actions/workflows/codeql-analysis.yml)
+[![Docs](https://readthedocs.org/projects/abnf/badge/?version=latest)](https://abnf.readthedocs.io/en/latest/)
 
 ABNF generates parsers from ABNF grammars as described in
 [RFC 5234](https://tools.ietf.org/html/rfc5234) and
@@ -42,7 +43,8 @@ greeting.parse_all("hello world")
 
 ## Documentation
 
-Full documentation follows the [Diátaxis](https://diataxis.fr/) framework:
+Full documentation is hosted at **[abnf.readthedocs.io](https://abnf.readthedocs.io/en/latest/)**
+and follows the [Diátaxis](https://diataxis.fr/) framework:
 
 - **Tutorial** — *Parse your first header*, a ten-minute end-to-end walkthrough.
 - **How-to guides** — validate input, extract values with visitors, load a grammar
