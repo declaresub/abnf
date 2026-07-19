@@ -4,474 +4,80 @@
 ![abnf-tox](https://github.com/declaresub/abnf/workflows/abnf-tox/badge.svg)
 [![CodeQL](https://github.com/declaresub/abnf/actions/workflows/codeql-analysis.yml/badge.svg?branch=master)](https://github.com/declaresub/abnf/actions/workflows/codeql-analysis.yml)
 
-
-ABNF is a package that generates parsers from ABNF grammars as described in [RFC 5234](https://tools.ietf.org/html/rfc5234)
-and [RFC7405](https://tools.ietf.org/html/rfc7405).  The main purpose of this
-package is to parse data as specified in RFCs.  But it should be able to handle any ABNF 
-grammar.
-
-ABNF was originally written a few years ago for parsing HTTP headers in a web framework.
-The code herein has been in use in production here and there on the internet since then.
-
-
-## Requirements
-
-ABNF is tested with Python 3.10-14.
-
+ABNF generates parsers from ABNF grammars as described in
+[RFC 5234](https://tools.ietf.org/html/rfc5234) and
+[RFC 7405](https://tools.ietf.org/html/rfc7405). Its main purpose is parsing data
+specified in RFCs — HTTP headers, email addresses, URIs, and the like — but it
+handles any ABNF grammar. It ships with 30+ ready-to-use grammar modules for common
+RFCs and has been in production use since it was first written for parsing HTTP
+headers in a web framework.
 
 ## Installation
 
-The abnf package is available from [PyPI](https://pypi.org/project/abnf/). As of version 2.3.1, abnf uses
-trusted publishing.
+```console
+pip install abnf
+pip install 'abnf[rust]'   # optional Rust backend, for substantially faster parsing
+```
 
-Install it with the Python installer of your choice:
+ABNF is tested with Python 3.10–3.14.
 
-    pip install abnf
-    uv pip install abnf            # uv
-    uv add abnf                    # uv, inside a project
-    poetry add abnf                # poetry
+## Quick start
 
-For substantially faster parsing, install the optional Rust backend with the `rust` extra:
+```python
+from abnf.grammars import rfc7232
 
-    pip install 'abnf[rust]'
-    uv pip install 'abnf[rust]'
-    uv add 'abnf[rust]'
-    poetry add 'abnf[rust]'
+# parse an ETag header value
+node, offset = rfc7232.Rule("ETag").parse('W/"moof"', 0)
+print(node.value)          # 'W/"moof"'
 
-(Most shells require the quotes around `abnf[rust]` because `[...]` is a glob pattern.)
-See [The Rust backend](#the-rust-backend) for details and benchmark numbers.
+# validate a whole string against a rule (raises ParseError otherwise)
+from abnf.grammars import rfc5322
+rfc5322.Rule("address").parse_all("test@example.com")
 
+# compile your own rule; the RFC 5234 core rules are always available
+from abnf import Rule
+greeting = Rule.create('greeting = "hello" SP 1*ALPHA')
+greeting.parse_all("hello world")
+```
 
-## The Rust backend
+## Documentation
 
-When the `abnf-rust` companion is installed (via `pip install abnf[rust]`), `abnf.parser`
-transparently dispatches its combinator primitives to a Rust extension built with PyO3.
-The public API is unchanged in either case, including every RFC grammar module and every
-example in this README; set the environment variable `ABNF_NO_RUST=1` to force the
-pure-Python backend at runtime.
+Full documentation follows the [Diátaxis](https://diataxis.fr/) framework:
 
-Representative benchmarks (median of three runs of `pytest tests/benchmarks/`, Apple Silicon):
+- **Tutorial** — *Parse your first header*, a ten-minute end-to-end walkthrough.
+- **How-to guides** — validate input, extract values with visitors, load a grammar
+  from a file, write your own grammar module, use the Rust backend.
+- **Reference** — the public API, the built-in core rules, the bundled grammars, and
+  configuration knobs.
+- **Explanation** — the combinator architecture, the two backends, alternation
+  semantics, and how backtracking is kept in check.
 
-| Grammar / input | Pure Python | Rust | Speed-up |
-|---|---|---|---|
-| RFC 3986 URI&nbsp;&nbsp; `https://user:pass@example.com:8080/a/b/c?q=1&r=2#frag` | 190 µs | 28.4 µs | **6.7×** |
-| RFC 5322 mailbox&nbsp;&nbsp; `Charles Yeomans <charles@example.com>` | 422 µs | 44.9 µs | **9.4×** |
-| RFC 7230 request-line&nbsp;&nbsp; `GET /index.html HTTP/1.1\r\n` | 73 µs | 10.4 µs | **7.0×** |
-| RFC 9051 astring&nbsp;&nbsp; `HelloWorld42` | 5.9 µs | 4.0 µs | **1.5×** |
-| Fuzz suite (512 cases, inputs up to 138 KB) | 9.1 s | 1.42 s | **6.4×** |
+To build the docs locally:
 
-### Where the Rust backend helps most
+```console
+pip install -e '.[docs]'
+sphinx-build -W docs docs/_build/html
+```
 
-The Rust backend's biggest advantage is **how cheaply it rejects parses that don't match**.
-ABNF parsing is built around alternation and optional groups: on every backtracking step
-the algorithm tries an alternative, watches it fail, and moves on. The Python combinator's
-failure path raises a `ParseError`, propagates it through generator exception machinery, and
-unwinds Python frames — all comparatively expensive. The Rust equivalent is a single
-`Err(...)` return value with no string formatting. Grammars that exercise this path heavily
-— RFC 5322's deeply-nested `FWS` and `CFWS` whitespace handling is the classic example —
-see the biggest wins.
-
-The advantage compounds with the number of candidate parses the algorithm considers at each
-step. RFC 3986's URI grammar enumerates dozens of partial-parse candidates (optional
-`[ "?" query ]`, optional `[ "#" fragment ]`, multiple `hier-part` alternatives); each
-candidate that ends up losing costs only a few hundred nanoseconds in Rust.
-
-### Where the gap narrows
-
-The Rust backend is *less* dominant on tight grammars whose work is mostly *successful*
-tree-building rather than backtracking. The clearest example among our benchmarks is the
-RFC 9051 `astring` row above: parsing `"HelloWorld42"` against
-
-    astring = 1*ASTRING-CHAR / string
-
-is essentially twelve successful `ASTRING-CHAR` matches plus a single near-instant failure
-on the `string` arm. Each successful match builds a small parse-tree node, and CPython
-optimises that build path extremely well: a small list allocation goes through CPython's
-`list` freelist and costs only a handful of nanoseconds. The Rust equivalent allocates an
-`Arc<Vec<NodeKind>>` per node and crosses the PyO3 boundary — both fast, but still a few
-times more expensive than CPython's open-coded path. The Rust backend still wins on
-`astring`, but only modestly.
-
-Roughly:
-
-| Grammar shape | Typical Rust speed-up |
-|---|---|
-| Heavy alternation / optional / deep backtracking | 6–10× |
-| Mixed: moderate alternation with tree-building | 3–6× |
-| Pure linear success with few alternatives | 1.5–2× |
-
-In other words: the more an ABNF grammar exercises backtracking — which most real RFC
-grammars do — the bigger the win. We have not observed a grammar on which the Rust backend
-is slower than the pure-Python implementation.
-
-### When to skip the Rust backend
-
-For most workloads, `pip install abnf[rust]` is the right choice and is fully transparent
-after install. The pure-Python implementation remains a complete and supported parser, and
-is the right choice when:
-
-* The deployment target rejects compiled extensions (e.g. zip-deployed AWS Lambda layers,
-  some constrained container images).
-* You want to debug or step through parser internals — the pure-Python code is shorter,
-  generator-based, and trivially traceable.
-* `ABNF_NO_RUST=1` is convenient for an A/B comparison.
-
-Much of the optimisation work motivated by the Rust port (lazy `Rule.lparse`, sorted
-`Alternation`, `Match` hash caching, dedup-by-end-position in `Repetition`) also landed in
-the pure-Python implementation, so even without the `[rust]` extra `abnf` parses
-meaningfully faster than its historical baseline.
-
-
-## Usage
-
-The main class of abnf is Rule.  You should think of a Rule subclass as corresponding to an
-ABNF grammar.  Then instances of that subclass represent the rules of that grammar.
-
-The Rule class is initialized with the core ABNF rules OCTET, BIT, HEXDIG, CTL, HTAB, LWSP, 
-CR, VCHAR, DIGIT, WSP, DQUOTE, LF, SP, CRLF, CHAR, ALPHA, and so are available in any subclass
-of Rule.
-
-Create a Rule object using the class method create.
-
-    rule = Rule.create('double-quoted-string = DQUOTE *(%x20-21 / %x23-7E / %x22.22) DQUOTE')
-
-To later retrieve the object just created:
-
-    rule = Rule('double-quoted-string')
-
-Rule objects are cached, so `Rule('double-quoted-string')` should always return the same object,
-though you might not want to depend on that.
-
-ABNF includes several grammars.  The Rule subclass ABNFGrammarRule implements the rules 
-for ABNF.  The package `abnf.grammars` includes grammars from several RFCs.
-
-    from abnf.grammars import rfc7232
-    src = 'W/"moof"'
-    node, start = rfc7232.Rule('ETag').parse(src)
-    print(str(node))
-    
-The output is
-
-    Node(
-        name=ETag, 
-        children=
-            [
-            Node(
-                name=entity-tag, 
-                children=
-                    [
-                    Node(
-                        name=weak, 
-                        children=
-                            [
-                            Node(
-                                name=literal, 
-                                offset=0, 
-                                value="W/"
-                                )
-                            ]
-                        ), 
-                        Node(
-                            name=opaque-tag, 
-                            children=
-                                [
-                                Node(
-                                    name=DQUOTE, 
-                                    children=
-                                        [
-                                        Node(
-                                            name=literal, 
-                                            offset=2, 
-                                            value="""
-                                            )
-                                        ]
-                                    ), 
-                                Node(
-                                    name=etagc, 
-                                    children=
-                                        [
-                                        Node(
-                                            name=literal, 
-                                            offset=3, 
-                                            value="m"
-                                            )
-                                        ]
-                                    ), 
-                                Node(
-                                    name=etagc, 
-                                    children=
-                                        [
-                                        Node(
-                                            name=literal, 
-                                            offset=4, 
-                                            value="o"
-                                            )
-                                        ]
-                                    ), 
-                                Node(
-                                    name=etagc, 
-                                    children=
-                                        [
-                                        Node(
-                                            name=literal, 
-                                            offset=5, 
-                                            value="o"
-                                            )
-                                        ]
-                                    ), 
-                                Node(
-                                    name=etagc, 
-                                    children=
-                                    [
-                                    Node(
-                                        name=literal, 
-                                        offset=6, 
-                                        value="f"
-                                        )
-                                    ]
-                                ), 
-                            Node(
-                                name=DQUOTE, 
-                                children=
-                                    [
-                                    Node(
-                                        name=literal, 
-                                        offset=7, 
-                                        value="""
-                                        )
-                                    ]
-                                )
-                            ]
-                        )
-                    ]
-                )
-            ]
-        )'
-    
-    
-
-
-The modules in `abnf.grammars` may serve as an example for writing other Rule subclasses. 
-In particular, some of the RFC grammars incorporate rules by reference from other RFC. 
-`abnf.grammars.rfc7230` shows a way to import rules from another Rule subclass.
-
-You can also load a grammar from a text file using Rule.from_file.  This class function
-accepts either a str or pathlib.Path. The text file must contain an ABNF rulelist.
-
-
-    class FromFileRule(Rule):
-        pass
-        
-    FromFileRule.from_file('/path/to/grammar.abnf')
-
-
-ABNF uses CRLF as a delimiter for rules in a rulelist.  Beware that many text editors (e.g. BBEdit) 
-substitute line endings without telling the user.
-
-### Errors
-
-abnf implements two exception subclasses, ParseError and GrammarError.  
-
-A GrammarError is raised when parsing encounters an undefined rule, or a prose-value in
-a grammar.  
-
-A ParseError is raised when parsing fails for some reason.  Error reporting is nothing
-more than a stack trace, but that usually allows one to get to the source of the problem.
-
-
-## Examples
-
-### Validate an email address
-
-The code below validates an arbitrary email address.  If src is not syntactically valid,
-a ParseError is raised.
-
-    from abnf.grammars import rfc5322
-    
-    src = 'test@example.com'
-    parser = rfc5322.Rule('address')
-    parser.parse_all(src)
-
-### Extract the actual address from an email address
-
-    from abnf.grammars import rfc5322
-
-    def get_address(node):
-        """Do a breadth-first search of the tree for addr-spec node.  If found, 
-        return its value."""
-        queue = [node]
-        while queue:
-            n, queue = queue[0], queue[1:]
-            if n.name == 'addr-spec':
-                return n.value
-            else:
-                queue.extend(n.children)
-        return None
-
-    src = 'John Doe <jdoe@example.com>'
-    parser = rfc5322.Rule('address')
-    node = parser.parse_all(src)
-    address = get_address(node)
-    
-        
-    for x in node_iterator(node):
-        if x.name == 'addr-spec':
-            print(x.value)
-            break
-
-
-### Extract authentication information from an HTTP Authorization header.
-
-    from abnf.parser import NodeVisitor
-    from abnf.grammars import rfc7235
-
-    header_value = 'Basic YWxhZGRpbjpvcGVuc2VzYW1l'
-    parser = rfc7235.Rule('Authorization')
-    node, offset = parser.parse(header_value, 0)
-
-    class AuthVisitor(NodeVisitor):
-        def __init__(self):
-            super().__init__()
-            self.auth_scheme = None
-            self.token = None
-
-        def visit_authorization(self, node):
-            for child_node in node.children:
-                self.visit(child_node)
-
-        def visit_credentials(self, node):
-            for child_node in node.children:
-                self.visit(child_node)
-
-        def visit_auth_scheme(self, node):
-            self.auth_scheme = node.value
-
-        def visit_token68(self, node):
-            self.token = node.value
-
-    visitor = AuthVisitor()
-    visitor.visit(node)
-    
-The result is that visitor.auth_scheme = 'Basic', and visitor.token = 'YWxhZGRpbjpvcGVuc2VzYW1l'
-
-## Implementation
-
-abnf is implemented using parser combinators. There is a class Literal whose instances are
-initialized with either a string like 'moof', or a tuple like ('a', 'z') representing a range.
-The result is a parser that can match the initialized value.
-
-ABNF operations -- alternation, concatenation, repeat, etc. are implemented as classes.  
-For example, Alternation(Literal('foo'), Literal('bar')) returns a parser that implements the
-ABNF expression 
-
-    "foo" / "bar"
-
-The parser bootstraps itself: the RFC 5234 core rules and the ABNF meta-grammar are
-constructed directly from these combinator classes in code, with no parser available yet
-to read them from text. `ABNFGrammarRule` holds the resulting meta-grammar — it is the
-parser used to read every other grammar, and it can parse its own ABNF source as a
-self-check.
-
-### Backends
-
-abnf has two interchangeable parser implementations behind the same public API:
-
-* **Pure Python** (`abnf._parser_python`) — the default. Always available, depends only on
-  the standard library, and serves as the executable reference for the combinator
-  semantics.
-* **Rust** (`abnf_rust._ext`, installed via `pip install abnf[rust]`) — a PyO3 extension
-  that reimplements the combinator engine and the ABNF meta-grammar in Rust. When
-  importable, `abnf.parser` rebinds its combinator primitives (`Alternation`,
-  `Concatenation`, `Repetition`, `Option`, `Literal`, `Prose`, `Repeat`, `Match`, `Node`,
-  `LiteralNode`) to the Rust pyclasses. `Rule`, `NodeVisitor`, `ParseError`, and
-  `GrammarError` remain Python in either case so that subclassing, the per-class rule
-  registry, and reflective visitor dispatch continue to work unchanged. See
-  [The Rust backend](#the-rust-backend) above for benchmark numbers and the kinds of
-  grammars each implementation handles best.
-
-The dispatch happens once at import time in `abnf.parser`, based on whether the
-companion `abnf_rust` extension is importable. Set `ABNF_NO_RUST=1` in the environment
-to force the pure-Python backend even when the extension is installed.
-
-### Alternation
-
-RFC 5234 does not specify the precise behavior of alternation.  The ABNF definition of 
-ABNF appears to assume longest match.  But other grammars expect first match alternation 
-(e.g. [dhall](https://dhall-lang.org)).  So this behavior is configurable. A class attribute Rule.first_match_alternation
-allows one to choose a behavior for a particular grammar (as represented by a Rule subclass).
-When first_match_alternation is False, alternation returns the longest match; in the event of a tie, 
-the first match is returned. When first_match_alternation is True, the first match is 
-returned.
-
-
-### Backtracking
-
-ABNF implements backtracking as of version 2.0.0.  There were sufficient changes in behavior that this constituted a breaking change, 
-and so the major version has been bumped.
-
-As is well-known, naive implementations of backtracking typically have exponential worst-case behavior.  Here I attempt to reduce that 
-through the use of generators and some caching. In particular, Repetition objects cache parse results.
-
-Version 2.0.0 uses a LRU cache, ParseCache.  The code comes wihout any max sizes set for caches, which will obviously result in long-term issues.  
-My hope is to get feedback from parser usage.  ParseCache has a class attribute max_cache_size: int | None that if set to a non-negative integer, will 
-limit cache size.
-
-        
-## Development, Testing, etc.
-
-To set up a development environment, install in editable mode with the `dev` extra.  Pick whichever installer you prefer:
-
-    pip install -e '.[dev]'
-
-or, with [uv](https://docs.astral.sh/uv/) (which the project's lockfile and CI both use):
-
-    uv sync --extra dev
-
-A good starting point is to run pytest and see that all tests pass:
-
-    pytest --cov-report term-missing --cov=abnf
-
-The test suite includes fuzz testing with test data generated using [abnfgen](http://www.quut.com/abnfgen/).
-Some of the test rules are long and gruesome, so the tests take a bit of time to complete.
-Skip the fuzz tests with:
-
-    pytest --cov-report term-missing --cov=abnf --ignore=tests/fuzz
-
-### Code quality
-
-Pre-commit hooks run ruff, pyright, check-manifest, and tox automatically.  Install them once:
-
-    pre-commit install
-
-To invoke the checks manually:
-
-    ruff check src/abnf       # Lint
-    pyright                   # Type-check
-    tox                       # Run pytest across python 3.10-3.14
-
-### Working with the Rust backend
-
-To build and install the Rust extension against your dev venv:
-
-    pip install -e ./packages/abnf-rust
-
-or, with uv:
-
-    uv pip install -e ./packages/abnf-rust
-
-This drives [maturin](https://www.maturin.rs/) (declared as the PEP 517 build backend) to compile and install the extension; subsequent runs rebuild only what changed.  To force the pure-Python backend even with `abnf-rust` installed:
-
-    ABNF_NO_RUST=1 pytest
-
-To run the Rust crate's own unit tests:
-
-    cargo test --manifest-path packages/abnf-rust/Cargo.toml
-
-
-
-## Third-Party Packages
-
-
-### [abnf-to-regexp](https://pypi.org/project/abnf-to-regexp/1.0.0/)
-
-The program abnf-to-regexp converts augmented Backus-Naur form (ABNF) to a regular expression.
+## Contributing
+
+Set up a development environment with the `dev` extra:
+
+```console
+pip install -e '.[dev]'          # or: uv sync --extra dev
+```
+
+Run the test suite (skip the slower fuzz tests with `--ignore=tests/fuzz`):
+
+```console
+pytest --cov-report term-missing --cov=abnf
+```
+
+Pre-commit hooks run ruff, pyright, check-manifest, and tox. Install them once with
+`pre-commit install`. See the *Explanation* and *How-to* docs for working with the
+Rust backend.
+
+## Third-party packages
+
+- [abnf-to-regexp](https://pypi.org/project/abnf-to-regexp/) — converts ABNF to a
+  regular expression.

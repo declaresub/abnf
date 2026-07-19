@@ -63,6 +63,16 @@ rust = [
     # with a breaking change can't silently come in via the extra.
     'abnf-rust>=2.5,<3',
 ]
+# Documentation toolchain (Sphinx + MyST for Markdown prose + autodoc for the
+# API reference from docstrings).  Kept separate from `dev` so running the test
+# suite does not require the doc stack.  Pinned to versions that support the
+# project's Python floor (3.10); Read the Docs installs `.[docs]`.
+docs = [
+    'sphinx==8.1.3',
+    'myst-parser==4.0.1',
+    'furo==2025.12.19',
+    'sphinx-copybutton==0.5.2',
+]
 
 [tool.check-manifest]
 ignore = [
@@ -71,6 +81,11 @@ ignore = [
     "packages",
     "packages/**",
     "tests/notes",
+    # Documentation sources are built by Read the Docs from the repo, not
+    # shipped in the sdist.
+    "docs",
+    "docs/**",
+    ".readthedocs.yaml",
 ]
 
 [tool.pytest.ini_options]

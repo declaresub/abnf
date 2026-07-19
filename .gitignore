@@ -20,3 +20,4 @@ dist/
 pypi-notes
 profile_rule.py
 .claude
+docs/_build/
