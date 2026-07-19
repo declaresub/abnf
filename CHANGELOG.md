@@ -1,5 +1,55 @@
 # Changelog
 
+## Unreleased
+
+Nothing yet.
+
+## 2.6.0
+
+* Add grammars for RFC 6797 (HTTP Strict Transport Security), RFC 7240
+  (Prefer header), RFC 7838 (HTTP Alternative Services), RFC 8288 (Web
+  Linking / Link header), and RFC 9651 (Structured Field Values for HTTP,
+  which obsoletes RFC 8941).
+
+* The pure-Python parser now raises `ParseError` instead of an uncaught
+  `RecursionError` when input is nested more deeply than the Python
+  recursion limit allows, restoring the documented exception contract (the
+  Rust backend was already unaffected).  `Rule.parse_all`'s docstring
+  documents the depth limit and a worker-thread recipe for parsing very
+  deeply nested input.
+  https://github.com/declaresub/abnf/issues/144
+
+* Fix the CORS `Origin` header grammar to accept the ASCII string `"null"`,
+  and warn on rule redefinition.  The root cause was a case-insensitive
+  rule-name collision between `Origin` and `origin`; the grammar now uses
+  the current Fetch standard's self-contained serialized-origin
+  productions.
+  https://github.com/declaresub/abnf/issues/135
+
+* Documentation is now a full site organized by the Diátaxis framework,
+  hosted at <https://abnf.readthedocs.io/>.  The README is now a landing
+  page.
+
+* Testing: every RFC grammar module now has generative / differential
+  fuzz coverage (pure-Python vs. Rust results are checked against each
+  other), alongside the existing ABNF meta-grammar fuzz.  Development
+  tooling moved from black / isort to `ruff format`.
+
+* `abnf` and `abnf-rust` release together at 2.6.0 from the same tag, as
+  usual.  The Rust backend has no source changes this release; it is
+  republished to keep the version-locked pair resolvable.
+
+### Known issues
+
+* The pure-Python `Repetition` parse cache is not invalidated when a
+  grammar is mutated after it has been used to parse — via `=/`
+  (incremental definition), rule redefinition, `Rule.exclude_rule`, or
+  toggling `Rule.first_match_alternation`.  Re-parsing a previously-seen
+  input can then return a stale result.  The bundled grammars are not
+  affected (they are finalized at import, before any parse); only code
+  that mutates a grammar after parsing with it is exposed.  A fix is
+  planned for the next release.
+
 ## 2.5.1
 
 * Migrate the `abnf-rust` bindings from pyo3 0.22 to pyo3 0.29.  This

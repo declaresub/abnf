@@ -556,14 +556,16 @@ class Rule:
 
     def exclude_rule(self, rule: Rule) -> None:
         """
-        Exclude values which match rule.  For example, suppose we have the following
-        grammar.
-        foo = %x66.6f.6f
-        keyword = foo
-        identifier = ALPHA *(ALPHA / DIGIT )
+        Exclude values which match ``rule``.  For example, suppose we have the
+        following grammar::
 
-        We don't want to allow a keyword to be an identifier.  To do this,
-        Rule('identifier').exclude_rule(Rule('keyword'))
+            foo = %x66.6f.6f
+            keyword = foo
+            identifier = ALPHA *(ALPHA / DIGIT )
+
+        We don't want to allow a keyword to be an identifier.  To do this::
+
+            Rule('identifier').exclude_rule(Rule('keyword'))
 
         Then attempting to use "foo" as an identifier would result in a ParseError.
         """
@@ -630,7 +632,19 @@ class Rule:
         # losing candidates.  If `g` yields nothing it has already
         # raised `ParseError`; the `next` here therefore never sees
         # `StopIteration` in practice.
-        longest_match = next(g)
+        try:
+            longest_match = next(g)
+        except RecursionError as exc:
+            # Deeply-nested input exhausts the Python call stack (the parser is
+            # recursive-descent).  Convert to ParseError so the documented
+            # exception contract holds instead of leaking RecursionError, and
+            # so callers guarding untrusted input with `except ParseError` are
+            # not crashed by it.  See GitHub issue #144.  `parse` is the
+            # outermost frame, so by the time RecursionError has unwound to
+            # here there is stack headroom to raise; and because RecursionError
+            # is not a ParseError, the intermediate `except ParseError` handlers
+            # in Alternation/Repetition do not swallow it on the way up.
+            raise ParseError(self, start) from exc
         return (longest_match.nodes[0], longest_match.start)
 
     def parse_all(self, source: str) -> Node:
@@ -646,6 +660,35 @@ class Rule:
         :raises ParseError: if source cannot be parsed using rule.
         :raises GrammarError: if rule has no definition.  This usually means that a
             non-terminal in the grammar is not defined or imported.
+
+        .. note::
+            The pure-Python backend is recursive-descent, so input nested more
+            deeply than the Python recursion limit permits is reported as a
+            ParseError rather than crashing with RecursionError.  The Rust
+            backend is not subject to this limit.  If you must parse very deeply
+            nested input on the pure-Python backend, run the parse on a worker
+            thread with a larger stack and a raised recursion limit -- both
+            levers are needed, as ``setrecursionlimit`` alone would overflow the
+            C stack::
+
+                import sys, threading
+
+                def parse_all_deep(rule, source, *, limit=100_000,
+                                   stack=256 * 1024 * 1024):
+                    threading.stack_size(stack)
+                    box = {}
+                    def run():
+                        sys.setrecursionlimit(limit)  # process-global while running
+                        try:
+                            box["node"] = rule.parse_all(source)
+                        except BaseException as exc:  # re-raised on the caller
+                            box["exc"] = exc
+                    t = threading.Thread(target=run)
+                    t.start()
+                    t.join()
+                    if "exc" in box:
+                        raise box["exc"]
+                    return box["node"]
         """
 
         node, start = self.parse(source, 0)
