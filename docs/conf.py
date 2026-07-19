@@ -5,7 +5,8 @@ API reference is generated from the package's docstrings with autodoc.
 """
 
 import os
-from importlib.metadata import version as _version
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _pkg_version
 
 # Document the pure-Python backend: the classes autodoc renders (Rule, Node,
 # NodeVisitor, the exceptions) are always the pure-Python ones regardless of
@@ -15,10 +16,15 @@ os.environ.setdefault("ABNF_NO_RUST", "1")
 
 project = "abnf"
 author = "Charles Yeomans"
-copyright = "Charles Yeomans"  # noqa: A001
+copyright = "Charles Yeomans"
 
-# The full version, including alpha/beta/rc tags.
-release = _version("abnf")
+# The full version, including alpha/beta/rc tags.  Read from the installed
+# package metadata; fall back gracefully if the build environment could not
+# resolve a version (e.g. a shallow clone without tags for setuptools_scm).
+try:
+    release = _pkg_version("abnf")
+except PackageNotFoundError:  # pragma: no cover
+    release = "0.0.0"
 # The short X.Y version.
 version = ".".join(release.split(".")[:2])
 
@@ -43,7 +49,6 @@ source_suffix = {
     ".rst": "restructuredtext",
 }
 
-templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # -- Autodoc ---------------------------------------------------------------

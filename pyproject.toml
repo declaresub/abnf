@@ -36,6 +36,13 @@ name = "abnf"
 readme = "README.md"
 requires-python = ">= 3.10"
 
+[project.urls]
+Homepage = "https://github.com/declaresub/abnf"
+Documentation = "https://abnf.readthedocs.io/"
+Source = "https://github.com/declaresub/abnf"
+Changelog = "https://github.com/declaresub/abnf/blob/master/CHANGELOG.md"
+Issues = "https://github.com/declaresub/abnf/issues"
+
 
 [project.optional-dependencies]
 dev = [
