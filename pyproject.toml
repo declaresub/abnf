@@ -51,6 +51,7 @@ dev = [
 'pyright[nodejs]==1.1.410',
 'pytest==9.1.0',
 'pytest-cov==7.1.0',
+'pytest-benchmark==5.2.3',
 'hypothesis==6.156.6',
 'ruff==0.15.17',
 'setuptools==82.0.1',

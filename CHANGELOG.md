@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+Nothing yet.
+
 ## 2.6.0
 
 * Add grammars for RFC 6797 (HTTP Strict Transport Security), RFC 7240
