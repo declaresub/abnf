@@ -3,7 +3,7 @@ Collected rules from RFC 3339, Appendix A.
 https://datatracker.ietf.org/doc/html/rfc3339
 """
 
-from typing import ClassVar, Union
+from typing import ClassVar
 
 from abnf.parser import Rule as _Rule
 
@@ -14,7 +14,7 @@ from .misc import load_grammar_rules
 class Rule(_Rule):
     """Rules from RFC 3339."""
 
-    grammar: ClassVar[Union[list[str], str]] = [
+    grammar: ClassVar[list[str] | str] = [
         "date-fullyear   = 4DIGIT",
         "date-month      = 2DIGIT  ; 01-12",
         "date-mday       = 2DIGIT  ; 01-28, 01-29, 01-30, 01-31 based on\

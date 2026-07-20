@@ -3,7 +3,7 @@ Collected rules from RFC 5646
 https://tools.ietf.org/html/rfc5646
 """
 
-from typing import ClassVar, Union
+from typing import ClassVar
 
 from abnf.parser import Rule as _Rule
 
@@ -14,7 +14,7 @@ from .misc import load_grammar_rules
 class Rule(_Rule):
     """Rules from RFC 5646."""
 
-    grammar: ClassVar[Union[list[str], str]] = [
+    grammar: ClassVar[list[str] | str] = [
         "Language-Tag = langtag / privateuse / grandfathered",
         'langtag = language ["-" script] ["-" region] *("-" variant) *("-" extension) ["-" privateuse]',
         'language = 2*3ALPHA ["-" extlang] / 4ALPHA / 5*8ALPHA',

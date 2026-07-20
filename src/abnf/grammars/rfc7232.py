@@ -2,11 +2,11 @@
 Collected rules from RFC 7232
 https://tools.ietf.org/html/rfc7232
 
-Note that this RFC is obsolete as of June 2022, replaced by 
+Note that this RFC is obsolete as of June 2022, replaced by
 https://www.rfc-editor.org/rfc/rfc9110.
 """
 
-from typing import ClassVar, Union
+from typing import ClassVar
 
 from abnf.parser import Rule as _Rule
 
@@ -24,7 +24,7 @@ from .misc import load_grammar_rules
 class Rule(_Rule):
     """Rules from RFC 7232."""
 
-    grammar: ClassVar[Union[list[str], str]] = [
+    grammar: ClassVar[list[str] | str] = [
         "ETag = entity-tag",
         # HTTP-date = <HTTP-date, see [RFC7231], Section 7.1.1.1>
         'If-Match = "*" / ( *( "," OWS ) entity-tag *( OWS "," [ OWS entity-tag ] ) )',

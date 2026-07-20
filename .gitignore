@@ -1,11 +1,13 @@
 .cache
 .coverage
+.DS_Store
 .mypy*
 *.pyc
 __pycache__
 .tox
 *.egg-info
 .pytest*
+.hypothesis/
 .python-version
 .venv
 .benchmarks/
@@ -18,3 +20,4 @@ dist/
 pypi-notes
 profile_rule.py
 .claude
+docs/_build/

@@ -73,7 +73,9 @@ __all__ = [
 class Rule(_Rule):
     """Rules from RFC 9651, Appendix C."""
 
-    grammar: ClassVar[list[str] | str] = r"""sf-list = list-member *( OWS "," OWS list-member )
+    grammar: ClassVar[
+        list[str] | str
+    ] = r"""sf-list = list-member *( OWS "," OWS list-member )
 list-member = sf-item / inner-list
 inner-list = "(" *SP [ sf-item *( 1*SP sf-item ) *SP ] ")" parameters
 parameters = *( ";" *SP parameter )

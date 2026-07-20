@@ -36,16 +36,25 @@ name = "abnf"
 readme = "README.md"
 requires-python = ">= 3.10"
 
+[project.urls]
+Homepage = "https://github.com/declaresub/abnf"
+Documentation = "https://abnf.readthedocs.io/"
+Source = "https://github.com/declaresub/abnf"
+Changelog = "https://github.com/declaresub/abnf/blob/master/CHANGELOG.md"
+Issues = "https://github.com/declaresub/abnf/issues"
+
 
 [project.optional-dependencies]
 dev = [
 'check-manifest==0.51',
 'pre-commit==4.6.0',
 'pyright[nodejs]==1.1.410',
-'pytest==9.1.0',
+'pytest==9.1.1',
 'pytest-cov==7.1.0',
+'pytest-benchmark==5.2.3',
+'hypothesis==6.156.6',
 'ruff==0.15.17',
-'setuptools==82.0.1',
+'setuptools==83.0.0',
 'tox==4.55.1',
 'setuptools_scm==10.2.0',
 ]
@@ -62,8 +71,16 @@ rust = [
     # with a breaking change can't silently come in via the extra.
     'abnf-rust>=2.5,<3',
 ]
-
-[tool.black]
+# Documentation toolchain (Sphinx + MyST for Markdown prose + autodoc for the
+# API reference from docstrings).  Kept separate from `dev` so running the test
+# suite does not require the doc stack.  Pinned to versions that support the
+# project's Python floor (3.10); Read the Docs installs `.[docs]`.
+docs = [
+    'sphinx==8.1.3',
+    'myst-parser==4.0.1',
+    'furo==2025.12.19',
+    'sphinx-copybutton==0.5.2',
+]
 
 [tool.check-manifest]
 ignore = [
@@ -72,10 +89,16 @@ ignore = [
     "packages",
     "packages/**",
     "tests/notes",
+    # Documentation sources are built by Read the Docs from the repo, not
+    # shipped in the sdist.
+    "docs",
+    "docs/**",
+    ".readthedocs.yaml",
 ]
 
-[tool.isort]
-profile = "black"
+[tool.pytest.ini_options]
+norecursedirs = [".tox", "venv", ".hypothesis"]
+testpaths = ["tests"]
 
 [tool.pyright]
 pythonVersion = "3.10"
@@ -110,6 +133,10 @@ select = [
     "T20",
     "UP",
 ]
+
+[tool.ruff.lint.per-file-ignores]
+# gen_corpus.py is a developer CLI utility; print() is its output channel.
+"tests/fuzz/gen_corpus.py" = ["T201"]
 
 [tool.ruff.lint.flake8-pytest-style]
 fixture-parentheses = false

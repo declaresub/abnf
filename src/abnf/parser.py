@@ -25,6 +25,7 @@ from abnf import _parser_python as _py
 from abnf._parser_python import (
     ABNFGrammarRule,
     GrammarError,
+    GrammarWarning,
     Matches,
     MatchSet,
     Nodes,
@@ -121,6 +122,7 @@ __all__ = [
     "CharValNodeVisitor",
     "Concatenation",
     "GrammarError",
+    "GrammarWarning",
     "Literal",
     "LiteralNode",
     "Match",
