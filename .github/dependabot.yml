@@ -12,6 +12,20 @@ updates:
     # but not yet caught/yanked.
     cooldown:
       default-days: 7
+    # Batch routine dev-tooling bumps into a single PR with one
+    # consistent uv.lock update. Merging many single-dependency PRs in
+    # sequence otherwise drifts the lockfile: each PR is locked against
+    # an older master, so a later "Update branch" merge can drop an
+    # earlier PR's lock entries. Major bumps still come as individual
+    # PRs so they get their own review (all these deps are dev/build
+    # tooling; the published `abnf` package has no runtime dependencies).
+    groups:
+      dev-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: github-actions
     directory: "/"
@@ -21,6 +35,13 @@ updates:
       timezone: America/Kentucky/Monticello
     cooldown:
       default-days: 7
+    groups:
+      actions:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: cargo
     # Rust workspace for the optional `abnf-rust` companion package.
@@ -39,3 +60,10 @@ updates:
         update-types:
           - "version-update:semver-minor"
           - "version-update:semver-major"
+    groups:
+      cargo:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
