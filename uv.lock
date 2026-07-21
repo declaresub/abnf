@@ -38,7 +38,7 @@ requires-dist = [
     { name = "hypothesis", marker = "extra == 'dev'", specifier = "==6.156.6" },
     { name = "myst-parser", marker = "extra == 'docs'", specifier = "==4.0.1" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = "==4.6.0" },
-    { name = "pyright", extras = ["nodejs"], marker = "extra == 'dev'", specifier = "==1.1.410" },
+    { name = "pyright", extras = ["nodejs"], marker = "extra == 'dev'", specifier = "==1.1.411" },
     { name = "pytest", marker = "extra == 'dev'", specifier = "==9.1.1" },
     { name = "pytest-benchmark", marker = "extra == 'dev'", specifier = "==5.2.3" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = "==7.1.0" },
@@ -47,7 +47,7 @@ requires-dist = [
     { name = "setuptools-scm", marker = "extra == 'dev'", specifier = "==10.2.0" },
     { name = "sphinx", marker = "extra == 'docs'", specifier = "==8.1.3" },
     { name = "sphinx-copybutton", marker = "extra == 'docs'", specifier = "==0.5.2" },
-    { name = "tox", marker = "extra == 'dev'", specifier = "==4.55.1" },
+    { name = "tox", marker = "extra == 'dev'", specifier = "==4.56.1" },
 ]
 provides-extras = ["dev", "rust", "docs"]
 
@@ -807,15 +807,15 @@ wheels = [
 
 [[package]]
 name = "pyright"
-version = "1.1.410"
+version = "1.1.411"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "nodeenv" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/10/53/e4d8ea1391bd4355231be6f91bf239479aa0014260ed3fb5526eeb12a1f2/pyright-1.1.410.tar.gz", hash = "sha256:07a073b8ba6749826773c1269773efa11b93440d9a6aa60419d9a3172d6dc488", size = 4062013, upload-time = "2026-06-01T17:35:48.894Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7e/ab/265f7dc69d28113ebba19092e57b075f41543b2ed048429c5f56e2b88eac/pyright-1.1.411.tar.gz", hash = "sha256:d885a0551f2e763b089a02702174e7f4ba77548cddabc972ab86d1f7f1b0f998", size = 4112861, upload-time = "2026-06-25T02:14:06.37Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d7/33/288b5868fa00846dacf249633719d747893e54aebd196b9968ac1878a5d3/pyright-1.1.410-py3-none-any.whl", hash = "sha256:5e961bed37cacf96b3f7cd7b1da39b350a9239aa2e69138d0e88f728cfaf296c", size = 6082448, upload-time = "2026-06-01T17:35:46.387Z" },
+    { url = "https://files.pythonhosted.org/packages/0a/49/385be530a6a5b78d1cbcd5c2e38debc8959a2fc6bdb716f4e581002979fc/pyright-1.1.411-py3-none-any.whl", hash = "sha256:dc7c72a8e2700c55baa127554040e067041ea53ccfd50bf96308cc4291c7d5d9", size = 6181526, upload-time = "2026-06-25T02:14:04.691Z" },
 ]
 
 [package.optional-dependencies]
@@ -1208,7 +1208,7 @@ wheels = [
 
 [[package]]
 name = "tox"
-version = "4.55.1"
+version = "4.56.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cachetools" },
@@ -1224,9 +1224,9 @@ dependencies = [
     { name = "typing-extensions", marker = "python_full_version < '3.11'" },
     { name = "virtualenv" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/79/5b/4f09156a3f7bf3c4fa23212717f097c59126d81e2c557e6fd872a62db38a/tox-4.55.1.tar.gz", hash = "sha256:0678fbf26dd5b559b1ef128fa4388325920219322ebc8cc5f3497627c00f4472", size = 280676, upload-time = "2026-06-03T20:01:03.487Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/60/6a/d20d405fc6661902ff803a9fa048d8aae27597c3b5dc750369ded82d08f7/tox-4.56.1.tar.gz", hash = "sha256:db1c2610802553189cf40de251661d066a635ee0ed9bf2a60093b5f1a7f36ef8", size = 283155, upload-time = "2026-06-25T06:18:36.802Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/bb/fd/394f00f3d3e23d87eb7b20276d88fe835e48780d3eb30e6f362428bb80c8/tox-4.55.1-py3-none-any.whl", hash = "sha256:e2084be6dfdef96ba1bed4948e6a1f73613d6952e1477be5dca45653d4c053c8", size = 215360, upload-time = "2026-06-03T20:01:01.967Z" },
+    { url = "https://files.pythonhosted.org/packages/d8/97/560a5dfde154619d9643b1e208119dddc29bbb35a38a4ce4d095c16cf8f0/tox-4.56.1-py3-none-any.whl", hash = "sha256:4d06b925c4dd67872099b39c5a46fba79a2169c5f6e32060f95a8b1181f0ef55", size = 216469, upload-time = "2026-06-25T06:18:35.229Z" },
 ]
 
 [[package]]
