@@ -52,10 +52,10 @@ dev = [
 'pytest==9.1.1',
 'pytest-cov==7.1.0',
 'pytest-benchmark==5.2.3',
-'hypothesis==6.156.6',
-'ruff==0.15.21',
+'hypothesis==6.157.2',
+'ruff==0.15.22',
 'setuptools==83.0.0',
-'tox==4.56.4',
+'tox==4.57.2',
 'setuptools_scm==10.2.0',
 ]
 # `pip install abnf[rust]` pulls in the companion `abnf-rust`
