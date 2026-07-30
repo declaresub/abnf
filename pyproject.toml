@@ -52,7 +52,7 @@ dev = [
 'pytest==9.1.1',
 'pytest-cov==7.1.0',
 'pytest-benchmark==5.2.3',
-'hypothesis==6.158.1',
+'hypothesis==6.161.0',
 'ruff==0.15.22',
 'setuptools==83.0.0',
 'tox==4.58.0',
