@@ -211,6 +211,54 @@ jobs:
         args: --release --out dist
         manylinux: ${{ matrix.target.manylinux }}
 
+    # ------------------------------------------------------------
+    # Smoke test.  Until issue #168 this job's only signal was "it
+    # compiled" — no wheel was ever installed, imported, or run
+    # before it went to PyPI.  A wheel that builds but fails to
+    # import, or imports and silently falls back to the pure-Python
+    # backend, would have shipped.  Combined with CI being
+    # Linux-only at the time, the non-Linux wheels were never
+    # executed at any point in the pipeline (that is how the
+    # Windows stack overflow in #170 survived to a release).
+    #
+    # Runs on the same runner that produced the wheel, so the
+    # artifact is exercised on its own target.
+    # ------------------------------------------------------------
+
+    - name: Set up Python for the smoke test
+      # `linux-aarch64` is cross-compiled on an x86_64 runner, so its
+      # wheel cannot execute here.  Excluded deliberately rather than
+      # by omission — that target's only signal remains "it compiled".
+      # QEMU could close the gap; not worth the complexity yet.
+      if: matrix.target.label != 'linux-aarch64'
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+      with:
+        # The extension is built against the stable ABI (abi3-py310),
+        # so one wheel serves 3.10+ and testing on the floor version
+        # exercises the oldest interpreter it claims to support.
+        python-version: "3.10"
+
+    - name: Smoke-test the wheel
+      if: matrix.target.label != 'linux-aarch64'
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install pytest
+        # The pure-Python distribution supplies Rule / Node / the
+        # dispatch shim; the wheel only supplies the compiled
+        # combinators behind it.
+        python -m pip install .
+        # --no-index: install the artifact just built, never
+        # something resolved off an index.  If the wheel is
+        # unusable on this platform, this is where it fails.
+        python -m pip install --no-index \
+          --find-links packages/abnf-rust/dist abnf-rust
+        # The shim falls back to pure Python silently when the
+        # extension will not import, which would make the test run
+        # below pass while testing nothing.
+        python -c "import abnf.parser; assert abnf.parser._BACKEND == 'rust', abnf.parser._BACKEND; print('backend:', abnf.parser._BACKEND)"
+        pytest --ignore=tests/fuzz --ignore=tests/benchmarks
+
     - name: Upload wheel
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
       with:
