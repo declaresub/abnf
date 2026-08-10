@@ -692,6 +692,17 @@ def test_m2_empty_literal_matches_inside_source():
     assert match.start == 1  # empty literal advances nothing
 
 
+@pytest.mark.xfail(
+    sys.platform == "win32"
+    and __import__("abnf.parser", fromlist=["_BACKEND"])._BACKEND == "rust",
+    reason=(
+        "Issue #170: MAX_RULE_RECURSION never trips on Windows -- the native "
+        "stack is gone first, so the subprocess dies with STATUS_STACK_OVERFLOW "
+        "(0xC00000FD) instead of exiting cleanly with a caught exception.  "
+        "Left recursion is the case that guard exists for."
+    ),
+    strict=True,
+)
 def test_h5_left_recursive_grammar_is_catchable_not_segfault():
     import subprocess
     import sys
