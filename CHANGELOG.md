@@ -2,7 +2,29 @@
 
 ## Unreleased
 
-Nothing yet.
+* The Rust backend no longer crashes the interpreter on deeply nested input.
+  Its recursion guard bounded the number of nested rule levels (1000, to mirror
+  CPython's recursion limit), but the resource that runs out is stack *bytes*:
+  a level costs ~3 KiB, so reaching 1000 needs ~3 MiB of native stack.  Where
+  the stack was smaller the process died of a stack overflow -- no `ParseError`,
+  no `RecursionError`, nothing catchable -- before the level counter came close
+  to firing.  That was every Windows user of `abnf[rust]`, and anyone on any
+  platform parsing on a thread created with a modest `threading.stack_size`.
+
+  The guard now budgets native stack as well as counting levels, so it fires on
+  the resource that actually runs out and behaves identically everywhere.  The
+  ceiling is lower as a result: roughly 180 levels of rule nesting rather than
+  1000 on platforms whose stack could absorb it.  ABNF grammars nest in the
+  single digits in practice; input approaching this bound is pathological, and
+  is now reported as a `ParseError` on both backends.  To parse deeper input,
+  use the pure-Python backend, whose limit can be raised -- see the
+  worker-thread recipe in `Rule.parse_all`.
+  https://github.com/declaresub/abnf/issues/170
+
+* CI runs the Rust backend on Windows and macOS, not just Linux.  The compiled
+  extension was previously built and tested only on Linux even though wheels
+  ship for five targets, which is why the crash above went unnoticed.
+  https://github.com/declaresub/abnf/issues/167
 
 ## 2.6.0
 
