@@ -1,4 +1,5 @@
 import pathlib
+import sys
 import textwrap
 from typing import cast
 
@@ -145,6 +146,16 @@ def test_backtracking():
     assert "".join(n.value for n in match.nodes) == src
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32"
+    and __import__("abnf.parser", fromlist=["_BACKEND"])._BACKEND == "rust",
+    reason=(
+        "Issue #170: the Rust backend needs ~3 MiB of native stack to reach "
+        "depth 1000, more than Windows reserves, so the process overflows the "
+        "stack before MAX_RULE_RECURSION trips.  Cannot be xfailed -- the "
+        "overflow is fatal and takes pytest down with it."
+    ),
+)
 def test_deeply_nested_input_does_not_leak_recursionerror():
     """Regression for issue #144: deeply-nested input must not escape as an
     uncaught RecursionError.  The recursive-descent pure-Python parser converts
