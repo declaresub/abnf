@@ -146,9 +146,11 @@ def test_backtracking():
 
 
 def test_deeply_nested_input_does_not_leak_recursionerror():
-    """Regression for issue #144: deeply-nested input must not escape as an
-    uncaught RecursionError.  The recursive-descent pure-Python parser converts
-    it to a ParseError (the documented contract); the Rust backend parses it."""
+    """Regression for issues #144 and #170: deeply-nested input must not escape
+    as an uncaught RecursionError, and must not take the process down either.
+    Both backends convert it to ParseError -- the pure-Python one from CPython's
+    recursion limit, the Rust one from its stack budget (which surfaces as
+    RecursionError and is converted by `Rule.parse` on the way out)."""
 
     class DeepGrammar(Rule):
         pass
@@ -165,9 +167,10 @@ def test_deeply_nested_input_does_not_leak_recursionerror():
     # RecursionError is not caught here, so if the fix regresses it propagates
     # and fails the test.
 
-    if __import__("abnf.parser", fromlist=["_BACKEND"])._BACKEND == "python":
-        # nesting well beyond the Python recursion limit must convert cleanly.
-        assert raised_parse_error
+    # Before #170 the Rust backend parsed this successfully on Linux and macOS
+    # and killed the interpreter on Windows.  Neither is right: the depth is
+    # pathological and the answer is the same catchable error everywhere.
+    assert raised_parse_error
 
 
 def test_alternation_first_match():
@@ -711,6 +714,67 @@ def test_h5_left_recursive_grammar_is_catchable_not_segfault():
     # negative returncode on POSIX (e.g. -11 for SIGSEGV).
     assert result.returncode == 0, (
         f"left-recursive grammar killed the interpreter: "
+        f"returncode={result.returncode}, stderr={result.stderr!r}"
+    )
+    assert result.stdout.startswith("caught:"), (
+        f"expected a caught exception, got: stdout={result.stdout!r}, "
+        f"stderr={result.stderr!r}"
+    )
+
+
+def test_170_deep_nesting_on_a_small_stack_is_catchable_not_fatal():
+    """Regression for issue #170.
+
+    The guard used to bound recursion by counting levels, which only protects
+    a stack big enough for the count: 1000 levels wants ~3 MiB, so on a
+    smaller stack the process died with no catchable error.  Windows found
+    this because it reserves less than Linux and macOS, but the variable that
+    matters is stack size, not platform -- `threading.stack_size` reproduces
+    it anywhere, which is what this test does so the regression is covered on
+    every runner rather than only on Windows.
+
+    Subprocessed because the pre-fix failure mode is a fatal stack overflow,
+    which pytest cannot observe in-process.
+    """
+
+    import subprocess
+    import sys
+
+    script = textwrap.dedent(
+        """
+        import threading
+        from abnf.parser import Rule
+
+        class G(Rule):
+            pass
+
+        G.create('nested = "(" [ nested ] ")"')
+        src = "(" * 1000 + ")" * 1000
+        out = {}
+
+        def run():
+            try:
+                G("nested").parse_all(src)
+            except Exception as exc:
+                out["result"] = f"caught:{type(exc).__name__}"
+            else:
+                out["result"] = "no-exception"
+
+        threading.stack_size(1024 * 1024)
+        thread = threading.Thread(target=run)
+        thread.start()
+        thread.join()
+        print(out.get("result", "thread-died"))
+        """
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert result.returncode == 0, (
+        f"deep nesting on a 1 MiB stack killed the interpreter: "
         f"returncode={result.returncode}, stderr={result.stderr!r}"
     )
     assert result.stdout.startswith("caught:"), (
