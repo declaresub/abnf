@@ -662,14 +662,21 @@ class Rule:
             non-terminal in the grammar is not defined or imported.
 
         .. note::
-            The pure-Python backend is recursive-descent, so input nested more
-            deeply than the Python recursion limit permits is reported as a
-            ParseError rather than crashing with RecursionError.  The Rust
-            backend is not subject to this limit.  If you must parse very deeply
-            nested input on the pure-Python backend, run the parse on a worker
-            thread with a larger stack and a raised recursion limit -- both
-            levers are needed, as ``setrecursionlimit`` alone would overflow the
-            C stack::
+            Both backends are recursive-descent and both bound how deeply they
+            will recurse, reporting input nested past the bound as a ParseError
+            rather than crashing.  The pure-Python backend's bound is CPython's
+            recursion limit.  The Rust backend budgets native stack instead,
+            which puts its ceiling near 180 levels of rule nesting -- lower, but
+            the same on every platform and every thread.  (Before that budget
+            existed the Rust backend counted levels only, and on a stack too
+            small for the count -- Windows, or any thread created with a modest
+            ``threading.stack_size`` -- it overflowed and killed the process.)
+
+            To parse input nested more deeply than that, use the pure-Python
+            backend, whose bound you can raise: force it with ``ABNF_NO_RUST=1``
+            and run the parse on a worker thread with a larger stack and a
+            raised recursion limit.  Both levers are needed, as
+            ``setrecursionlimit`` alone would overflow the C stack::
 
                 import sys, threading
 

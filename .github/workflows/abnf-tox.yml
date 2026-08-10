@@ -53,12 +53,37 @@ jobs:
     # `abnf-rust` extension and runs the same suite against the
     # dispatch shim's Rust path.  Both backends must stay parity-
     # equivalent, so any regression on either side fails CI.
-    name: Rust backend / Python ${{ matrix.python-version }}
-    runs-on: ubuntu-latest
+    #
+    # Runs on all three platforms we ship wheels for.  Linux covers
+    # the supported Python range; Windows and macOS add one version
+    # each, because what they contribute is a different toolchain
+    # (MSVC link, Mach-O) rather than a different Python minor — a
+    # full OS x version matrix would be 15 jobs to learn almost
+    # nothing extra.  3.10 and 3.14 pick up the ends of the range at
+    # no cost.  Runner labels are pinned to match release.yml, which
+    # avoids `macos-latest` because that label can shift under us.
+    name: Rust backend / ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        # Windows runners default to pwsh; bash is present on all
+        # three images, so every step below stays identical.
+        shell: bash
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
+        # Linux labels are bare version numbers so these job names
+        # stay byte-identical to the required status checks named in
+        # the branch ruleset.  Renaming them silently drops the
+        # requirement.
+        include:
+        - { label: 'Python 3.10', os: ubuntu-latest, python-version: '3.10' }
+        - { label: 'Python 3.11', os: ubuntu-latest, python-version: '3.11' }
+        - { label: 'Python 3.12', os: ubuntu-latest, python-version: '3.12' }
+        - { label: 'Python 3.13', os: ubuntu-latest, python-version: '3.13' }
+        - { label: 'Python 3.14', os: ubuntu-latest, python-version: '3.14' }
+        - { label: 'Windows / Python 3.10', os: windows-latest, python-version: '3.10' }
+        - { label: 'macOS / Python 3.14', os: macos-15, python-version: '3.14' }
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1

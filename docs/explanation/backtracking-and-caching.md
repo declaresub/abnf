@@ -32,11 +32,15 @@ distinct inputs. Set `Rule.max_cache_size` to a non-negative integer to bound it
 (see {doc}`../reference/configuration`).
 
 ```{note}
-The pure-Python parser is recursive-descent, so extremely deeply-nested input can
-exceed the Python recursion limit. Rather than crashing with `RecursionError`, the
-pure-Python backend reports this as a `ParseError`. If you must parse very deeply
-nested input, `Rule.parse_all` documents a worker-thread recipe with a larger
-stack.
+Both parsers are recursive-descent, so extremely deeply-nested input eventually
+runs out of room. Rather than crashing, both report it as a `ParseError`: the
+pure-Python backend when it exceeds the Python recursion limit, the Rust backend
+when nested rules exhaust its native-stack budget (about 180 levels — lower than
+the Python backend's, but identical on every platform and every thread).
+
+To parse input nested more deeply than that, use the pure-Python backend, whose
+limit you can raise: force it with `ABNF_NO_RUST=1` and follow the worker-thread
+recipe in `Rule.parse_all`.
 ```
 
 For how much the backtracking cost differs between the two backends — the Rust
