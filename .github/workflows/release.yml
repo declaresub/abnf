@@ -243,7 +243,7 @@ jobs:
         path: dist/
 
     - name: Publish to TestPyPI
-      uses: pypa/gh-action-pypi-publish@ba38be9e461d3875417946c167d0b5f3d385a247  # release/v1
+      uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # release/v1
       with:
         repository-url: https://test.pypi.org/legacy/
         # Make re-runs idempotent.  If a previous attempt for this
@@ -279,7 +279,7 @@ jobs:
         path: dist/
 
     - name: Publish to PyPI
-      uses: pypa/gh-action-pypi-publish@ba38be9e461d3875417946c167d0b5f3d385a247  # release/v1
+      uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # release/v1
       with:
         # Idempotent re-runs.  PyPI rejects duplicate filenames at
         # the project level, so this is purely a "skip what already
@@ -315,7 +315,7 @@ jobs:
         path: dist/
 
     - name: Publish to TestPyPI
-      uses: pypa/gh-action-pypi-publish@ba38be9e461d3875417946c167d0b5f3d385a247  # release/v1
+      uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # release/v1
       with:
         repository-url: https://test.pypi.org/legacy/
         skip-existing: true
@@ -344,7 +344,7 @@ jobs:
         path: dist/
 
     - name: Publish to PyPI
-      uses: pypa/gh-action-pypi-publish@ba38be9e461d3875417946c167d0b5f3d385a247  # release/v1
+      uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # release/v1
       with:
         skip-existing: true
         attestations: true
@@ -375,7 +375,7 @@ jobs:
         path: dist/
 
     - name: Sign all dists with Sigstore
-      uses: sigstore/gh-action-sigstore-python@5b79a39c381910c090341a2c9b0bf022c8b387e1  # v3.4.0
+      uses: sigstore/gh-action-sigstore-python@790bc6befb9d733738f18d8f895854b453640ec9  # v3.5.0
       with:
         inputs: >-
           ./dist/*.tar.gz
