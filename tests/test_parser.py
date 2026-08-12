@@ -204,6 +204,100 @@ def test_repetition_str():
     assert str(Repetition(Repeat(1, 2), Literal("foo")))
 
 
+# ---------------------------------------------------------------------------
+# X4: `min*max` with max < min is an impossible range.  Unvalidated it
+# silently behaves as `min*` -- `3*2"a"` rejected "aa" but accepted "aaa",
+# "aaaa", ... -- so a typo for `2*3` became unbounded repetition with no
+# diagnostic.  Both backends must reject it identically.
+# ---------------------------------------------------------------------------
+
+
+def test_x4_repeat_max_less_than_min_raises():
+    with pytest.raises(GrammarError):
+        Repeat(3, 2)
+
+
+def test_x4_repeat_max_equal_to_min_is_fine():
+    # The boundary is legal: `2*2` is an exact count, spelled `2` in ABNF.
+    assert str(Repeat(2, 2))
+
+
+def test_x4_impossible_repetition_rejected_at_grammar_load():
+    class BadRepeatRule(Rule):
+        pass
+
+    with pytest.raises(GrammarError):
+        BadRepeatRule.create('s = 3*2"a"')
+
+
+def test_x4_ordinary_repetition_bounds_still_load():
+    class GoodRepeatRule(Rule):
+        pass
+
+    GoodRepeatRule.create('s = 2*3"a"')
+    assert GoodRepeatRule("s").parse_all("aa")
+    assert GoodRepeatRule("s").parse_all("aaa")
+    with pytest.raises(ParseError):
+        GoodRepeatRule("s").parse_all("aaaa")
+
+
+# ---------------------------------------------------------------------------
+# X2: `start` was never validated.  A negative value is a valid Python slice
+# measured from the end of the source, so `parse("abcdef", -4)` matched "cd"
+# and returned negative node offsets, while the Rust backend raised
+# OverflowError -- the backends disagreed on a case where neither was right.
+# ---------------------------------------------------------------------------
+
+
+class StartRule(Rule):
+    pass
+
+
+StartRule.create('mid = "cd"')
+StartRule.create("one = %x61-7A")
+
+
+@pytest.mark.parametrize("start", [-1, -4, -99])
+def test_x2_negative_start_rejected(start: int):
+    with pytest.raises(ValueError, match="start must be in"):
+        StartRule("mid").parse("abcdef", start)
+
+
+@pytest.mark.parametrize("start", [7, 99])
+def test_x2_start_past_end_rejected(start: int):
+    with pytest.raises(ValueError, match="start must be in"):
+        StartRule("mid").parse("abcdef", start)
+
+
+def test_x2_start_at_end_of_source_is_allowed():
+    # len(source) is a legal position -- there is simply nothing to match
+    # there, which is a ParseError rather than a programming error.
+    with pytest.raises(ParseError):
+        StartRule("mid").parse("abcdef", 6)
+
+
+def test_x2_valid_start_still_parses():
+    node, start = StartRule("mid").parse("abcdef", 2)
+    assert node.value == "cd"
+    assert start == 4
+
+
+def test_x2_bool_start_is_normalised_to_int():
+    # bool is an int subclass, so `True` was used as an index but arrived
+    # verbatim in ParseError.start on the Python backend while the Rust
+    # backend reported 1.  operator.index normalises it.
+    with pytest.raises(ParseError) as excinfo:
+        StartRule("mid").parse("abcdef", True)
+    assert excinfo.value.start == 1
+    assert not isinstance(excinfo.value.start, bool)
+
+
+@pytest.mark.parametrize("start", [1.5, None, "2"])
+def test_x2_non_integer_start_rejected(start: object):
+    with pytest.raises(TypeError, match="cannot be interpreted as an integer"):
+        StartRule("mid").parse("abcdef", start)  # type: ignore[arg-type]
+
+
 def test_option_str():
     assert str(Option(Literal("foo")))
 

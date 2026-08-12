@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import operator
 import pathlib
 import typing
 import warnings
@@ -258,6 +259,17 @@ class Repeat:
     """Implements the ABNF Repeat operator for Repetition."""
 
     def __init__(self, min: int = 0, max: int | None = None):
+        # `3*2` is an impossible range.  Silently treating it as `3*`
+        # -- which is what an unvalidated max does, since the loop
+        # never reaches an upper bound it has already passed -- turns
+        # a typo for `2*3` into unbounded repetition with no
+        # diagnostic.  Reject it where the grammar is built.
+        if max is not None and max < min:
+            msg = (
+                f"Repeat max ({max}) is less than min ({min}); "
+                f"a repetition of {min}*{max} can never match."
+            )
+            raise GrammarError(msg)
         self.min = min
         self.max = max
 
@@ -622,7 +634,28 @@ class Rule:
         :raises ParseError: if source cannot be parsed using rule.
         :raises GrammarError: if rule has no definition.  This usually means that a
             non-terminal in the grammar is not defined or imported.
+        :raises ValueError: if start is outside ``0 <= start <= len(source)``.
         """
+
+        # Normalise first: this turns `True` into `1` (the Rust
+        # backend already treated it as an index, while here it ended
+        # up verbatim in `ParseError.start`) and rejects non-integers
+        # with the same message the Rust backend produces.
+        start = operator.index(start)
+
+        # Without this check a negative start is a valid Python slice
+        # measured from the end of the source, so the parse quietly
+        # succeeds at a position the caller never asked for and hands
+        # back negative node offsets: `parse("abcdef", -4)` matches
+        # "cd".  The Rust backend raises OverflowError on the same
+        # input, so the backends disagreed on a case where neither
+        # answer was right.
+        if not 0 <= start <= len(source):
+            msg = (
+                f"start must be in 0..{len(source)} for a source of "
+                f"length {len(source)}; got {start}."
+            )
+            raise ValueError(msg)
 
         g = self.lparse(source, start)
         # `lparse` yields matches longest-first (the upstream

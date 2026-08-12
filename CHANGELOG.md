@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+* `Rule.parse` now validates `start` and raises `ValueError` if it falls outside
+  `0 <= start <= len(source)`.  It was previously unchecked, and a negative
+  value is a valid Python slice measured from the end of the source, so the
+  parse quietly succeeded at a position the caller never asked for and returned
+  negative node offsets -- `parse("abcdef", -4)` matched `"cd"`.  The Rust
+  backend raised `OverflowError` on the same call, so the two backends
+  disagreed on a case where neither answer was right.  `start` is also
+  normalised with `operator.index`, so `True` becomes `1` rather than reaching
+  `ParseError.start` verbatim, and a non-integer raises `TypeError` with the
+  same message on both backends.
+
+* A repetition whose maximum is below its minimum now raises `GrammarError`
+  when the grammar is loaded, on both backends.  `3*2"a"` is an impossible
+  range, but it silently behaved as `3*"a"` -- rejecting `"aa"` while accepting
+  `"aaa"`, `"aaaa"` and so on -- so a typo for `2*3` became unbounded
+  repetition with no diagnostic.
+
 * The Rust backend no longer crashes the interpreter on deeply nested input.
   Its recursion guard bounded the number of nested rule levels (1000, to mirror
   CPython's recursion limit), but the resource that runs out is stack *bytes*:
