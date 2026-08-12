@@ -1,43 +1,6 @@
 # Changelog
 
-## Unreleased
-
-* Document what `abnf` parses: code points, not bytes.  A terminal value in a
-  grammar is a code-point value, a Python `str` is a sequence of code points,
-  and wire data is parsed by decoding it with latin-1, which maps the 256 byte
-  values onto `U+0000`-`U+00FF` one to one so that a code point is exactly an
-  octet.  New "What abnf parses" page, a note on `Rule.parse_all`, and a README
-  section.  This is why there is no bytes API: latin-1 already gives exact octet
-  semantics for one method call.
-  https://github.com/declaresub/abnf/issues/174
-
-* The Rust backend now explains itself when it meets a surrogate code point,
-  which it cannot represent because Rust strings are well-formed UTF-8.  A
-  grammar containing one (`%xD800-DBFF`) raised `TypeError: value argument must
-  be a string or a 2-tuple of strings` -- about a value that *was* a string --
-  and input containing one (from `surrogateescape`, or an unpaired `\uD800` out
-  of `json.loads`) raised a bare `UnicodeEncodeError` that never mentioned
-  `abnf`.  Both now name the surrogate as the cause and point at
-  `ABNF_NO_RUST=1`, which selects the pure-Python backend.  The underlying
-  limitation is unchanged.
-  https://github.com/declaresub/abnf/issues/173
-
-* `Rule.parse` now validates `start` and raises `ValueError` if it falls outside
-  `0 <= start <= len(source)`.  It was previously unchecked, and a negative
-  value is a valid Python slice measured from the end of the source, so the
-  parse quietly succeeded at a position the caller never asked for and returned
-  negative node offsets -- `parse("abcdef", -4)` matched `"cd"`.  The Rust
-  backend raised `OverflowError` on the same call, so the two backends
-  disagreed on a case where neither answer was right.  `start` is also
-  normalised with `operator.index`, so `True` becomes `1` rather than reaching
-  `ParseError.start` verbatim, and a non-integer raises `TypeError` with the
-  same message on both backends.
-
-* A repetition whose maximum is below its minimum now raises `GrammarError`
-  when the grammar is loaded, on both backends.  `3*2"a"` is an impossible
-  range, but it silently behaved as `3*"a"` -- rejecting `"aa"` while accepting
-  `"aaa"`, `"aaaa"` and so on -- so a typo for `2*3` became unbounded
-  repetition with no diagnostic.
+## 2.7.0
 
 * The Rust backend no longer crashes the interpreter on deeply nested input.
   Its recursion guard bounded the number of nested rule levels (1000, to mirror
@@ -58,10 +21,64 @@
   worker-thread recipe in `Rule.parse_all`.
   https://github.com/declaresub/abnf/issues/170
 
+* `Rule.parse` now validates `start` and raises `ValueError` if it falls outside
+  `0 <= start <= len(source)`.  It was previously unchecked, and a negative
+  value is a valid Python slice measured from the end of the source, so the
+  parse quietly succeeded at a position the caller never asked for and returned
+  negative node offsets -- `parse("abcdef", -4)` matched `"cd"`.  The Rust
+  backend raised `OverflowError` on the same call, so the two backends
+  disagreed on a case where neither answer was right.  `start` is also
+  normalised with `operator.index`, so `True` becomes `1` rather than reaching
+  `ParseError.start` verbatim, and a non-integer raises `TypeError` with the
+  same message on both backends.
+
+* A repetition whose maximum is below its minimum now raises `GrammarError`
+  when the grammar is loaded, on both backends.  `3*2"a"` is an impossible
+  range, but it silently behaved as `3*"a"` -- rejecting `"aa"` while accepting
+  `"aaa"`, `"aaaa"` and so on -- so a typo for `2*3` became unbounded
+  repetition with no diagnostic.
+
+* The Rust backend now explains itself when it meets a surrogate code point,
+  which it cannot represent because Rust strings are well-formed UTF-8.  A
+  grammar containing one (`%xD800-DBFF`) raised `TypeError: value argument must
+  be a string or a 2-tuple of strings` -- about a value that *was* a string --
+  and input containing one (from `surrogateescape`, or an unpaired `\uD800` out
+  of `json.loads`) raised a bare `UnicodeEncodeError` that never mentioned
+  `abnf`.  Both now name the surrogate as the cause and point at
+  `ABNF_NO_RUST=1`, which selects the pure-Python backend.  The underlying
+  limitation is unchanged.
+  https://github.com/declaresub/abnf/issues/173
+
+* Document what `abnf` parses: code points, not bytes.  A terminal value in a
+  grammar is a code-point value, a Python `str` is a sequence of code points,
+  and wire data is parsed by decoding it with latin-1, which maps the 256 byte
+  values onto `U+0000`-`U+00FF` one to one so that a code point is exactly an
+  octet.  New "What abnf parses" page, a note on `Rule.parse_all`, and a README
+  section.  This is why there is no bytes API: latin-1 already gives exact octet
+  semantics for one method call.
+  https://github.com/declaresub/abnf/issues/174
+
 * CI runs the Rust backend on Windows and macOS, not just Linux.  The compiled
   extension was previously built and tested only on Linux even though wheels
   ship for five targets, which is why the crash above went unnoticed.
   https://github.com/declaresub/abnf/issues/167
+
+### Known issues
+
+* The `Repetition` parse cache is still not invalidated when a grammar is
+  mutated after it has been used to parse — via `=/` (incremental definition),
+  rule redefinition, `Rule.exclude_rule`, or toggling
+  `Rule.first_match_alternation`.  Re-parsing a previously-seen input can then
+  return a stale result.  2.6.0 said a fix was planned for the next release;
+  it did not make this one.  The bundled grammars remain unaffected — they are
+  finalized at import, before any parse — so only code that mutates a grammar
+  after parsing with it is exposed.
+
+* The Rust backend cannot represent surrogate code points: a grammar
+  containing one raises `GrammarError` and input containing one raises
+  `ValueError`, where the pure-Python backend handles both.  Set
+  `ABNF_NO_RUST=1` to use the pure-Python backend.
+  https://github.com/declaresub/abnf/issues/173
 
 ## 2.6.0
 
