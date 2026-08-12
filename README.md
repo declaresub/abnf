@@ -41,6 +41,20 @@ greeting = Rule.create('greeting = "hello" SP 1*ALPHA')
 greeting.parse_all("hello world")
 ```
 
+## Parsing bytes
+
+`abnf` parses code points, so `parse` and `parse_all` take a `str`. To parse wire
+data, decode it with latin-1 — that maps the 256 byte values onto `U+0000`–`U+00FF`
+one to one, so a code point is exactly an octet and octet-oriented grammars behave
+as their RFCs describe:
+
+```python
+rfc7230.Rule("request-line").parse_all(raw.decode("latin-1"))
+```
+
+See [What abnf parses](https://abnf.readthedocs.io/en/latest/explanation/what-abnf-parses.html)
+for why the encoding is the caller's choice.
+
 ## Documentation
 
 Full documentation is hosted at **[abnf.readthedocs.io](https://abnf.readthedocs.io/en/latest/)**
@@ -51,8 +65,9 @@ and follows the [Diátaxis](https://diataxis.fr/) framework:
   from a file, write your own grammar module, use the Rust backend.
 - **Reference** — the public API, the built-in core rules, the bundled grammars, and
   configuration knobs.
-- **Explanation** — the combinator architecture, the two backends, alternation
-  semantics, and how backtracking is kept in check.
+- **Explanation** — what abnf parses (code points, not bytes), the combinator
+  architecture, the two backends, alternation semantics, and how backtracking is
+  kept in check.
 
 To build the docs locally:
 

@@ -298,6 +298,54 @@ def test_x2_non_integer_start_rejected(start: object):
         StartRule("mid").parse("abcdef", start)  # type: ignore[arg-type]
 
 
+# ---------------------------------------------------------------------------
+# Surrogate code points (issue #173).  Rust `str` is well-formed UTF-8 and so
+# cannot hold one; Python `str` can.  The behaviour gap is not fixed here --
+# these tests pin the *diagnosis*, which used to be a TypeError claiming a
+# string was not a string, and a bare codec traceback that never mentioned
+# abnf.  They also record the parity gap itself, so closing #173 will fail
+# them and prompt an update.
+# ---------------------------------------------------------------------------
+
+_BACKEND_IS_RUST = __import__("abnf.parser", fromlist=["_BACKEND"])._BACKEND == "rust"
+_SURROGATE_SOURCE = b"caf\xe9".decode("utf-8", "surrogateescape")
+
+
+@pytest.mark.skipif(not _BACKEND_IS_RUST, reason="Rust backend only.")
+def test_173_surrogate_grammar_names_the_real_problem():
+    class SurrogateGrammar(Rule):
+        pass
+
+    with pytest.raises(GrammarError) as excinfo:
+        SurrogateGrammar.create("s = %xD800-DBFF")
+    message = str(excinfo.value)
+    assert "surrogate" in message
+    assert "ABNF_NO_RUST" in message
+
+
+@pytest.mark.skipif(not _BACKEND_IS_RUST, reason="Rust backend only.")
+def test_173_surrogate_input_names_the_real_problem():
+    class SurrogateInputGrammar(Rule):
+        pass
+
+    SurrogateInputGrammar.create("s = 1*%x00-10FFFF")
+    with pytest.raises(ValueError) as excinfo:
+        SurrogateInputGrammar("s").parse_all(_SURROGATE_SOURCE)
+    message = str(excinfo.value)
+    assert "surrogate" in message
+    assert "ABNF_NO_RUST" in message
+
+
+@pytest.mark.skipif(_BACKEND_IS_RUST, reason="Pure-Python backend only.")
+def test_173_pure_python_handles_surrogates():
+    # The workaround the messages above point at has to actually work.
+    class SurrogatePythonGrammar(Rule):
+        pass
+
+    SurrogatePythonGrammar.create("s = 1*%x00-10FFFF")
+    assert SurrogatePythonGrammar("s").parse_all(_SURROGATE_SOURCE).value == _SURROGATE_SOURCE
+
+
 def test_option_str():
     assert str(Option(Literal("foo")))
 

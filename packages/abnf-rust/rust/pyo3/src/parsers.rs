@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
-use pyo3::types::PyTuple;
+use pyo3::types::{PyString, PyTuple};
 
 use abnf_core::{
     arc, Alternation, ArcParser, Concatenation, Literal, LiteralKind, OptionParser, Parser, Prose,
@@ -214,6 +214,37 @@ impl PyOption {
 // Literal
 // ----------------------------------------------------------------
 
+/// If `value` is a `str` — or a tuple containing one — that cannot be
+/// converted to a Rust `String`, return its `repr` for use in a
+/// diagnostic.  The only way a genuine `str` fails to convert is by
+/// containing a surrogate code point, which is well-formed in Python
+/// and unrepresentable in Rust.  Returns `None` when the value simply
+/// is not a string, which is an ordinary type error.
+///
+/// `repr` is used rather than the value itself because it renders
+/// surrogates as escapes and so is safe to interpolate.
+fn unrepresentable_str(value: &Bound<'_, PyAny>) -> Option<String> {
+    fn bad(obj: &Bound<'_, PyAny>) -> Option<String> {
+        if obj.is_instance_of::<PyString>() && obj.extract::<String>().is_err() {
+            return Some(
+                obj.repr()
+                    .map(|r| r.to_string_lossy().into_owned())
+                    .unwrap_or_else(|_| "<unrepresentable>".to_string()),
+            );
+        }
+        None
+    }
+
+    if let Some(r) = bad(value) {
+        return Some(r);
+    }
+    // Range bounds arrive as a 2-tuple, e.g. %xD800-DBFF.
+    if let Ok(items) = value.extract::<(Bound<'_, PyAny>, Bound<'_, PyAny>)>() {
+        return bad(&items.0).or_else(|| bad(&items.1));
+    }
+    None
+}
+
 #[pyclass(name = "Literal", module = "abnf_rust._ext", from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyLiteral {
@@ -226,7 +257,7 @@ pub struct PyLiteral {
 impl PyLiteral {
     #[new]
     #[pyo3(signature = (value, case_sensitive=false))]
-    fn new(value: &Bound<'_, PyAny>, case_sensitive: bool) -> PyResult<Self> {
+    fn new(py: Python<'_>, value: &Bound<'_, PyAny>, case_sensitive: bool) -> PyResult<Self> {
         if let Ok(s) = value.extract::<String>() {
             Ok(Self {
                 inner: Literal::string(s, case_sensitive).into(),
@@ -243,6 +274,21 @@ impl PyLiteral {
                 inner: Literal::range(lo_char, hi_char).into(),
                 case_sensitive: true,
             })
+        } else if let Some(offender) = unrepresentable_str(value) {
+            // A `str` that fails to extract is not a type error.  It
+            // is a string this backend cannot represent: Rust `str`
+            // is well-formed UTF-8, so a lone surrogate (`%xD800` and
+            // friends) has nowhere to go.  Saying "must be a string"
+            // about something that *is* a string sends the reader off
+            // in the wrong direction, so name the real problem.
+            let msg = format!(
+                "the Rust backend cannot represent the literal value {offender}: \
+                 Rust strings are well-formed UTF-8, so surrogate code points \
+                 (%xD800-DFFF) have no representation.  Set ABNF_NO_RUST=1 to \
+                 use the pure-Python backend, which accepts them.  \
+                 See https://github.com/declaresub/abnf/issues/173"
+            );
+            Err(crate::errors::grammar_error(py, &msg))
         } else {
             Err(PyTypeError::new_err(
                 "value argument must be a string or a 2-tuple of strings.",
