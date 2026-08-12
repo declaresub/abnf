@@ -38,3 +38,28 @@ fn get_parse_error_class(py: Python<'_>) -> PyResult<Bound<'_, PyType>> {
     cls.cast_into::<PyType>()
         .map_err(|e| e.into())
 }
+
+/// Build an `abnf.parser.GrammarError` carrying `message`.
+///
+/// Same reasoning as `parse_error_to_pyerr`: the Python class is the
+/// one users write `except` clauses against, so a malformed grammar
+/// has to raise it whichever backend caught the problem.  Only ever
+/// called on an error path, so the module import costs nothing in
+/// normal operation.
+pub fn grammar_error(py: Python<'_>, message: &str) -> PyErr {
+    let cls = match get_grammar_error_class(py) {
+        Ok(c) => c,
+        Err(e) => return e,
+    };
+    match cls.call1((message,)) {
+        Ok(exc) => PyErr::from_value(exc),
+        Err(e) => e,
+    }
+}
+
+fn get_grammar_error_class(py: Python<'_>) -> PyResult<Bound<'_, PyType>> {
+    let module = py.import("abnf.parser")?;
+    let cls = module.getattr("GrammarError")?;
+    cls.cast_into::<PyType>()
+        .map_err(|e| e.into())
+}

@@ -37,8 +37,21 @@ pub struct PyRepeat {
 impl PyRepeat {
     #[new]
     #[pyo3(signature = (min=0, max=None))]
-    fn new(min: usize, max: Option<usize>) -> Self {
-        Self { min, max }
+    fn new(py: Python<'_>, min: usize, max: Option<usize>) -> PyResult<Self> {
+        // Mirrors the check in the pure-Python `Repeat.__init__`:
+        // `3*2` is an impossible range, and leaving it unvalidated
+        // silently behaves as `3*`.  Both backends must reject it
+        // identically, so this raises the same `GrammarError`.
+        if let Some(max) = max {
+            if max < min {
+                let msg = format!(
+                    "Repeat max ({max}) is less than min ({min}); \
+                     a repetition of {min}*{max} can never match."
+                );
+                return Err(crate::errors::grammar_error(py, &msg));
+            }
+        }
+        Ok(Self { min, max })
     }
 
     fn __str__(&self) -> String {
