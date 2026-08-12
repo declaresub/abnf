@@ -1,0 +1,87 @@
+# What abnf parses: code points, not bytes
+
+`abnf` parses **sequences of Unicode code points**. A Python `str` is exactly
+that, which is why `parse` and `parse_all` take a `str` and nothing else.
+
+That one sentence answers most of the questions people arrive with, including
+"can it parse bytes?" — see [Parsing wire data](#parsing-wire-data) below, where
+the answer is yes, with a one-line decode.
+
+## Terminal values are code-point values
+
+In ABNF a terminal is written as a numeric value: `%x41` is `A`, `%d97` is `a`,
+`%x61-7A` is the range `a`–`z`. `abnf` reads those as **code-point** values, so
+they mean what the RFC that wrote them meant:
+
+```text
+ALPHA   = %x41-5A / %x61-7A          ; ASCII letters
+ucschar = %xA0-D7FF / %xF900-FDCF / %x10000-1FFFD / ...   ; RFC 3987, IRIs
+```
+
+`%x10000-1FFFD` is a range of astral-plane characters, and matching it against a
+`str` works because a `str` holds code points. There is no encoding step and no
+encoding assumption anywhere in the parse.
+
+## Parsing wire data
+
+Protocol data arrives as bytes, and ABNF grammars for protocols are written in
+octets: `OCTET = %x00-FF`, `obs-text = %x80-FF`. Decode with **latin-1** and one
+code point is exactly one octet:
+
+```python
+from abnf.grammars import rfc7230
+
+raw = b"GET /index.html HTTP/1.1\r\n"          # bytes off the wire
+rfc7230.Rule("request-line").parse_all(raw.decode("latin-1"))
+```
+
+latin-1 maps the 256 byte values onto the 256 code points `U+0000`–`U+00FF`, one
+to one, in both directions. It is total — every byte string decodes, including
+arbitrary binary — and `.encode("latin-1")` returns the original bytes exactly.
+It costs nothing: CPython stores such a string at one byte per code point, so
+the decode is a copy with no change in memory footprint.
+
+```{important}
+Which encoding you decode with is a semantic choice, and `abnf` cannot make it
+for you. Consider two octets of UTF-8:
+
+    raw = b"\xc3\xa9"                        # 'é' encoded as UTF-8
+
+    1*OCTET against raw.decode("latin-1")    -> 2 octets
+    1*OCTET against raw.decode("utf-8")      -> 1 octet
+
+Both are right. The first reads the data as a byte protocol, where `OCTET` means
+octet and there are two of them. The second reads it as text, where there is one
+character. If you are parsing an HTTP header or an email message, you want
+latin-1: those grammars count octets.
+```
+
+## Surrogates
+
+Code points `U+D800`–`U+DFFF` are surrogates. They are legal in a Python `str`
+but have no character meaning, and they arrive in real data — `surrogateescape`
+is how Python represents undecodable bytes in filenames, `sys.argv`, and
+environment variables, and an unpaired `\uD800` survives `json.loads`.
+
+A grammar can name them (`%xD800-DBFF`) and the pure-Python backend will match
+them, but whether they appear at all depends on how *you* decoded: a strict
+`utf-8` or `utf-16` decode rejects them, while `surrogatepass` and
+`surrogateescape` preserve them. That is a property of the decode, not of the
+parser.
+
+```{note}
+The Rust backend cannot represent surrogate code points, because Rust strings
+are well-formed UTF-8. A grammar containing one raises `GrammarError`, and input
+containing one raises `ValueError`; both messages say so and point at
+`ABNF_NO_RUST=1`, which selects the pure-Python backend. Tracked as
+[issue #173](https://github.com/declaresub/abnf/issues/173).
+```
+
+## Why there is no bytes API
+
+A `bytes` entry point would buy no capability — latin-1 already gives exact
+octet semantics — while costing an `encoding` parameter, a second node-value
+type, and a permanent second path through the parser. The decode is one method
+call and stays where the knowledge lives: with the caller who knows what their
+data is. See [issue #25](https://github.com/declaresub/abnf/issues/25) for the
+full reasoning.

@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+* Document what `abnf` parses: code points, not bytes.  A terminal value in a
+  grammar is a code-point value, a Python `str` is a sequence of code points,
+  and wire data is parsed by decoding it with latin-1, which maps the 256 byte
+  values onto `U+0000`-`U+00FF` one to one so that a code point is exactly an
+  octet.  New "What abnf parses" page, a note on `Rule.parse_all`, and a README
+  section.  This is why there is no bytes API: latin-1 already gives exact octet
+  semantics for one method call.
+  https://github.com/declaresub/abnf/issues/174
+
+* The Rust backend now explains itself when it meets a surrogate code point,
+  which it cannot represent because Rust strings are well-formed UTF-8.  A
+  grammar containing one (`%xD800-DBFF`) raised `TypeError: value argument must
+  be a string or a 2-tuple of strings` -- about a value that *was* a string --
+  and input containing one (from `surrogateescape`, or an unpaired `\uD800` out
+  of `json.loads`) raised a bare `UnicodeEncodeError` that never mentioned
+  `abnf`.  Both now name the surrogate as the cause and point at
+  `ABNF_NO_RUST=1`, which selects the pure-Python backend.  The underlying
+  limitation is unchanged.
+  https://github.com/declaresub/abnf/issues/173
+
 * `Rule.parse` now validates `start` and raises `ValueError` if it falls outside
   `0 <= start <= len(source)`.  It was previously unchecked, and a negative
   value is a valid Python slice measured from the end of the source, so the

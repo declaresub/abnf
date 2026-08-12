@@ -72,6 +72,7 @@ reference/configuration
 :caption: Explanation
 
 explanation/index
+explanation/what-abnf-parses
 explanation/architecture
 explanation/backends
 explanation/alternation-semantics

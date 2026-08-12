@@ -667,6 +667,24 @@ class Rule:
         # `StopIteration` in practice.
         try:
             longest_match = next(g)
+        except UnicodeEncodeError as exc:
+            # Only reachable on the Rust backend, which carries the source
+            # across the FFI as a UTF-8 `&str`.  A Python str may contain lone
+            # surrogates -- from `surrogateescape` on an undecodable filename,
+            # or an unpaired \uD800 out of `json.loads` -- and those have no
+            # UTF-8 representation, so the conversion fails before any parsing
+            # happens.  The pure-Python backend parses such input fine.
+            # Replace the codec traceback, which says nothing about abnf, with
+            # the limitation and its workaround.  See GitHub issue #173.
+            # UnicodeEncodeError is itself a ValueError, so `except ValueError`
+            # callers are unaffected by the re-raise.
+            msg = (
+                "the Rust backend cannot parse input containing lone surrogate "
+                "code points; set ABNF_NO_RUST=1 to use the pure-Python "
+                "backend, which accepts them.  "
+                "See https://github.com/declaresub/abnf/issues/173"
+            )
+            raise ValueError(msg) from exc
         except RecursionError as exc:
             # Deeply-nested input exhausts the Python call stack (the parser is
             # recursive-descent).  Convert to ParseError so the documented
@@ -693,6 +711,21 @@ class Rule:
         :raises ParseError: if source cannot be parsed using rule.
         :raises GrammarError: if rule has no definition.  This usually means that a
             non-terminal in the grammar is not defined or imported.
+
+        .. note::
+            ``source`` is a sequence of Unicode code points, which is what a
+            Python ``str`` is; a terminal value in the grammar (``%x41``,
+            ``%x10000-1FFFD``) is a code-point value.  To parse wire data,
+            decode it with latin-1 -- that maps the 256 byte values onto
+            ``U+0000``-``U+00FF`` one to one, so a code point is exactly an
+            octet and ``OCTET``/``obs-text`` behave as their RFCs describe::
+
+                rule.parse_all(raw.decode("latin-1"))
+
+            The choice of encoding is a semantic one and belongs to the caller:
+            ``b"\\xc3\\xa9"`` is two octets read as latin-1 and one character
+            read as UTF-8, and both readings are correct for some input.  See
+            the "What abnf parses" page in the documentation.
 
         .. note::
             Both backends are recursive-descent and both bound how deeply they
