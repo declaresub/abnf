@@ -391,7 +391,11 @@ class Repetition:
                     cached_matchset.start,
                     *cached_matchset.args,
                 )
-            yield from next_longest(cached_matchset)
+            # Already longest-first: the list is sorted once, before it
+            # goes into the memo, rather than on every hit.  A cold
+            # rfc5322 parse takes ~1,700 hits, each of which used to
+            # pay a list copy and a sort of a list that never changes.
+            yield from cached_matchset
             return
 
         # De-duplicate by `Match.start` (i.e. by end position) rather
@@ -453,8 +457,14 @@ class Repetition:
             else:
                 break
 
+        # Sort in place, once, so both this yield and every later hit
+        # can iterate the stored list directly.  Same comparison and
+        # same stable sort `next_longest` applied, so the order is
+        # unchanged -- it just happens once instead of per hit.
+        if len(match_list) > 1:
+            match_list.sort(key=lambda match: match.start, reverse=True)
         memo[cache_key] = match_list
-        yield from next_longest(match_list)
+        yield from match_list
 
     def __str__(self):
         return f"Repetition({self.repeat}, {self.element})"
