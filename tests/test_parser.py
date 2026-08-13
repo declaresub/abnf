@@ -276,6 +276,49 @@ def test_179_exclusion_can_be_replaced():
         ReplaceExcludeGrammar("ident").parse_all("bar")
 
 
+def _nested_keyword_grammar():
+    """`ident` appears only *inside* `phrase`, so the exclusion is
+    exercised through a nested reference -- the case the Rust engine
+    used to ignore, and the only one that tells the backends apart."""
+
+    class NestedKeywordGrammar(Rule):
+        pass
+
+    NestedKeywordGrammar.create("ident = 1*%x61-7A")
+    NestedKeywordGrammar.create('kw = "foo"')
+    NestedKeywordGrammar.create('phrase = 1*(ident ".")')
+    return NestedKeywordGrammar
+
+
+def test_179_exclusion_is_cleared_by_assigning_none():
+    grammar = _nested_keyword_grammar()
+    grammar("ident").exclude_rule(grammar("kw"))
+    with pytest.raises(ParseError):
+        grammar("phrase").parse_all("foo.")
+
+    # `exclude` is a property whose setter notifies the backend, so
+    # clearing works through the attribute as well as the method.
+    grammar("ident").exclude = None
+    assert grammar("phrase").parse_all("foo.").value == "foo."
+
+
+def test_179_exclusion_can_be_set_by_assigning_the_attribute():
+    grammar = _nested_keyword_grammar()
+    grammar("ident").exclude = grammar("kw")
+    with pytest.raises(ParseError):
+        grammar("phrase").parse_all("foo.")
+
+
+def test_179_excluding_an_undefined_rule_is_a_grammar_error():
+    # Not "the input did not match": the grammar names a rule that was
+    # never defined, which both backends must report as such rather
+    # than quietly accepting the input.
+    grammar = _nested_keyword_grammar()
+    grammar("ident").exclude_rule(grammar("never-defined"))
+    with pytest.raises(GrammarError):
+        grammar("phrase").parse_all("foo.")
+
+
 def test_parseerror_str():
     # I'm not checking the output, just exercising ParseError.__str__ .
     assert str(ParseError(Literal("a"), 1))

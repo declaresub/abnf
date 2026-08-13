@@ -192,6 +192,17 @@ impl NamedRule {
     /// Mirrors the pure-Python check, which runs `parse_all` over the
     /// matched value: a partial match does not disqualify anything.
     fn is_excluded(excluded: &NamedRule, text: &str) -> bool {
+        // An exclusion naming a rule that was never defined is a
+        // broken grammar, not an input that failed to match.  The
+        // pure-Python backend raises GrammarError here; without this
+        // check the missing definition would surface as an ordinary
+        // parse failure, i.e. "not excluded", and the grammar would
+        // silently accept what it was written to reject.  Panic with
+        // the phrase the PyO3 layer maps to GrammarError, the same
+        // route the recursion guard uses.
+        if excluded.definition().is_none() {
+            panic!("Undefined rule \"{}\"", excluded.name);
+        }
         // The sub-parse runs over different text inside the current
         // parse, so it needs its own epoch -- position-keyed cache
         // entries from the two must not mix.

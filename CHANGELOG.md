@@ -14,6 +14,18 @@
   pure-Python semantics exactly (a partial match still does not disqualify).
   https://github.com/declaresub/abnf/issues/179
 
+* `Rule.exclude` is now a property whose setter notifies the backend, mirroring
+  `Rule.definition`, and `Rule.exclude_rule` is a thin wrapper over it.  Only the
+  method used to notify, so on the Rust backend `rule.exclude = None` cleared the
+  exclusion for the pure-Python parser while the engine went on applying it, and
+  assigning `rule.exclude = other` was ignored entirely.  Assignment is the only
+  way to *remove* an exclusion, so that was the case most likely to be hit.
+
+* An exclusion naming a rule that has no definition now raises `GrammarError` on
+  both backends.  The Rust engine treated the missing definition as an ordinary
+  parse failure -- "not excluded" -- and accepted input the grammar was written
+  to reject.
+
 * Document `Rule.exclude_rule`.  Its docstring was reachable in the API
   reference, but nothing in the guides mentioned it, so the answer to "how do I
   say an identifier that is not a keyword?" -- a thing ABNF has no operator for

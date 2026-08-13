@@ -42,6 +42,11 @@ const DEPTH_PANIC_TAG: &str = "maximum rule recursion depth exceeded";
 /// flow signal across the Rust core.
 const PYERR_PANIC_TAG: &str = "pycallback-python-error";
 
+/// Substring identifying the panic raised when an exclusion names a
+/// rule that has no definition.  Matches the message the pure-Python
+/// `Rule.lparse` raises as `GrammarError`.
+const UNDEFINED_RULE_TAG: &str = "Undefined rule";
+
 thread_local! {
     /// Holds the most recent `PyErr` raised by a `PyCallbackParser`
     /// callback that should propagate (i.e. not a `ParseError`).
@@ -63,7 +68,10 @@ pub fn install_panic_hook() {
                 .map(String::as_str)
                 .or_else(|| info.payload().downcast_ref::<&'static str>().copied())
                 .unwrap_or("");
-            if message.contains(DEPTH_PANIC_TAG) || message.contains(PYERR_PANIC_TAG) {
+            if message.contains(DEPTH_PANIC_TAG)
+                || message.contains(PYERR_PANIC_TAG)
+                || message.contains(UNDEFINED_RULE_TAG)
+            {
                 // Suppress the default hook's stderr output for these
                 // specific panics — they're about to be caught and
                 // re-raised as ordinary Python exceptions, so the
@@ -110,6 +118,8 @@ where
             let message = payload_message(&payload);
             if message.contains(DEPTH_PANIC_TAG) {
                 Err(PyRecursionError::new_err(message))
+            } else if message.contains(UNDEFINED_RULE_TAG) {
+                Python::attach(|py| Err(crate::errors::grammar_error(py, &message)))
             } else if message.contains(PYERR_PANIC_TAG) {
                 let err = PENDING_PYERR.with(|cell| cell.borrow_mut().take());
                 Err(err.unwrap_or_else(|| {
