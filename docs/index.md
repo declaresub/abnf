@@ -30,7 +30,7 @@ kinds of material, each answering a different need:
   here if you are new: build a working parser end to end.
 - **{doc}`How-to guides <how-to/index>`** — task-oriented recipes for specific goals:
   validate input, walk a parse tree, load a grammar from a file, write your own
-  grammar module, use the Rust backend.
+  grammar module, exclude matches from a rule, use the Rust backend.
 - **{doc}`Reference <reference/index>`** — information-oriented. The public API, the
   built-in core rules, the bundled grammars, and configuration knobs.
 - **{doc}`Explanation <explanation/index>`** — understanding-oriented discussion: the
@@ -53,6 +53,7 @@ how-to/validate-input
 how-to/extract-values-with-visitors
 how-to/load-a-grammar-from-a-file
 how-to/write-your-own-grammar-module
+how-to/exclude-matches-from-a-rule
 how-to/use-the-rust-backend
 ```
 

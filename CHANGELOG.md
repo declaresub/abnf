@@ -14,6 +14,13 @@
   pure-Python semantics exactly (a partial match still does not disqualify).
   https://github.com/declaresub/abnf/issues/179
 
+* Document `Rule.exclude_rule`.  Its docstring was reachable in the API
+  reference, but nothing in the guides mentioned it, so the answer to "how do I
+  say an identifier that is not a keyword?" -- a thing ABNF has no operator for
+  -- was undiscoverable.  New how-to covering the recipe, the complete-match
+  semantics, and the fact that it filters candidate matches rather than aborting
+  the parse.
+
 * Memoisation is now scoped to a single parse on both backends, which fixes two
   silent wrong-result bugs and a memory leak at once.
 

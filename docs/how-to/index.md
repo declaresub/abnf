@@ -9,4 +9,6 @@ specific goal.
 - {doc}`load-a-grammar-from-a-file` — parse with a grammar kept in a `.abnf` file.
 - {doc}`write-your-own-grammar-module` — define a grammar, including importing rules
   from another.
+- {doc}`exclude-matches-from-a-rule` — express "an X, but not a Y", which ABNF has no
+  operator for.
 - {doc}`use-the-rust-backend` — install, force, and build the optional Rust backend.
