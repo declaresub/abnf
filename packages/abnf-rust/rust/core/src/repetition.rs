@@ -30,14 +30,33 @@ impl Repeat {
 pub struct Repetition {
     pub repeat: Repeat,
     pub element: ArcParser,
+    /// The `min` mandatory repetitions, as a single `Concatenation`.
+    /// `None` when `min` is zero.
+    ///
+    /// Depends only on `element` and `repeat.min`, both fixed at
+    /// construction, so it is built once here rather than on every
+    /// parse -- `1*X` is the most common repetition in any grammar,
+    /// and rebuilding it allocated a `Vec` plus a `Concatenation` per
+    /// call.  The pure-Python backend had the same wart, fixed the
+    /// same way.
+    ///
+    /// `Repeat` is `Copy` with public fields; nothing in the library
+    /// mutates one after handing it to `Repetition`, and a caller who
+    /// did would need to rebuild the `Repetition` too.
+    min_parser: Option<ArcParser>,
     cache: Mutex<ParseCache>,
 }
 
 impl Repetition {
     pub fn new(repeat: Repeat, element: ArcParser) -> Self {
+        let min_parser = (repeat.min > 0).then(|| {
+            let parsers = vec![element.clone(); repeat.min];
+            ArcParser::from(Concatenation::new(parsers))
+        });
         Self {
             repeat,
             element,
+            min_parser,
             cache: Mutex::new(ParseCache::default()),
         }
     }
@@ -68,21 +87,19 @@ impl Repetition {
         let mut match_set: MatchList = if self.repeat.min == 0 {
             smallvec![Match::new(SmallVec::new(), start)]
         } else {
-            let parsers = vec![self.element.clone(); self.repeat.min];
-            let concat = Concatenation::new(parsers);
+            // Non-zero `min` implies `min_parser` was built.
+            let concat = self
+                .min_parser
+                .as_ref()
+                .expect("min_parser is Some whenever repeat.min > 0");
             match concat.lparse(source, start) {
                 Ok(ms) => ms,
                 Err(_) => {
                     let err = ParseError::new("Repetition", start);
-                    // Tolerate a poisoned mutex: a panic in some unrelated
-            // earlier code path must not permanently brick this rule.
-            // The cache is purely a hit-rate optimisation; stale
-            // entries left over by a poisoned holder only cost us a
-            // miss on the next lookup.
-            let mut cache = self
-                .cache
-                .lock()
-                .unwrap_or_else(|e| e.into_inner());
+                    // Tolerate a poisoned mutex, as above: a stale
+                    // entry left by a poisoned holder costs a miss,
+                    // never a wrong answer.
+                    let mut cache = self.cache.lock().unwrap_or_else(|e| e.into_inner());
                     cache.put(start, CachedResult::Failed(err.clone()));
                     return Err(err);
                 }
