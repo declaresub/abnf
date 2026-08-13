@@ -49,6 +49,7 @@ fn _ext(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     // Functions
     m.add_function(wrap_pyfunction!(bootstrap::bootstrap, m)?)?;
     m.add_function(wrap_pyfunction!(hooks::set_definition_hook, m)?)?;
+    m.add_function(wrap_pyfunction!(hooks::set_exclude_hook, m)?)?;
     m.add_function(wrap_pyfunction!(bridge::clear_bridge, m)?)?;
     m.add_function(wrap_pyfunction!(bridge::bridge_size, m)?)?;
 

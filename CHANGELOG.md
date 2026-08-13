@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+* `Rule.exclude_rule` now applies to nested rule references under the Rust
+  backend.  It never had: the exclusion lives in the pure-Python `Rule.lparse`,
+  and the Rust engine resolves rule references internally, entering that method
+  only for the rule the caller parses directly.  A grammar written as
+  "identifier, but not a keyword" therefore accepted keywords whenever the
+  keyword rule appeared nested inside another rule -- a validator answering
+  "valid" for input it was written to reject.  `Rule.exclude_rule` now forwards
+  through the bridge the way `Rule.definition` already did, and the engine drops
+  matches whose span parses completely as the excluded rule, matching the
+  pure-Python semantics exactly (a partial match still does not disqualify).
+  https://github.com/declaresub/abnf/issues/179
+
 * Memoisation is now scoped to a single parse on both backends, which fixes two
   silent wrong-result bugs and a memory leak at once.
 

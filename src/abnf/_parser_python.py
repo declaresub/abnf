@@ -634,6 +634,14 @@ class Rule:
         typing.Callable[[Rule, Parser], None] | None
     ] = None
 
+    #: Optional hook invoked on every ``rule.exclude_rule(...)`` call,
+    #: so the Rust engine can apply exclusions to nested rule
+    #: references.  Unset for the pure-Python backend, which applies
+    #: them directly in ``Rule.lparse``.
+    _set_exclude_hook: typing.ClassVar[typing.Callable[[Rule, Rule], None] | None] = (
+        None
+    )
+
     @property
     def first_match_alternation(self) -> bool:
         try:
@@ -673,6 +681,14 @@ class Rule:
         Then attempting to use "foo" as an identifier would result in a ParseError.
         """
         self.exclude = rule
+        # Forward to the engine, the same way `definition` does.  The
+        # exclusion is applied in `Rule.lparse` below, which the Rust
+        # backend enters only for the rule the caller parses directly --
+        # so without this hook an exclusion on a *nested* rule reference
+        # was silently ignored there.  See GitHub issue #179.
+        hook = getattr(type(self), "_set_exclude_hook", None)
+        if hook is not None:
+            hook(self, rule)
 
     def lparse(self, source: Source, start: int) -> Matches:
         def exclude(match: Match) -> bool:
