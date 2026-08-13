@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+* The pure-Python `Repetition` stores its match list already sorted, so a memo
+  hit iterates it directly instead of copying and re-sorting a list that cannot
+  have changed.  A cold `rfc5322` mailbox parse takes ~1,700 such hits and is
+  about 5% faster as a result (median 5720 -> 5413 us).  Grammars that do not
+  backtrack are unaffected -- they get no memo hits at all -- so the other
+  benchmark workloads are unchanged.  Yield order is identical, verified by
+  fingerprinting the full ordered match sequence over 600 parses before and
+  after.  The Rust engine already worked this way.
+
 * The Rust engine builds a repetition's mandatory-prefix parser once, at
   construction, rather than rebuilding it on every cache miss.  `1*X` is the most
   common repetition in any grammar, and each miss allocated a `Vec` plus a
