@@ -62,7 +62,8 @@ and follows the [Diátaxis](https://diataxis.fr/) framework:
 
 - **Tutorial** — *Parse your first header*, a ten-minute end-to-end walkthrough.
 - **How-to guides** — validate input, extract values with visitors, load a grammar
-  from a file, write your own grammar module, use the Rust backend.
+  from a file, write your own grammar module, exclude matches from a rule, use the
+  Rust backend.
 - **Reference** — the public API, the built-in core rules, the bundled grammars, and
   configuration knobs.
 - **Explanation** — what abnf parses (code points, not bytes), the combinator

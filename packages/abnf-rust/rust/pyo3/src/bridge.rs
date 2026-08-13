@@ -60,6 +60,26 @@ pub fn set_definition_for(
     Ok(())
 }
 
+/// Point the `NamedRule` for `py_rule` at the `NamedRule` for
+/// `py_excluded`, so the engine applies `Rule.exclude_rule` to nested
+/// rule references.  Before this, the exclusion lived only in the
+/// pure-Python `Rule.lparse`, which the Rust path enters just once
+/// per parse -- for the top-level rule -- so a nested exclusion was
+/// silently ignored and the grammar accepted what it was written to
+/// reject (issue #179).
+pub fn set_exclude_for(
+    py_rule: &Bound<'_, PyAny>,
+    py_excluded: Option<&Bound<'_, PyAny>>,
+) -> PyResult<()> {
+    let handle = get_or_create(py_rule)?;
+    let excluded = match py_excluded {
+        Some(rule) => Some(get_or_create(rule)?),
+        None => None,
+    };
+    handle.set_exclude(excluded);
+    Ok(())
+}
+
 /// Drop every entry in the bridge registry.
 ///
 /// The registry holds one `Arc<NamedRule>` (plus its parser tree) for

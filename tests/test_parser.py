@@ -154,15 +154,6 @@ def test_parse_cache_max_cache_size_assignment_is_deprecated():
 # ---------------------------------------------------------------------------
 
 
-_RUST_NO_NESTED_EXCLUDE = pytest.mark.skipif(
-    __import__("abnf.parser", fromlist=["_BACKEND"])._BACKEND == "rust",
-    reason="Rule.exclude_rule is not implemented in the Rust engine for nested "
-    "rule references -- the exclusion lives in the pure-Python Rule.lparse, "
-    "which the Rust path enters only for the top-level rule.  Not a cache "
-    "issue; tracked separately.",
-)
-
-
 def test_h1_incremental_definition_is_not_masked_by_a_stale_cache():
     class IncrementalRule(Rule):
         pass
@@ -176,7 +167,6 @@ def test_h1_incremental_definition_is_not_masked_by_a_stale_cache():
     assert IncrementalRule("word").parse_all("ab").value == "ab"
 
 
-@_RUST_NO_NESTED_EXCLUDE
 def test_h1_exclude_rule_is_not_masked_by_a_stale_cache():
     class ExcludeAfterParseRule(Rule):
         pass
@@ -215,7 +205,6 @@ def test_parse_memo_does_not_outlive_the_parse():
     assert _parser_python._parse_memo.get() is None
 
 
-@_RUST_NO_NESTED_EXCLUDE
 def test_nested_parse_restores_the_outer_memo():
     # Rule.lparse runs exclude.parse_all on a *different* source mid-parse.
     # The inner parse must bind its own memo and hand the outer one back,
@@ -232,6 +221,59 @@ def test_nested_parse_restores_the_outer_memo():
     with pytest.raises(ParseError):
         NestedParseRule("phrase").parse_all("foo.")
     assert _parser_python._parse_memo.get() is None
+
+
+# ---------------------------------------------------------------------------
+# #179: exclusions must apply to nested rule references, not only to whichever
+# rule the caller parses directly.  The Rust engine resolves rule references
+# internally and enters the pure-Python Rule.lparse just once per parse, so
+# before the bridge forwarded exclusions it silently accepted what the grammar
+# was written to reject.
+# ---------------------------------------------------------------------------
+
+
+def _keyword_grammar():
+    class KeywordGrammar(Rule):
+        pass
+
+    KeywordGrammar.create("ident = 1*%x61-7A")
+    KeywordGrammar.create('kw = "foo"')
+    KeywordGrammar.create('phrase = 1*(ident ".")')
+    KeywordGrammar("ident").exclude_rule(KeywordGrammar("kw"))
+    return KeywordGrammar
+
+
+def test_179_exclusion_applies_to_nested_rule_references():
+    grammar = _keyword_grammar()
+    with pytest.raises(ParseError):
+        grammar("phrase").parse_all("foo.")
+
+
+def test_179_exclusion_leaves_other_input_alone():
+    grammar = _keyword_grammar()
+    assert grammar("phrase").parse_all("bar.").value == "bar."
+
+
+def test_179_partial_match_does_not_exclude():
+    # The Python side runs `parse_all` over the matched value, so only a
+    # complete match disqualifies: "foobar" is not the keyword "foo".
+    grammar = _keyword_grammar()
+    assert grammar("ident").parse_all("foobar").value == "foobar"
+
+
+def test_179_exclusion_can_be_replaced():
+    class ReplaceExcludeGrammar(Rule):
+        pass
+
+    ReplaceExcludeGrammar.create("ident = 1*%x61-7A")
+    ReplaceExcludeGrammar.create('kw = "foo"')
+    ReplaceExcludeGrammar.create('other = "bar"')
+    ReplaceExcludeGrammar("ident").exclude_rule(ReplaceExcludeGrammar("kw"))
+    ReplaceExcludeGrammar("ident").exclude_rule(ReplaceExcludeGrammar("other"))
+
+    assert ReplaceExcludeGrammar("ident").parse_all("foo").value == "foo"
+    with pytest.raises(ParseError):
+        ReplaceExcludeGrammar("ident").parse_all("bar")
 
 
 def test_parseerror_str():

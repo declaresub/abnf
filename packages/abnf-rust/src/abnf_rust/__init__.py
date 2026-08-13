@@ -26,6 +26,7 @@ from abnf_rust._ext import (  # type: ignore[import-not-found]
     Repetition,
     bootstrap,
     set_definition_hook,
+    set_exclude_hook,
 )
 
 #: Signals to :mod:`abnf.parser` that the compiled extension exposes
@@ -54,4 +55,5 @@ __all__ = [
     "__version__",
     "bootstrap",
     "set_definition_hook",
+    "set_exclude_hook",
 ]

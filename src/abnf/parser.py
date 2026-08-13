@@ -109,6 +109,7 @@ if _BACKEND == "rust":
     # this, rule references in user grammars dispatch through Python's
     # `Rule.lparse` on every call, bottlenecking the Rust engine.
     Rule._set_definition_hook = staticmethod(_backend.set_definition_hook)
+    Rule._set_exclude_hook = staticmethod(_backend.set_exclude_hook)
     # Replace the pure-Python combinator trees registered into
     # ABNFGrammarRule._obj_map at _parser_python import time with
     # Rust-backed equivalents.  See abnf_rust.bootstrap.

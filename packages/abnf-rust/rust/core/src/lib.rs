@@ -40,7 +40,7 @@ mod rule;
 mod visitor;
 
 pub use alternation::Alternation;
-pub use cache::{ParseCache, ParseScope};
+pub use cache::{ParseCache, ParseScope, SourceScope};
 pub use concatenation::Concatenation;
 pub use core_rules::install_core_rules;
 pub use error::ParseError;

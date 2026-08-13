@@ -231,6 +231,36 @@ impl Drop for ParseScope {
     }
 }
 
+/// Marks a sub-parse over a *different* source inside the current
+/// parse: rule exclusion re-parses a matched span against the
+/// excluded rule.
+///
+/// Cache entries are keyed by position and scoped by epoch, which
+/// assumes one epoch sees one source.  A sub-parse over other text
+/// therefore has to claim its own epoch, or its positions would
+/// collide with the enclosing parse's.  The outer epoch is restored
+/// on drop; caches the sub-parse touched are reset when the outer
+/// parse next reaches them, so it costs hit rate in grammars that use
+/// exclusions and nothing at all in grammars that do not.
+pub struct SourceScope {
+    previous: u64,
+}
+
+impl SourceScope {
+    pub fn enter() -> Self {
+        let previous = CURRENT_EPOCH.with(Cell::get);
+        let claimed = EPOCH_COUNTER.fetch_add(1, Ordering::Relaxed) + 1;
+        CURRENT_EPOCH.with(|epoch| epoch.set(claimed));
+        Self { previous }
+    }
+}
+
+impl Drop for SourceScope {
+    fn drop(&mut self) {
+        CURRENT_EPOCH.with(|epoch| epoch.set(self.previous));
+    }
+}
+
 /// The epoch currently being parsed under.
 pub fn current_epoch() -> u64 {
     CURRENT_EPOCH.with(Cell::get)

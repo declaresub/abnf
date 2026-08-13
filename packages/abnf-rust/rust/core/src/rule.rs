@@ -147,6 +147,11 @@ impl Drop for DepthGuard {
 pub struct NamedRule {
     pub name: Arc<str>,
     definition: RwLock<Option<ArcParser>>,
+    /// Rule whose complete matches disqualify this rule's matches --
+    /// `Rule.exclude_rule`, the ABNF idiom for "identifier, but not a
+    /// keyword".  `None` for the overwhelming majority of rules, and
+    /// checked with a single `Option` test on the match path.
+    exclude: RwLock<Option<Arc<NamedRule>>>,
     /// Pre-formatted error description (`"Rule(<name>)"`), computed
     /// once at construction and cloned cheaply (Arc bump) on every
     /// failed parse.  Without this, alternation backtracking through
@@ -162,7 +167,38 @@ impl NamedRule {
         Self {
             name,
             definition: RwLock::new(None),
+            exclude: RwLock::new(None),
             error_label,
+        }
+    }
+
+    /// Set (or clear) the exclusion.  Mirrors `Rule.exclude_rule` on
+    /// the Python side, which the dispatch shim forwards here so the
+    /// engine sees exclusions on nested rule references and not just
+    /// on whichever rule the caller happened to parse directly.
+    pub fn set_exclude(&self, rule: Option<Arc<NamedRule>>) {
+        *self.exclude.write().unwrap_or_else(|e| e.into_inner()) = rule;
+    }
+
+    fn exclude(&self) -> Option<Arc<NamedRule>> {
+        self.exclude
+            .read()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone()
+    }
+
+    /// Whether `text` parses completely as the excluded rule.
+    ///
+    /// Mirrors the pure-Python check, which runs `parse_all` over the
+    /// matched value: a partial match does not disqualify anything.
+    fn is_excluded(excluded: &NamedRule, text: &str) -> bool {
+        // The sub-parse runs over different text inside the current
+        // parse, so it needs its own epoch -- position-keyed cache
+        // entries from the two must not mix.
+        let _scope = crate::cache::SourceScope::enter();
+        match excluded.lparse(text, 0) {
+            Ok(matches) => matches.iter().any(|m| m.start == text.len()),
+            Err(_) => false,
         }
     }
 
@@ -171,10 +207,7 @@ impl NamedRule {
         // code path left it poisoned, we still want to record the
         // new definition rather than permanently brick every parse
         // that touches this rule.
-        *self
-            .definition
-            .write()
-            .unwrap_or_else(|e| e.into_inner()) = Some(def);
+        *self.definition.write().unwrap_or_else(|e| e.into_inner()) = Some(def);
     }
 
     pub fn definition(&self) -> Option<ArcParser> {
@@ -227,9 +260,11 @@ impl NamedRule {
         let def = self.definition().ok_or_else(|| self.parse_error(start))?;
         let inner = def.lparse(source, start)?;
 
-        // Hot path: most rules produce exactly one match.  Skip the
-        // dedup allocation entirely.
-        if inner.len() == 1 {
+        let excluded = self.exclude();
+
+        // Hot path: most rules produce exactly one match and have no
+        // exclusion.  Skip the dedup allocation entirely.
+        if inner.len() == 1 && excluded.is_none() {
             let m = inner.into_iter().next().expect("len == 1");
             let node = Node::new(self.name.clone(), m.nodes.into_vec());
             return Ok(smallvec![Match::new(
@@ -238,18 +273,25 @@ impl NamedRule {
             )]);
         }
 
-        // Multi-match (ambiguous grammar): dedup by end position.
+        // Multi-match (ambiguous grammar) or an exclusion to apply:
+        // dedup by end position, dropping matches whose span parses
+        // completely as the excluded rule.
         let mut seen: HashSet<usize> = HashSet::new();
         let mut wrapped: MatchList = SmallVec::with_capacity(inner.len());
         for m in inner {
             if !seen.insert(m.start) {
                 continue;
             }
+            if let Some(ref excluded) = excluded {
+                // `m.start` is the end of the match; the span is what
+                // the Python side rebuilds by joining node values.
+                if Self::is_excluded(excluded, &source[start..m.start]) {
+                    seen.remove(&m.start);
+                    continue;
+                }
+            }
             let node = Node::new(self.name.clone(), m.nodes.into_vec());
-            wrapped.push(Match::new(
-                smallvec![NodeKind::Internal(node)],
-                m.start,
-            ));
+            wrapped.push(Match::new(smallvec![NodeKind::Internal(node)], m.start));
         }
         if wrapped.is_empty() {
             Err(self.parse_error(start))
