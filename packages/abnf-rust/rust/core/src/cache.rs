@@ -29,6 +29,7 @@
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::num::NonZeroUsize;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use lru::LruCache;
 
@@ -176,11 +177,25 @@ impl Default for ParseCache {
     }
 }
 
+/// Source of epoch numbers, shared by every thread.
+///
+/// It has to be global, not thread-local.  A `Repetition` -- and so
+/// its cache -- is shared across threads behind a `Mutex`, while a
+/// parse belongs to one thread.  With a per-thread counter, two
+/// threads would independently reach epoch N, and the second would
+/// find entries stamped N by the first and treat them as its own:
+/// the same cross-source corruption this design removes, arriving by
+/// a different route.  A global counter makes every parse in the
+/// process distinguishable.  `Relaxed` suffices -- uniqueness is the
+/// only requirement, and the `Mutex` around the cache provides the
+/// happens-before edge for the entries themselves.
+static EPOCH_COUNTER: AtomicU64 = AtomicU64::new(0);
+
 thread_local! {
-    /// Bumped on entry to each outermost `lparse`.  Entries stamped
-    /// with an older epoch belong to a finished parse.
-    static PARSE_EPOCH: Cell<u64> = const { Cell::new(0) };
-    /// Nesting depth, so only the *outermost* entry starts a new
+    /// Epoch of the parse this thread is currently running, claimed
+    /// from `EPOCH_COUNTER` on entry to the outermost `lparse`.
+    static CURRENT_EPOCH: Cell<u64> = const { Cell::new(0) };
+    /// Nesting depth, so only the *outermost* entry claims a new
     /// epoch.  A `PyCallbackParser` that re-enters the engine is part
     /// of the same parse and must keep using the same entries.
     static PARSE_DEPTH: Cell<u32> = const { Cell::new(0) };
@@ -198,7 +213,11 @@ impl ParseScope {
         PARSE_DEPTH.with(|depth| {
             let current = depth.get();
             if current == 0 {
-                PARSE_EPOCH.with(|epoch| epoch.set(epoch.get().wrapping_add(1)));
+                // `fetch_add` returns the previous value; epochs start
+                // at 1 so that a never-used cache (epoch 0) never
+                // matches a live parse.
+                let claimed = EPOCH_COUNTER.fetch_add(1, Ordering::Relaxed) + 1;
+                CURRENT_EPOCH.with(|epoch| epoch.set(claimed));
             }
             depth.set(current + 1);
         });
@@ -214,7 +233,7 @@ impl Drop for ParseScope {
 
 /// The epoch currently being parsed under.
 pub fn current_epoch() -> u64 {
-    PARSE_EPOCH.with(Cell::get)
+    CURRENT_EPOCH.with(Cell::get)
 }
 
 /// Whether a parse is in progress on this thread.  Callers using
@@ -285,6 +304,41 @@ mod tests {
             cache.get(3).is_some(),
             "outer entries survive the nested scope"
         );
+    }
+
+    /// Epochs must be unique across threads, not just within one.
+    /// The cache is shared behind a `Mutex` while a parse belongs to a
+    /// single thread, so a per-thread counter would let two threads
+    /// both reach epoch N and read each other's entries.
+    #[test]
+    fn epochs_are_unique_across_threads() {
+        use std::collections::HashSet;
+        use std::sync::mpsc;
+
+        let (tx, rx) = mpsc::channel();
+        let handles: Vec<_> = (0..8)
+            .map(|_| {
+                let tx = tx.clone();
+                std::thread::spawn(move || {
+                    for _ in 0..50 {
+                        let _scope = ParseScope::enter();
+                        tx.send(current_epoch()).unwrap();
+                    }
+                })
+            })
+            .collect();
+        drop(tx);
+        for h in handles {
+            h.join().unwrap();
+        }
+        let seen: Vec<u64> = rx.iter().collect();
+        let unique: HashSet<u64> = seen.iter().copied().collect();
+        assert_eq!(
+            seen.len(),
+            unique.len(),
+            "two parses shared an epoch; entries would cross between them"
+        );
+        assert!(!unique.contains(&0), "epoch 0 means never parsed");
     }
 
     /// A cache that has never seen a parse holds nothing.
