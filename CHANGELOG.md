@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+* The Rust engine builds a repetition's mandatory-prefix parser once, at
+  construction, rather than rebuilding it on every cache miss.  `1*X` is the most
+  common repetition in any grammar, and each miss allocated a `Vec` plus a
+  `Concatenation` that depended only on values fixed when the `Repetition` was
+  created.  The pure-Python backend was fixed the same way earlier in this
+  release; this brings the two into line.  No measurable speed change -- for
+  `min = 1` the discarded allocation is one `Arc` clone and a one-element `Vec`,
+  which does not register against the parsing work at any input size tested.
+
 * `Rule.exclude_rule` now applies to nested rule references under the Rust
   backend.  It never had: the exclusion lives in the pure-Python `Rule.lparse`,
   and the Rust engine resolves rule references internally, entering that method
