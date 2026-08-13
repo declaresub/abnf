@@ -1,9 +1,11 @@
 import pathlib
 import textwrap
+import warnings
 from typing import cast
 
 import pytest
 
+from abnf import _parser_python
 from abnf.parser import (
     ABNFGrammarNodeVisitor,
     ABNFGrammarRule,
@@ -123,11 +125,113 @@ def test_parse_cache_clear_caches():
     except KeyError:
         pass
 
-    ParseCache.clear_caches()
+    # Deprecated: the parser no longer holds a ParseCache, so this clears only
+    # caches the caller made.  It still has to do that much.
+    with pytest.deprecated_call():
+        ParseCache.clear_caches()
     for c in ParseCache.list():
         assert len(c) == 0
         assert c.misses == 0
         assert c.hits == 0
+
+
+def test_parse_cache_max_cache_size_assignment_is_deprecated():
+    original = ParseCache.max_cache_size
+    try:
+        with pytest.deprecated_call():
+            ParseCache.max_cache_size = 1024
+    finally:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            ParseCache.max_cache_size = original
+
+
+# ---------------------------------------------------------------------------
+# H1: the parse memo is scoped to one parse, so a grammar mutated between
+# parses can never be observed through a stale cached result.  Each of these
+# returned the pre-mutation answer while the cache was per-Repetition and
+# keyed (source, start) with no invalidation.
+# ---------------------------------------------------------------------------
+
+
+_RUST_NO_NESTED_EXCLUDE = pytest.mark.skipif(
+    __import__("abnf.parser", fromlist=["_BACKEND"])._BACKEND == "rust",
+    reason="Rule.exclude_rule is not implemented in the Rust engine for nested "
+    "rule references -- the exclusion lives in the pure-Python Rule.lparse, "
+    "which the Rust path enters only for the top-level rule.  Not a cache "
+    "issue; tracked separately.",
+)
+
+
+def test_h1_incremental_definition_is_not_masked_by_a_stale_cache():
+    class IncrementalRule(Rule):
+        pass
+
+    IncrementalRule.create('inner = "a"')
+    IncrementalRule.create("word = 1*inner")
+    with pytest.raises(ParseError):
+        IncrementalRule("word").parse_all("ab")  # caches the failure
+
+    IncrementalRule.create('inner =/ "b"')  # grammar now accepts "ab"
+    assert IncrementalRule("word").parse_all("ab").value == "ab"
+
+
+@_RUST_NO_NESTED_EXCLUDE
+def test_h1_exclude_rule_is_not_masked_by_a_stale_cache():
+    class ExcludeAfterParseRule(Rule):
+        pass
+
+    ExcludeAfterParseRule.create("ident = 1*%x61-7A")
+    ExcludeAfterParseRule.create('kw = "foo"')
+    ExcludeAfterParseRule.create('phrase = 1*(ident ".")')
+    assert ExcludeAfterParseRule("phrase").parse_all("foo.")  # warms the cache
+
+    ExcludeAfterParseRule("ident").exclude_rule(ExcludeAfterParseRule("kw"))
+    with pytest.raises(ParseError):
+        ExcludeAfterParseRule("phrase").parse_all("foo.")
+
+
+def test_h1_first_match_alternation_is_not_masked_by_a_stale_cache():
+    class FirstMatchAfterParseRule(Rule):
+        pass
+
+    FirstMatchAfterParseRule.create('inner = "ab" / "abc"')
+    FirstMatchAfterParseRule.create("outer = 1*inner")
+    _, longest = FirstMatchAfterParseRule("outer").parse("abcab", 0)
+    assert longest == 5
+
+    FirstMatchAfterParseRule("inner").first_match_alternation = True
+    _, first = FirstMatchAfterParseRule("outer").parse("abcab", 0)
+    assert first == 2
+
+
+def test_parse_memo_does_not_outlive_the_parse():
+    class MemoScopeRule(Rule):
+        pass
+
+    MemoScopeRule.create("s = 1*%x61-7A")
+    MemoScopeRule("s").parse_all("abc")
+    # Nothing is bound once the parse returns, so nothing is retained.
+    assert _parser_python._parse_memo.get() is None
+
+
+@_RUST_NO_NESTED_EXCLUDE
+def test_nested_parse_restores_the_outer_memo():
+    # Rule.lparse runs exclude.parse_all on a *different* source mid-parse.
+    # The inner parse must bind its own memo and hand the outer one back,
+    # otherwise the outer parse would key positions against the wrong source.
+    class NestedParseRule(Rule):
+        pass
+
+    NestedParseRule.create("ident = 1*%x61-7A")
+    NestedParseRule.create('kw = "foo"')
+    NestedParseRule.create('phrase = 1*(ident ".")')
+    NestedParseRule("ident").exclude_rule(NestedParseRule("kw"))
+
+    assert NestedParseRule("phrase").parse_all("bar.")
+    with pytest.raises(ParseError):
+        NestedParseRule("phrase").parse_all("foo.")
+    assert _parser_python._parse_memo.get() is None
 
 
 def test_parseerror_str():

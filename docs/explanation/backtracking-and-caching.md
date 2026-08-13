@@ -22,14 +22,45 @@ so an ambiguous grammar does not pay to build every candidate parse tree.
 ## Caching
 
 `Repetition` objects memoize their results: a repeated sub-parse at a given
-`(source, start)` is computed once and reused when backtracking revisits it.
-Failures are cached too (as a `_CachedParseError`), so a sub-parse that cannot
-match at a position is not retried there.
+position is computed once and reused when backtracking revisits it. Failures are
+memoized too, so a sub-parse that cannot match at a position is not retried
+there.
 
-The cache is an LRU, `ParseCache`. By default it is unbounded, which is fine for
-one-shot parses but can grow without limit in a long-lived process that parses many
-distinct inputs. Set `Rule.max_cache_size` to a non-negative integer to bound it
-(see {doc}`../reference/configuration`).
+**The memo lives for exactly one parse.** It is created when `parse` or
+`parse_all` is called and discarded when that call returns. Both backends work
+this way — the pure-Python one binds a context variable, the Rust engine stamps
+entries with a per-parse epoch.
+
+Two consequences worth knowing:
+
+- **Nothing is retained between parses.** A long-lived process parsing many
+  distinct inputs holds no parse state at all. There is no cache to bound and
+  no cache to clear.
+- **Re-parsing the same source repeats the work.** The memo cannot answer the
+  second call, because it no longer exists.
+
+If you parse a byte-identical source repeatedly — validating the same `Host`
+header on every request, say — memoize at the call site:
+
+```python
+import functools
+
+parse_host = functools.lru_cache(maxsize=1024)(rfc9110.Rule("Host").parse_all)
+```
+
+That is not a workaround; it is strictly better than an internal cache could be.
+It skips the parse outright instead of replaying sub-results, which measures
+roughly a thousand times faster, and its size and lifetime belong to the code
+that knows the working set.
+
+```{note}
+`ParseCache`, `ParseCache.clear_caches()` and `ParseCache.max_cache_size` are
+deprecated: the parser no longer uses them, so they have nothing left to bound
+or clear. Assigning `max_cache_size` or calling `clear_caches()` raises a
+`DeprecationWarning`. Earlier releases also documented `Rule.max_cache_size`,
+which never existed — the attribute lived on `ParseCache` — so any code setting
+it has always been a no-op.
+```
 
 ```{note}
 Both parsers are recursive-descent, so extremely deeply-nested input eventually

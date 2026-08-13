@@ -5,7 +5,8 @@
 //! involved.
 
 use abnf_core::{
-    Alternation, ArcParser, Concatenation, Literal, Match, OptionParser, Prose, Repeat, Repetition,
+    Alternation, ArcParser, Concatenation, Literal, Match, OptionParser, ParseScope, Prose, Repeat,
+    Repetition,
 };
 
 fn lit(value: &str) -> ArcParser {
@@ -164,12 +165,32 @@ fn backtracking_through_repetition_then_literal() {
 }
 
 #[test]
-fn parse_cache_short_circuits_repeated_calls() {
+fn parse_cache_short_circuits_repeated_calls_within_a_parse() {
     let parser = Repetition::new(Repeat::new(0, None), lit("a"));
-    let _ = parser.lparse("aaa", 0).unwrap();
-    let _ = parser.lparse("aaa", 0).unwrap();
-    let cache = parser.cache().lock().unwrap();
-    assert!(cache.hits > 0, "expected cache hit on second lparse");
+    {
+        let _scope = ParseScope::enter();
+        let _ = parser.lparse("aaa", 0).unwrap();
+        let _ = parser.lparse("aaa", 0).unwrap();
+        let cache = parser.cache().lock().unwrap();
+        assert!(cache.hits > 0, "expected cache hit on second lparse");
+    }
+}
+
+#[test]
+fn parse_cache_does_not_short_circuit_across_parses() {
+    // The point of scoping: a second parse must not answer from the
+    // first one's entries, whatever the source happens to be.
+    let parser = Repetition::new(Repeat::new(0, None), lit("a"));
+    {
+        let _scope = ParseScope::enter();
+        let _ = parser.lparse("aaa", 0).unwrap();
+    }
+    {
+        let _scope = ParseScope::enter();
+        let _ = parser.lparse("aaa", 0).unwrap();
+        let cache = parser.cache().lock().unwrap();
+        assert_eq!(cache.hits, 0, "entries leaked from the previous parse");
+    }
 }
 
 #[test]

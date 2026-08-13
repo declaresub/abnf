@@ -57,7 +57,7 @@ impl Repetition {
                 .cache
                 .lock()
                 .unwrap_or_else(|e| e.into_inner());
-            if let Some(cached) = cache.get(source, start) {
+            if let Some(cached) = cache.get(start) {
                 return match cached {
                     CachedResult::Matches(ms) => Ok(ms),
                     CachedResult::Failed(err) => Err(err),
@@ -83,7 +83,7 @@ impl Repetition {
                 .cache
                 .lock()
                 .unwrap_or_else(|e| e.into_inner());
-                    cache.put(source, start, CachedResult::Failed(err.clone()));
+                    cache.put(start, CachedResult::Failed(err.clone()));
                     return Err(err);
                 }
             }
@@ -145,7 +145,7 @@ impl Repetition {
                 .cache
                 .lock()
                 .unwrap_or_else(|e| e.into_inner());
-            cache.put(source, start, CachedResult::Matches(match_set.clone()));
+            cache.put(start, CachedResult::Matches(match_set.clone()));
         }
         Ok(match_set)
     }

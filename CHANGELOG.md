@@ -1,5 +1,55 @@
 # Changelog
 
+## Unreleased
+
+* Memoisation is now scoped to a single parse on both backends, which fixes two
+  silent wrong-result bugs and a memory leak at once.
+
+  The `Repetition` cache used to live on the parser object and survive across
+  calls.  In the pure-Python backend it was keyed `(source, start)` and never
+  invalidated, so mutating a grammar after parsing with it -- `=/`, rule
+  redefinition, `Rule.exclude_rule`, or toggling `first_match_alternation` --
+  left stale results that silently overrode the new grammar.  In the Rust
+  backend it was keyed on position alone, with the source identified by its
+  address plus a fingerprint sampled from the first and last 64 bytes; two
+  sources of equal length differing only in between -- with the second at the
+  freed address of the first, which CPython's allocator does routinely -- were
+  taken for the same source, and the second parse returned the first one's
+  text.
+
+  Both are gone by construction.  The memo is created when `parse` is called
+  and discarded when it returns, so a grammar cannot change underneath it and
+  nothing is retained: parsing 2,000 distinct URIs previously grew the heap by
+  174 MiB with a 0% hit rate, and now grows it by nothing.  Cold parses got
+  faster on both backends -- 1-21% (Python) and 7-11% (Rust) -- because the
+  bookkeeping this replaces was not free.
+
+  **Re-parsing a byte-identical source now repeats the work**, since the memo
+  no longer outlives the call.  If you rely on that, memoize at the call site
+  with `functools.lru_cache`; it skips the parse entirely rather than replaying
+  sub-results, so it is far faster than the internal cache ever was, and its
+  size and lifetime belong to the code that knows the working set.
+
+* `ParseCache`, `ParseCache.clear_caches()` and `ParseCache.max_cache_size` are
+  deprecated.  The parser no longer holds a `ParseCache`, so there is nothing
+  to bound or clear; assigning the attribute or calling `clear_caches()` raises
+  a `DeprecationWarning`.  The class remains importable and still works as an
+  ordinary mapping.  Note that the documented spelling `Rule.max_cache_size`
+  never existed -- the attribute is on `ParseCache` -- so code following the old
+  documentation has always been a no-op.
+
+* The parse benchmarks now measure a cold parse per iteration, because there is
+  no longer a cross-call cache for later iterations to hit.  Numbers published
+  before this change measured cache hits and are not comparable.
+
+### Known issues
+
+* `Rule.exclude_rule` is silently ignored for nested rule references under the
+  Rust backend: the exclusion is implemented in the pure-Python `Rule.lparse`,
+  which the Rust path enters only for the top-level rule.  A grammar written to
+  reject a keyword will accept it.  `ABNF_NO_RUST=1` is a correct workaround.
+  https://github.com/declaresub/abnf/issues/179
+
 ## 2.7.0
 
 * The Rust backend no longer crashes the interpreter on deeply nested input.

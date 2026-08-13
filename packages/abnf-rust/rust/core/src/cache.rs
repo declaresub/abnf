@@ -10,12 +10,23 @@
 //! * `max_size = None` (Python default) → unbounded `HashMap`.
 //! * `max_size = Some(n)` → `LruCache` with capacity `n`.
 //!
-//! The Python key is `(source, start)` (string-equality on the
-//! source).  We approximate that by remembering the most recent
-//! source's `(pointer, length)` and clearing the cache whenever it
-//! changes — equivalent to Python's behaviour when the same source
-//! object is reused across calls, and cheaply correct when it is not.
+//! Entries are scoped to a single parse, and exist only while one is
+//! in progress: without a `ParseScope` the cache is inert.  A `ParseScope` guard at the
+//! FFI boundary bumps a thread-local epoch on entry to the outermost
+//! `lparse`, and a cache whose stored epoch differs from the current
+//! one is empty by definition.  One parse sees one source, so `start`
+//! alone identifies a position and nothing has to be inferred about
+//! the source itself.
+//!
+//! This replaces an earlier scheme that remembered the source's
+//! `(pointer, length)` and a sampled content fingerprint.  That
+//! sampled only the first and last 64 bytes, so two sources of equal
+//! length differing anywhere in between — with the second landing at
+//! the freed address of the first, which CPython's allocator does
+//! routinely — compared equal and the second parse silently reused
+//! the first one's matches.
 
+use std::cell::Cell;
 use std::collections::HashMap;
 use std::num::NonZeroUsize;
 
@@ -80,23 +91,12 @@ impl Backing {
 #[derive(Debug)]
 pub struct ParseCache {
     inner: Backing,
-    /// `(ptr, len)` of the source the cache is currently keyed
-    /// against.  Cheap to compare on every call; mismatch triggers a
-    /// content-hash check.
-    bound_token: Option<(*const u8, usize)>,
-    /// `XxHash` of the bound source's content.  Distinguishes
-    /// distinct sources that reuse the same address (e.g. short-lived
-    /// Python strings).
-    bound_hash: Option<u64>,
+    /// Epoch these entries belong to.  `0` means "never used"; live
+    /// epochs start at 1, so a fresh cache never matches.
+    epoch: u64,
     pub hits: u64,
     pub misses: u64,
 }
-
-// SAFETY: `bound_token` holds a `(ptr, len)` value that is only used
-// as a fast-equality hint; the actual cache invalidation falls back
-// to content hashing.  The raw pointer is never dereferenced.
-unsafe impl Send for ParseCache {}
-unsafe impl Sync for ParseCache {}
 
 impl ParseCache {
     pub fn new(max_size: Option<usize>) -> Self {
@@ -106,41 +106,38 @@ impl ParseCache {
         };
         Self {
             inner,
-            bound_token: None,
-            bound_hash: None,
+            epoch: 0,
             hits: 0,
             misses: 0,
         }
     }
 
-    fn bind(&mut self, source: &str) {
-        let token = (source.as_ptr(), source.len());
-        // Fast path: same source object as last call.  Verify content
-        // didn't change underneath us — Python sometimes places a
-        // different string at a freed address with the same length,
-        // and the sampled fingerprint catches that.
-        if self.bound_token == Some(token) {
-            let fingerprint = content_fingerprint(source);
-            if self.bound_hash == Some(fingerprint) {
-                return;
+    /// Discard entries belonging to an earlier parse.  Returns false
+    /// when there is no parse in progress, in which case the cache
+    /// must not be used at all: outside a `ParseScope` there is no
+    /// boundary to scope entries to, so retaining them across calls
+    /// would be the cross-source staleness this design removes.
+    fn bind(&mut self) -> bool {
+        if !in_parse() {
+            if self.epoch != 0 {
+                self.inner.reset();
+                self.epoch = 0;
             }
-            self.inner.reset();
-            self.bound_hash = Some(fingerprint);
-            return;
+            return false;
         }
-        // Different source buffer: always reset.  Cached `Match`
-        // objects embed byte offsets and `Arc<str>` snapshots that
-        // belong to the previous source; reusing them across distinct
-        // sources is incorrect even when the contents happen to
-        // fingerprint the same.  Skipping the reset on fingerprint
-        // collision (H1) caused silent cross-source corruption.
-        self.inner.reset();
-        self.bound_token = Some(token);
-        self.bound_hash = Some(content_fingerprint(source));
+        let now = current_epoch();
+        if self.epoch != now {
+            self.inner.reset();
+            self.epoch = now;
+        }
+        true
     }
 
-    pub fn get(&mut self, source: &str, start: usize) -> Option<CachedResult> {
-        self.bind(source);
+    pub fn get(&mut self, start: usize) -> Option<CachedResult> {
+        if !self.bind() {
+            self.misses += 1;
+            return None;
+        }
         if let Some(v) = self.inner.get(start) {
             self.hits += 1;
             Some(v)
@@ -150,15 +147,16 @@ impl ParseCache {
         }
     }
 
-    pub fn put(&mut self, source: &str, start: usize, value: CachedResult) {
-        self.bind(source);
+    pub fn put(&mut self, start: usize, value: CachedResult) {
+        if !self.bind() {
+            return;
+        }
         self.inner.put(start, value);
     }
 
     pub fn clear(&mut self) {
         self.inner.reset();
-        self.bound_token = None;
-        self.bound_hash = None;
+        self.epoch = 0;
         self.hits = 0;
         self.misses = 0;
     }
@@ -178,24 +176,52 @@ impl Default for ParseCache {
     }
 }
 
-/// Cheap content fingerprint for cache invalidation: hashes a short
-/// fixed-size sample of the source (up to 64 bytes from the start
-/// plus up to 64 bytes from the end) rather than the entire input.
-/// Detects content changes in practice while keeping the operation
-/// O(1) in source length.
-fn content_fingerprint(s: &str) -> u64 {
-    use std::collections::hash_map::DefaultHasher;
-    use std::hash::{Hash, Hasher};
-    let mut h = DefaultHasher::new();
-    let bytes = s.as_bytes();
-    let head_len = bytes.len().min(64);
-    let tail_len = bytes.len().saturating_sub(head_len).min(64);
-    bytes[..head_len].hash(&mut h);
-    if tail_len > 0 {
-        bytes[bytes.len() - tail_len..].hash(&mut h);
+thread_local! {
+    /// Bumped on entry to each outermost `lparse`.  Entries stamped
+    /// with an older epoch belong to a finished parse.
+    static PARSE_EPOCH: Cell<u64> = const { Cell::new(0) };
+    /// Nesting depth, so only the *outermost* entry starts a new
+    /// epoch.  A `PyCallbackParser` that re-enters the engine is part
+    /// of the same parse and must keep using the same entries.
+    static PARSE_DEPTH: Cell<u32> = const { Cell::new(0) };
+}
+
+/// Marks the dynamic extent of one parse.  Construct at the FFI
+/// boundary; entries cached inside it are discarded once a later
+/// parse begins.
+pub struct ParseScope {
+    _private: (),
+}
+
+impl ParseScope {
+    pub fn enter() -> Self {
+        PARSE_DEPTH.with(|depth| {
+            let current = depth.get();
+            if current == 0 {
+                PARSE_EPOCH.with(|epoch| epoch.set(epoch.get().wrapping_add(1)));
+            }
+            depth.set(current + 1);
+        });
+        Self { _private: () }
     }
-    bytes.len().hash(&mut h);
-    h.finish()
+}
+
+impl Drop for ParseScope {
+    fn drop(&mut self) {
+        PARSE_DEPTH.with(|depth| depth.set(depth.get().saturating_sub(1)));
+    }
+}
+
+/// The epoch currently being parsed under.
+pub fn current_epoch() -> u64 {
+    PARSE_EPOCH.with(Cell::get)
+}
+
+/// Whether a parse is in progress on this thread.  Callers using
+/// `abnf-core` directly, without a `ParseScope`, get no memoisation:
+/// there is no boundary that would make entries safe to keep.
+pub fn in_parse() -> bool {
+    PARSE_DEPTH.with(Cell::get) > 0
 }
 
 #[cfg(test)]
@@ -204,51 +230,79 @@ mod tests {
     use crate::error::ParseError;
     use std::sync::Arc;
 
-    /// H1 regression: two distinct sources whose 64-byte head and
-    /// 64-byte tail are identical produce the same `content_fingerprint`
-    /// but must NOT share cache entries.  Cached `Match` objects embed
-    /// byte offsets and `Arc<str>` values tied to a specific source;
-    /// reusing them across distinct source buffers is silent corruption.
+    fn marker(label: &str) -> CachedResult {
+        CachedResult::Failed(ParseError::new(Arc::<str>::from(label), 0))
+    }
+
+    /// Entries must not survive into the next parse.  Under the old
+    /// source-fingerprint scheme this was the corruption case: two
+    /// sources with identical 64-byte head and tail, the second at the
+    /// freed address of the first, compared equal and shared entries.
+    /// Scoping to an epoch makes the source irrelevant.
     #[test]
-    fn token_mismatch_invalidates_cache_even_on_fingerprint_collision() {
-        let head: String = "A".repeat(64);
-        let tail: String = "D".repeat(64);
-        let s1 = format!("{head}BC{tail}");
-        let s2 = format!("{head}XY{tail}");
-        assert_eq!(s1.len(), s2.len());
-        assert_eq!(content_fingerprint(&s1), content_fingerprint(&s2));
-        assert_ne!(s1.as_ptr(), s2.as_ptr());
-
+    fn entries_do_not_cross_parse_boundaries() {
         let mut cache = ParseCache::new(None);
-        let marker = CachedResult::Failed(ParseError::new(
-            Arc::<str>::from("from-s1"),
-            64,
-        ));
-        cache.put(&s1, 64, marker);
-        assert_eq!(cache.len(), 1, "entry should be installed against s1");
 
-        // The lookup against s2 must miss: distinct source objects
-        // with colliding fingerprints share a token mismatch and that
-        // alone must reset the cache.
-        let hit = cache.get(&s2, 64);
+        {
+            let _scope = ParseScope::enter();
+            cache.put(0, marker("first parse"));
+            assert!(cache.get(0).is_some(), "entry visible within its own parse");
+        }
+        {
+            let _scope = ParseScope::enter();
+            assert!(
+                cache.get(0).is_none(),
+                "an entry from a finished parse leaked into the next one"
+            );
+        }
+    }
+
+    /// Within one parse, entries are reused -- that is the whole point.
+    #[test]
+    fn entries_are_reused_within_one_parse() {
+        let mut cache = ParseCache::new(None);
+        let _scope = ParseScope::enter();
+        cache.put(7, marker("same parse"));
+        assert!(cache.get(7).is_some());
+        assert_eq!(cache.hits, 1);
+    }
+
+    /// A nested entry -- a `PyCallbackParser` re-entering the engine --
+    /// is part of the same parse and must not start a new epoch.
+    #[test]
+    fn nested_scopes_share_one_epoch() {
+        let mut cache = ParseCache::new(None);
+        let _outer = ParseScope::enter();
+        cache.put(3, marker("outer"));
+        {
+            let _inner = ParseScope::enter();
+            assert!(
+                cache.get(3).is_some(),
+                "a nested lparse started a new epoch and discarded the outer parse's work"
+            );
+        }
         assert!(
-            hit.is_none(),
-            "stale s1 entry leaked into a lookup against s2 \
-             (fingerprint collision was treated as identity)"
+            cache.get(3).is_some(),
+            "outer entries survive the nested scope"
         );
     }
 
-    /// Sanity-check the inverse: same source object across two calls
-    /// reuses the cache.
+    /// A cache that has never seen a parse holds nothing.
     #[test]
-    fn same_source_reuses_cache() {
-        let s = "hello world".to_string();
+    fn fresh_cache_is_empty_under_a_new_epoch() {
         let mut cache = ParseCache::new(None);
-        let marker = CachedResult::Failed(ParseError::new(
-            Arc::<str>::from("static"),
-            0,
-        ));
-        cache.put(&s, 0, marker);
-        assert!(cache.get(&s, 0).is_some());
+        let _scope = ParseScope::enter();
+        assert!(cache.get(0).is_none());
+    }
+
+    /// Outside a `ParseScope` there is no parse boundary, so the cache
+    /// must not retain anything: a direct `abnf-core` caller would
+    /// otherwise see one call's results answer the next one's lookup.
+    #[test]
+    fn cache_is_inert_outside_a_parse_scope() {
+        let mut cache = ParseCache::new(None);
+        cache.put(0, marker("no scope"));
+        assert!(cache.get(0).is_none());
+        assert_eq!(cache.len(), 0);
     }
 }

@@ -65,6 +65,16 @@ def test_parse(benchmark, label, module, rule_name, source, backend_label):
     the rule object across iterations, mirroring real-world usage
     where the rule is constructed once at import and parsed many
     times.
+
+    Every iteration is a **cold** parse.  Memoisation is scoped to a
+    single parse and discarded when it returns, so re-parsing the same
+    source does no less work than parsing it for the first time --
+    which is what makes these numbers a measure of the parser.  They
+    were not always: before per-parse scoping, the cache survived
+    across calls, so every iteration after the first measured cache
+    hits, and the reported figures were several times faster than any
+    real first-parse workload.  Comparisons with numbers published
+    before that change are not like-for-like.
     """
     rule = module.Rule(rule_name)
     # Sanity-check that the rule actually parses the input before

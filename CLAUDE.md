@@ -35,7 +35,7 @@ Key classes:
 - `Rule` — Primary API class. Users subclass it to define grammars. Maintains a global per-class registry of named rules. Parses ABNF grammar strings into parser objects via `load()` or `from_file()`.
 - `Node` / `LiteralNode` — Parse tree (AST) nodes, using `__slots__` for efficiency.
 - `NodeVisitor` — Base visitor for traversing parse trees.
-- `ParseCache` — LRU cache keyed on `(rule_name, source, start)` tuples; configurable via `Rule.max_cache_size`.
+- Memoisation is scoped to one parse: `Rule.parse` binds a context var holding `(source, {})` and `Repetition` memoizes into it, so nothing survives the call. The Rust engine does the same with a per-parse epoch (`ParseScope` in `cache.rs`). `ParseCache` and its knobs are deprecated no-ops.
 - `Alternation`, `Concatenation`, `Repetition`, `Option`, `Literal`, `Prose` — Internal parser combinator primitives (not part of public API).
 - `ABNFGrammarRule` / `ABNFGrammarNodeVisitor` — Bootstrapped parser for ABNF grammar syntax itself; converts parsed ABNF text into `Rule`-based parser objects.
 

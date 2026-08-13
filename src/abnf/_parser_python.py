@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import abc
+import contextvars
 import operator
 import pathlib
 import typing
@@ -102,8 +104,63 @@ class _CachedParseError:
 # for backward compatibility with any external code that stored sets.
 ParseCacheValue = list[Match] | MatchSet | _CachedParseError
 
+# Per-parse memo.  `Rule.parse` binds `(source, {})` for the duration of one
+# parse and `Repetition` memoises into that dict, so nothing survives the call
+# that created it.  `ContextVar.set` returns a token and `reset(token)` restores
+# the previous binding, which gives nesting for free: `Rule.lparse`'s `exclude`
+# check runs `parse_all` on a *different* source mid-parse, and that inner parse
+# simply binds its own memo and gives this one back on the way out.
+#
+# A ContextVar rather than a threading.local: it is cheaper to read (measured
+# 29.9ns vs 34.6ns), and it isolates asyncio tasks as well as threads.  Only
+# `Rule.parse` ever writes it -- never a generator, whose `set` would leak into
+# the caller's context between yields.
+_ParseMemo = tuple[Source, dict[tuple[int, int], ParseCacheValue]]
+_parse_memo: contextvars.ContextVar[_ParseMemo | None] = contextvars.ContextVar(
+    "abnf_parse_memo", default=None
+)
 
-class ParseCache(typing.MutableMapping[ParseCacheKey, ParseCacheValue]):
+
+_CACHE_DEPRECATION = (
+    "The parse cache is now scoped to a single parse and discarded when that "
+    "parse returns, so {what} no longer has any effect and can be removed. "
+    "For reuse across calls, memoise at the call site -- e.g. "
+    "functools.lru_cache on your own wrapper -- which is both bounded and "
+    "far faster, since it skips the parse entirely rather than replaying "
+    "sub-results."
+)
+
+
+class _ParseCacheMeta(abc.ABCMeta):
+    """Metaclass so that assigning the vestigial knob can be flagged.
+
+    `max_cache_size` is a plain class attribute, so there is no other hook for
+    telling a caller their configuration stopped mattering.  Derives from
+    `ABCMeta` because `ParseCache` is a `MutableMapping`.
+    """
+
+    def __setattr__(cls, name: str, value: typing.Any) -> None:
+        if name == "max_cache_size":
+            warnings.warn(
+                _CACHE_DEPRECATION.format(what="ParseCache.max_cache_size"),
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        super().__setattr__(name, value)
+
+
+class ParseCache(
+    typing.MutableMapping[ParseCacheKey, ParseCacheValue],
+    metaclass=_ParseCacheMeta,
+):
+    """A mapping that used to memoise `Repetition` results across parses.
+
+    .. deprecated::
+        The parser no longer uses this class; memoisation moved into a
+        per-parse context (`_parse_memo`).  The class remains importable, and
+        works as an ordinary mapping, so existing imports keep functioning.
+    """
+
     max_cache_size: int | None = None
     objects: WeakSet[ParseCache] = WeakSet()
 
@@ -160,6 +217,18 @@ class ParseCache(typing.MutableMapping[ParseCacheKey, ParseCacheValue]):
 
     @classmethod
     def clear_caches(cls):
+        """Clear every live `ParseCache`.
+
+        .. deprecated::
+            Nothing in the parser holds a `ParseCache` any more, so there is
+            no parser state left for this to clear.  It still empties any
+            instances the caller made themselves.
+        """
+        warnings.warn(
+            _CACHE_DEPRECATION.format(what="ParseCache.clear_caches()"),
+            DeprecationWarning,
+            stacklevel=2,
+        )
         for obj in cls.objects:
             obj.dict = OrderedDict()
             obj.hits = 0
@@ -285,15 +354,37 @@ class Repetition:
     def __init__(self, repeat: Repeat, element: Parser):
         self.repeat = repeat
         self.element = element
-        self.lparse_cache = ParseCache()
+        # The `min` prefix parser depends only on `element` and `repeat.min`,
+        # both fixed here, so build it once rather than on every cache miss --
+        # `1*X` is the most common repetition there is.  Building it per miss
+        # also meant each failure blamed a different (equal-behaving) parser
+        # instance, which only went unnoticed because the old cross-call cache
+        # replayed the first one.  Nothing in the library mutates `Repeat`
+        # after construction; a caller who does would need to rebuild this.
+        self._min_parser = (
+            Concatenation(*([element] * repeat.min)) if repeat.min else None
+        )
 
     def lparse(self, source: Source, start: int) -> Matches:
-        cache_key = (source, start)
-        try:
-            cached_matchset = self.lparse_cache[cache_key]
-        except KeyError:
-            pass
-        else:
+        # Memoise into the current parse's context rather than into
+        # per-instance state.  Because the memo dies with the parse, the
+        # grammar cannot change underneath it, so there is nothing to
+        # invalidate -- which is what made the old `(source, start)` cache
+        # return stale results after `=/`, `exclude_rule`, or a
+        # `first_match_alternation` flip.
+        #
+        # `ctx[0] is source` enforces the invariant the key relies on: one
+        # memo, one source, so `start` alone identifies a position.  A direct
+        # `lparse` call outside any parse, or one that somehow reaches a
+        # different source under an active memo, falls back to a memo scoped
+        # to this call -- correct either way, since the memo is only ever an
+        # optimisation.
+        ctx = _parse_memo.get()
+        memo = ctx[1] if ctx is not None and ctx[0] is source else {}
+
+        cache_key = (id(self), start)
+        cached_matchset = memo.get(cache_key)
+        if cached_matchset is not None:
             if isinstance(cached_matchset, _CachedParseError):
                 raise ParseError(
                     cached_matchset.parser,
@@ -316,14 +407,14 @@ class Repetition:
             match_list = [Match([], start)]
             seen_starts = {start}
         else:
-            concat_parser = Concatenation(*([self.element] * self.repeat.min))
+            # `_min_parser` is non-None exactly when `repeat.min` is non-zero,
+            # which is this branch.
+            min_parser = typing.cast("Parser", self._min_parser)
             try:
                 # If this raises a ParseError the minimum match was not reached.
-                match_list = list(concat_parser.lparse(source, start))
+                match_list = list(min_parser.lparse(source, start))
             except ParseError as exc:
-                self.lparse_cache[cache_key] = _CachedParseError(
-                    exc.parser, exc.start, exc.args
-                )
+                memo[cache_key] = _CachedParseError(exc.parser, exc.start, exc.args)
                 raise
             seen_starts = set()
             deduped: list[Match] = []
@@ -362,7 +453,7 @@ class Repetition:
             else:
                 break
 
-        self.lparse_cache[cache_key] = match_list
+        memo[cache_key] = match_list
         yield from next_longest(match_list)
 
     def __str__(self):
@@ -657,6 +748,20 @@ class Rule:
             )
             raise ValueError(msg)
 
+        # Bind a memo for the duration of this parse.  `reset(token)` restores
+        # whatever was bound before, so a nested parse -- `Rule.lparse` runs
+        # `exclude.parse_all` on a different source mid-parse -- nests
+        # correctly rather than sharing or clobbering this one.  The memo is
+        # unreachable once `parse` returns, which is what keeps grammar
+        # mutation between parses from ever being observable and keeps
+        # retention at zero.
+        memo_token = _parse_memo.set((source, {}))
+        try:
+            return self._parse(source, start)
+        finally:
+            _parse_memo.reset(memo_token)
+
+    def _parse(self, source: str, start: int) -> tuple[Node, int]:
         g = self.lparse(source, start)
         # `lparse` yields matches longest-first (the upstream
         # combinators sort by `start` descending), so the first
