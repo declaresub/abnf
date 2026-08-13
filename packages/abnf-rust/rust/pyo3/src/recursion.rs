@@ -95,6 +95,15 @@ pub fn call_lparse<F>(f: F) -> PyResult<abnf_core::ParseResult>
 where
     F: FnOnce() -> abnf_core::ParseResult,
 {
+    // Marks the dynamic extent of one parse.  Every combinator's
+    // `lparse` comes through here, and Python enters the engine
+    // exactly once per parse (the recursion below stays in Rust), so
+    // the outermost of these is the parse boundary.  Repetition
+    // caches are scoped to it: entries from a finished parse are
+    // discarded rather than matched against a guessed-at source
+    // identity.  Nested entries -- a `PyCallbackParser` calling back
+    // in -- share the epoch, so intra-parse reuse is preserved.
+    let _scope = abnf_core::ParseScope::enter();
     match panic::catch_unwind(AssertUnwindSafe(f)) {
         Ok(result) => Ok(result),
         Err(payload) => {

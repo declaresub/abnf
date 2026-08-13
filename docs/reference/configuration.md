@@ -17,11 +17,26 @@ class MyGrammar(Rule):
 
 See {doc}`../explanation/alternation-semantics` for why this is configurable.
 
-## `Rule.max_cache_size`
+## `ParseCache.max_cache_size` (deprecated)
 
-An `int | None` class attribute bounding the LRU parse cache that amortizes
-backtracking. `None` (the default) leaves the cache unbounded; set a non-negative
-integer to cap it. See {doc}`../explanation/backtracking-and-caching`.
+Formerly bounded the parse cache. There is nothing left to bound: memoisation is
+scoped to a single parse and discarded when it returns, so no parse state
+survives a call. Assigning it raises a `DeprecationWarning`, as does
+`ParseCache.clear_caches()`.
+
+Earlier versions of this page documented the attribute as `Rule.max_cache_size`.
+No such attribute ever existed -- it lives on `ParseCache` -- so code following
+that advice has always been a no-op.
+
+To reuse a parse result across calls, memoize at the call site:
+
+```python
+import functools
+
+parse_host = functools.lru_cache(maxsize=1024)(rfc9110.Rule("Host").parse_all)
+```
+
+See {doc}`../explanation/backtracking-and-caching`.
 
 ## `ABNF_NO_RUST` (environment variable)
 
