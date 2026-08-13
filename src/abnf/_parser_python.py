@@ -600,9 +600,12 @@ class Rule:
         except AttributeError:
             self.name = name
         try:
-            _ = self.exclude
+            _ = self._exclude
         except AttributeError:
-            self.exclude: Rule | None = None
+            # Assign the private slot, not the property: an unset
+            # exclusion is the default state and there is nothing for
+            # the backend to be told about.
+            self._exclude: Rule | None = None
 
         if definition is not None:
             # when defined-as = '=/', we'll need to overwrite existing definition.
@@ -634,13 +637,39 @@ class Rule:
         typing.Callable[[Rule, Parser], None] | None
     ] = None
 
-    #: Optional hook invoked on every ``rule.exclude_rule(...)`` call,
-    #: so the Rust engine can apply exclusions to nested rule
-    #: references.  Unset for the pure-Python backend, which applies
-    #: them directly in ``Rule.lparse``.
-    _set_exclude_hook: typing.ClassVar[typing.Callable[[Rule, Rule], None] | None] = (
-        None
-    )
+    @property
+    def exclude(self) -> Rule | None:
+        """Rule whose complete matches disqualify this rule's matches.
+
+        ``None`` unless set.  Backed by ``self._exclude``; like
+        ``definition``, the property setter forwards writes through
+        ``Rule._set_exclude_hook`` (when set) so the Rust engine
+        applies the exclusion to nested rule references too.
+
+        Assigning here and calling :meth:`exclude_rule` are the same
+        operation -- that is the point of the property.  Before it
+        existed only the method notified the backend, so
+        ``rule.exclude = None`` cleared the exclusion for the
+        pure-Python parser while the Rust engine went on applying it.
+        """
+
+        return self._exclude
+
+    @exclude.setter
+    def exclude(self, value: Rule | None) -> None:
+        self._exclude = value
+        hook = getattr(type(self), "_set_exclude_hook", None)
+        if hook is not None:
+            hook(self, value)
+
+    #: Optional hook invoked on every write to ``exclude`` (including
+    #: via :meth:`exclude_rule`), so the Rust engine can apply
+    #: exclusions to nested rule references.  Unset for the
+    #: pure-Python backend, which applies them directly in
+    #: ``Rule.lparse``.
+    _set_exclude_hook: typing.ClassVar[
+        typing.Callable[[Rule, Rule | None], None] | None
+    ] = None
 
     @property
     def first_match_alternation(self) -> bool:
@@ -679,16 +708,11 @@ class Rule:
             Rule('identifier').exclude_rule(Rule('keyword'))
 
         Then attempting to use "foo" as an identifier would result in a ParseError.
+
+        Equivalent to assigning :attr:`exclude`; assign ``None`` there to
+        remove an exclusion.
         """
         self.exclude = rule
-        # Forward to the engine, the same way `definition` does.  The
-        # exclusion is applied in `Rule.lparse` below, which the Rust
-        # backend enters only for the rule the caller parses directly --
-        # so without this hook an exclusion on a *nested* rule reference
-        # was silently ignored there.  See GitHub issue #179.
-        hook = getattr(type(self), "_set_exclude_hook", None)
-        if hook is not None:
-            hook(self, rule)
 
     def lparse(self, source: Source, start: int) -> Matches:
         def exclude(match: Match) -> bool:
