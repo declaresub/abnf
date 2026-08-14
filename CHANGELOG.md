@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+* Export `Parser` from the top-level `abnf` package.  It is the protocol the
+  combinators satisfy, and it is useful for annotating code that accepts or
+  returns a parser -- which meant reaching into `abnf.parser` for it.  Being a
+  `Protocol`, it describes a shape rather than a base class: `Rule`, the
+  built-in combinators (including the Rust-backed ones) and a parser you write
+  yourself all satisfy it without inheriting anything
+  (https://github.com/declaresub/abnf/issues/17).
+
 * The Rust engine represents the source as **code points** rather than as
   `&str`, which fixes the last behavioural difference between the two backends.
   It previously worked in `char` and `&str` -- Unicode *scalar values* and

@@ -9,6 +9,7 @@ from abnf.parser import (
     Node,
     NodeVisitor,
     ParseError,
+    Parser,
     Rule,
 )
 
@@ -19,6 +20,7 @@ __all__ = [
     "Node",
     "NodeVisitor",
     "ParseError",
+    "Parser",
     "Rule",
     "__version__",
 ]
