@@ -1074,18 +1074,60 @@ class LiteralNode:
         )
 
 
+_VISIT_PREFIX = "visit_"
+_VISIT_NAME_START = len(_VISIT_PREFIX)
+
+
 class NodeVisitor:
     """An external visitor class."""
 
-    def __init__(self):
-        self._node_method_cache = {}
-        method_prefix = "visit_"
-        name_start = len(method_prefix)
-        self._node_method_cache = {
-            attr[name_start:]: getattr(self, attr)
-            for attr in dir(self)
-            if attr.startswith(method_prefix)
+    @classmethod
+    def _visit_attr_names(cls) -> dict[str, str]:
+        """Node name -> attribute name, for every ``visit_*`` on the class.
+
+        `dir()` walks the whole MRO and sorts its result, which is far too
+        much work to repeat for every instance: importing the bundled
+        grammars alone constructs several hundred visitors.  The answer
+        depends only on the class, so compute it once and keep it there.
+
+        Cached in ``cls.__dict__`` rather than read through inheritance, so
+        a subclass builds its own table instead of borrowing its parent's.
+        """
+
+        # Adding a `visit_*` method to a class after it has been
+        # instantiated used to take effect, because the old code rebuilt
+        # from `dir(self)` every time.  Keep that working: the summed
+        # sizes of the MRO's dicts change whenever a method is added or
+        # removed anywhere in the hierarchy, and checking it costs ~240ns
+        # against ~3.1us for the scan it guards.  Replacing a method needs
+        # no signal at all -- the table maps to attribute *names*, which
+        # `getattr` resolves afresh on every instance.
+        signature = sum(len(klass.__dict__) for klass in cls.__mro__)
+        cached = cls.__dict__.get("_visit_attr_names_cache")
+        if cached is not None and cached[0] == signature:
+            return cached[1]
+        table = {
+            attr[_VISIT_NAME_START:]: attr
+            for attr in dir(cls)
+            if attr.startswith(_VISIT_PREFIX)
         }
+        cls._visit_attr_names_cache = (signature, table)
+        return table
+
+    def __init__(self):
+        cache = {
+            name: getattr(self, attr) for name, attr in self._visit_attr_names().items()
+        }
+        # Instance attributes count too, and not hypothetically:
+        # `ABNFGrammarNodeVisitor` assigns `self.visit_char_val` and
+        # `self.visit_num_val` before calling up to here, precisely so this
+        # picks them up.  `dir(self)` used to cover that; scanning the
+        # instance dict covers it for a fraction of the cost, since the
+        # dict holds a handful of entries rather than the full MRO.
+        for attr in vars(self):
+            if attr.startswith(_VISIT_PREFIX):
+                cache[attr[_VISIT_NAME_START:]] = getattr(self, attr)
+        self._node_method_cache = cache
 
     def __call__(self, node: Node):
         return self.visit(node)

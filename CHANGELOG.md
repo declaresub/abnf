@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+* `NodeVisitor` computes its `visit_*` dispatch table once per class instead of
+  rebuilding it from `dir(self)` on every instantiation.  `dir()` walks the whole
+  MRO and sorts the result, which is a lot of work to repeat for an answer that
+  depends only on the class: constructing `ABNFGrammarNodeVisitor` drops from
+  13.8 to 3.2 us, a three-method user visitor from 3.6 to 0.7 us, and
+  `Rule.create` -- which builds one per call -- is about 4% faster.  Parsing then
+  walking a tree with a fresh visitor is ~15% faster end to end on the Rust
+  backend for a short input, where the visitor was a real share of the work; on
+  the pure-Python backend parsing dominates and the difference does not show.
+
+  Behaviour is unchanged, including the dynamic cases: `visit_*` set as instance
+  attributes are still found (`ABNFGrammarNodeVisitor` relies on this), and
+  methods added to or removed from a class after it has been instantiated still
+  take effect, via a cheap check that costs ~240ns against the ~3.1us scan it
+  guards.
+
 * `Match` no longer memoises its hash, and `Match.__eq__` compares values rather
   than hashes.  Nothing in the parser hashes or compares a `Match` -- both
   `Repetition` and `Rule.lparse` deduplicate by end offset -- so the cached slot

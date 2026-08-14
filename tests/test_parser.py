@@ -17,6 +17,7 @@ from abnf.parser import (
     LiteralNode,
     Match,
     Node,
+    NodeVisitor,
     NumValVisitor,
     Option,
     ParseCache,
@@ -827,6 +828,74 @@ def test_repetition_cached_oarseerror():
     assert second.value is not first.value
     assert second.value.parser is first.value.parser
     assert second.value.start == first.value.start
+
+
+# ---------------------------------------------------------------------------
+# NodeVisitor dispatch: the visit_* table is cached per class rather than
+# rebuilt from dir(self) per instance.  Everything the old behaviour supported
+# still has to work, including the dynamic cases the library itself depends on.
+# ---------------------------------------------------------------------------
+
+
+def test_visitor_dispatches_to_class_methods():
+    class ClassMethodVisitor(NodeVisitor):
+        def visit_alpha(self, node):
+            return "alpha"
+
+    assert ClassMethodVisitor().visit(Node("alpha")) == "alpha"
+    assert ClassMethodVisitor().visit(Node("unknown")) is None
+
+
+def test_visitor_dispatches_to_instance_attributes():
+    # ABNFGrammarNodeVisitor assigns self.visit_char_val / self.visit_num_val
+    # before calling super().__init__(), specifically so they are picked up.
+    class InstanceAttrVisitor(NodeVisitor):
+        def __init__(self):
+            self.visit_beta = lambda node: "beta"
+            super().__init__()
+
+    assert InstanceAttrVisitor().visit(Node("beta")) == "beta"
+
+
+def test_visitor_sees_methods_added_to_the_class_afterwards():
+    # The old implementation rebuilt from dir(self) on every instantiation, so
+    # a method added later took effect.  The cache must not change that.
+    class LateMethodVisitor(NodeVisitor):
+        def visit_alpha(self, node):
+            return "alpha"
+
+    LateMethodVisitor()  # populates the cache
+    setattr(LateMethodVisitor, "visit_gamma", lambda self, node: "gamma")  # noqa: B010
+    assert LateMethodVisitor().visit(Node("gamma")) == "gamma"
+
+    delattr(LateMethodVisitor, "visit_gamma")
+    assert LateMethodVisitor().visit(Node("gamma")) is None
+
+
+def test_visitor_subclass_table_is_independent_of_its_parent():
+    class ParentVisitor(NodeVisitor):
+        def visit_alpha(self, node):
+            return "alpha"
+
+    class ChildVisitor(ParentVisitor):
+        def visit_delta(self, node):
+            return "delta"
+
+    ParentVisitor()  # cache the parent's table first
+    assert ChildVisitor().visit(Node("delta")) == "delta"
+    assert ChildVisitor().visit(Node("alpha")) == "alpha"
+    # The child's extra method must not leak upwards.
+    assert ParentVisitor().visit(Node("delta")) is None
+
+
+def test_visitor_normalises_node_names():
+    class HyphenVisitor(NodeVisitor):
+        def visit_addr_spec(self, node):
+            return "addr-spec"
+
+    # Node names are hyphenated and case-insensitive in ABNF.
+    assert HyphenVisitor().visit(Node("addr-spec")) == "addr-spec"
+    assert HyphenVisitor().visit(Node("ADDR-SPEC")) == "addr-spec"
 
 
 def test_empty_charval_node():
