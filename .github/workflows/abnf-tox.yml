@@ -146,6 +146,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      with:
+        persist-credentials: false
 
     - name: Install uv
       run: |
@@ -157,6 +159,8 @@ jobs:
 
     - name: Runtime dependency closure resolves
       # The exact command the release workflow runs for the SBOM.
+      # Written to a real path, not /dev/null: uv writes a temp file
+      # beside the target and renames it, which /dev cannot host.
       run: |
         uv export --no-dev --extra rust --no-hashes --no-emit-project \
-          --format requirements-txt -o /dev/null
+          --format requirements-txt -o "$RUNNER_TEMP/requirements.txt"
