@@ -11,16 +11,18 @@
 //! Mirrors `abnf.parser.Literal._lparse_value` /
 //! `_lparse_range` (`src/abnf/_parser_python.py:326-353`).
 //!
-//! ASCII fast paths are taken whenever both the pattern (and the
-//! range bounds) are pure ASCII; that covers essentially every
-//! real-world ABNF grammar and skips the UTF-8 decoder on the hot
-//! match loop.
+//! ASCII fast paths are taken whenever the pattern (or the range
+//! bounds) are pure ASCII; that covers essentially every real-world
+//! ABNF grammar and skips the UTF-8 decoder on the hot match loop.
+//! Case-insensitive matching folds over US-ASCII only, per RFC 5234
+//! §2.3, so it is length-preserving and needs no escape hatch for
+//! candidates that are not themselves ASCII.
 
 use std::sync::Arc;
 
 use smallvec::smallvec;
 
-use crate::casefold::casefold;
+use crate::casefold::ascii_fold;
 use crate::error::ParseError;
 use crate::matcher::Match;
 use crate::node::{LiteralNode, NodeKind};
@@ -65,7 +67,7 @@ impl Literal {
         let pattern: Arc<str> = if case_sensitive {
             value.clone()
         } else {
-            casefold(&value).into()
+            ascii_fold(&value).into()
         };
         let value_chars = value.chars().count();
         let is_ascii = value.is_ascii() && pattern.is_ascii();
@@ -168,54 +170,41 @@ impl Literal {
                     return Err(self.parse_error(start));
                 }
                 if *is_ascii {
-                    // Fast path: byte-level comparison.  Pattern
-                    // and value are both ASCII, so
-                    // `value_chars == pattern.len()` and we can
-                    // slice the source by byte.  Non-ASCII bytes in
-                    // the source fail the byte compare naturally
-                    // (a UTF-8 continuation byte is >= 0x80 while
-                    // every pattern byte is < 0x80).
+                    // Fast path: byte-level comparison.  Pattern and
+                    // value are both ASCII, so `value_chars ==
+                    // pattern.len()` and we can slice the source by
+                    // byte.  Non-ASCII bytes in the source fail the
+                    // byte compare naturally: every pattern byte is
+                    // < 0x80, and ASCII folding leaves a non-ASCII
+                    // byte alone, so no such byte can ever compare
+                    // equal.
                     //
-                    // Exception: in case-insensitive mode, some
-                    // non-ASCII codepoints casefold to an ASCII
-                    // multi-character sequence (e.g. 'ß' → 'ss',
-                    // 'ﬃ' → 'ffi').  Python's `Literal('ss',
-                    // case_sensitive=False)` matches a source of 'ß';
-                    // the byte-level fast path would incorrectly
-                    // reject it.  Fall through to the slow path
-                    // whenever the candidate region contains any
-                    // non-ASCII byte, where the full casefold can
-                    // express the expansion.
+                    // Folding over ASCII is length-preserving, so an
+                    // ASCII pattern always consumes exactly
+                    // `pattern.len()` source bytes.  (Under the full
+                    // Unicode folding used before, it was not: 'ß'
+                    // folded to "ss", so a 2-byte pattern could match
+                    // a 1-char source and this path had to defer to
+                    // the char-based one whenever the candidate held
+                    // a non-ASCII byte.)
                     let source_bytes = source.as_bytes();
                     let pattern_bytes = pattern.as_bytes();
                     let plen = pattern_bytes.len();
-                    if start + plen <= source_bytes.len() {
-                        let candidate = &source_bytes[start..start + plen];
-                        let candidate_is_ascii =
-                            candidate.iter().all(|b| *b < 128);
-                        if self.case_sensitive || candidate_is_ascii {
-                            return self.lparse_ascii_candidate(
-                                candidate,
-                                pattern_bytes,
-                                start,
-                            );
-                        }
-                        // Non-ASCII candidate in case-insensitive
-                        // mode: fall through to the slow path below.
-                    } else if self.case_sensitive {
-                        // Case-sensitive can never extend past EOF.
+                    if start + plen > source_bytes.len() {
                         return Err(self.parse_error(start));
                     }
-                    // Case-insensitive: even if the byte-slice would
-                    // run past EOF, the slow path needs to consider
-                    // shorter casefold-equivalent candidates (Python's
-                    // `source[start:start+N]` is permissive).
+                    return self.lparse_ascii_candidate(
+                        &source_bytes[start..start + plen],
+                        pattern_bytes,
+                        start,
+                    );
                 }
-                // Slow path: char-based.  Permissive about taken
-                // count when case-insensitive, since casefold can
-                // expand a short candidate into a pattern-length
-                // sequence (e.g. 'ß' → 'ss' satisfies a 2-char pattern
-                // from a 1-char source).
+                // Slow path: char-based, reached only for a
+                // non-ASCII pattern -- which the ABNF grammar itself
+                // cannot produce, since `char-val` is ASCII, but the
+                // Python `Literal` constructor can.  ASCII folding
+                // preserves char count, so a candidate shorter than
+                // the pattern can never match either way.
                 let remaining = source
                     .get(start..)
                     .ok_or_else(|| self.parse_error(start))?;
@@ -229,14 +218,14 @@ impl Literal {
                     taken += 1;
                     byte_end = i + ch.len_utf8();
                 }
-                if self.case_sensitive && taken < *value_chars {
+                if taken < *value_chars {
                     return Err(self.parse_error(start));
                 }
                 let candidate = &remaining[..byte_end];
                 let matches = if self.case_sensitive {
                     candidate == value.as_ref()
                 } else {
-                    casefold(candidate) == pattern.as_ref()
+                    ascii_fold(candidate) == pattern.as_ref()
                 };
                 if matches {
                     let matched: Arc<str> = Arc::from(candidate);

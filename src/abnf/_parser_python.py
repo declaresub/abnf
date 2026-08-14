@@ -15,6 +15,33 @@ from .typing import Protocol, runtime_checkable
 Source = str
 Nodes = list["Node"]
 
+#: Folds the 26 ASCII uppercase letters and nothing else.
+_ASCII_FOLD_TABLE = str.maketrans(
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz"
+)
+
+
+def _ascii_fold(value: str) -> str:
+    """Case-fold over US-ASCII only.
+
+    RFC 5234 §2.3 makes literals case-insensitive and says the character set
+    for them is US-ASCII, so case-insensitivity is defined over ASCII and
+    nothing else.  `str.casefold()`, used here previously, is full Unicode:
+    it matched a source of `'\u017f'` (long s) against `"s"`, `'\u212a'`
+    (Kelvin sign) against `"k"`, and `'ß'` against `"ss"` -- input a grammar
+    written in ASCII should reject.
+
+    Folding only ASCII also makes the operation length-preserving, which
+    Unicode folding is not.  The old behaviour therefore depended on
+    position: `"ss"` matched a lone `'ß'`, but `"ss" "x"` rejected `'ßx'`,
+    because the comparison folds a fixed-width window of the source.
+
+    Fast path via `str.lower`, which for an ASCII string *is* the ASCII
+    fold; CPython flags ASCII-ness on the object, so the test is free.
+    """
+
+    return value.lower() if value.isascii() else value.translate(_ASCII_FOLD_TABLE)
+
 
 class Match:
     """A span of consumed source, identified by its text and end offset.
@@ -526,7 +553,7 @@ class Literal:
         self.value = value
         self.case_sensitive = case_sensitive
         self.pattern = (
-            value if isinstance(value, tuple) or case_sensitive else value.casefold()
+            value if isinstance(value, tuple) or case_sensitive else _ascii_fold(value)
         )
 
         self.lparse = (
@@ -551,7 +578,7 @@ class Literal:
         # is handled correctly.
         if start < len(source):
             src = source[start : start + len(self.value)]
-            match = src if self.case_sensitive else src.casefold()
+            match = src if self.case_sensitive else _ascii_fold(src)
             if match == self.pattern:
                 yield Match(
                     [typing.cast(Node, LiteralNode(src, start, len(src)))],

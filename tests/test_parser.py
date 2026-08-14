@@ -603,7 +603,10 @@ def test_173_pure_python_handles_surrogates():
         pass
 
     SurrogatePythonGrammar.create("s = 1*%x00-10FFFF")
-    assert SurrogatePythonGrammar("s").parse_all(_SURROGATE_SOURCE).value == _SURROGATE_SOURCE
+    assert (
+        SurrogatePythonGrammar("s").parse_all(_SURROGATE_SOURCE).value
+        == _SURROGATE_SOURCE
+    )
 
 
 def test_option_str():
@@ -991,45 +994,89 @@ def test_h4_parse_error_start_is_codepoint_on_non_ascii():
 
 
 # ---------------------------------------------------------------------------
-# H3 regression: case-insensitive Literal must honour Unicode casefold
-# expansion.  Python's `str.casefold()` maps some non-ASCII characters to
-# multi-character ASCII sequences (most famously 'ß' → 'ss', 'ﬃ' → 'ffi').
-# Per the pure-Python reference, `Literal('ss', case_sensitive=False)`
-# matches a source consisting of 'ß'.  The Rust backend's ASCII fast path
-# missed this case (byte-level compare against pattern 'ss' against source
-# bytes 0xc3 0x9f fails) and silently raised `ParseError`.
+# X3: case-insensitive matching folds over US-ASCII only.  RFC 5234 §2.3
+# makes literals case-insensitive and fixes their character set as
+# US-ASCII, so case-insensitivity is defined over ASCII and nothing else.
+#
+# Until 2.7.0 both backends used full Unicode folding (Python's
+# `str.casefold()`, the `caseless` crate in Rust), which over-accepted:
+# an ASCII grammar matched '\u017f' (long s) against "s" and '\u212a'
+# (Kelvin sign) against "k", so e.g. RFC 7230 accepted 'compre\u017f\u017f'
+# as a transfer-coding.  Against a peer that folds only ASCII, that is a
+# parser differential.
+#
+# Unicode folding is also not length-preserving, which made matching
+# position-dependent: Literal("ss") matched a lone 'ß' but not the 'ß' in
+# "ßx", because the comparison folds a fixed-width window of the source.
+# ASCII folding removes both problems.
 # ---------------------------------------------------------------------------
 
 
-def test_h3_casefold_expansion_ss_matches_eszett():
-    """'ß'.casefold() == 'ss' — Literal('ss') should match 'ß' under
-    case-insensitive comparison."""
-    parser = Literal("ss", case_sensitive=False)
-    match = next(parser.lparse("ß", 0))
-    assert match.start == 1  # consumed one code point of source
+@pytest.mark.parametrize(
+    "pattern, source",
+    [
+        ("ss", "ß"),  # 'ß'.casefold() == 'ss'
+        ("SS", "ß"),
+        ("ffi", "\ufb03"),  # 'ﬃ'.casefold() == 'ffi'
+        ("s", "\u017f"),  # LATIN SMALL LETTER LONG S
+        ("k", "\u212a"),  # KELVIN SIGN
+        ("K", "\u212a"),
+    ],
+)
+def test_x3_case_insensitive_does_not_fold_non_ascii(pattern, source):
+    """Non-ASCII source must not match an ASCII pattern, in either
+    direction of case."""
+    parser = Literal(pattern, case_sensitive=False)
+    with pytest.raises(ParseError):
+        next(parser.lparse(source, 0))
+
+
+def test_x3_case_insensitive_still_folds_ascii():
+    """The folding that RFC 5234 does require is unaffected."""
+    parser = Literal("Chunked", case_sensitive=False)
+    match = next(parser.lparse("cHUNKED", 0))
+    assert match.start == 7
     # The matched LiteralNode preserves the source's original spelling.
-    assert match.nodes[0].value == "ß"
+    assert match.nodes[0].value == "cHUNKED"
 
 
-def test_h3_casefold_expansion_ffi_ligature():
-    """'ﬃ'.casefold() == 'ffi'."""
-    parser = Literal("ffi", case_sensitive=False)
-    match = next(parser.lparse("ﬃ", 0))
-    assert match.start == 1
-    assert match.nodes[0].value == "ﬃ"
+def test_x3_ascii_fold_is_length_preserving():
+    """A pattern always consumes exactly as many code points as it has,
+    so a match no longer depends on what follows it."""
+    parser = Literal("ss", case_sensitive=False)
+    match = next(parser.lparse("SSx", 0))
+    assert match.start == 2
+    with pytest.raises(ParseError):
+        next(parser.lparse("ßx", 0))
 
 
-def test_h3_casefold_expansion_uppercase_ss_matches_eszett():
-    """'SS'.casefold() == 'ss' and 'ß'.casefold() == 'ss'."""
-    parser = Literal("SS", case_sensitive=False)
-    match = next(parser.lparse("ß", 0))
-    assert match.start == 1
+def test_x3_non_ascii_literal_matches_itself():
+    """Folding leaves non-ASCII alone rather than rejecting it: a
+    non-ASCII literal still matches an exact copy of itself."""
+    parser = Literal("Straße", case_sensitive=False)
+    match = next(parser.lparse("STRAßE", 0))
+    assert match.start == 6
+    # ...but the case-mapped spelling of the non-ASCII part does not.
+    with pytest.raises(ParseError):
+        next(parser.lparse("STRASSE", 0))
 
 
-def test_h3_case_sensitive_does_not_expand():
-    """In case-sensitive mode, 'ß' should NOT match 'ss' — casefold
-    expansion is disabled by definition."""
+def test_x3_grammar_rejects_non_ascii_transfer_coding():
+    """The end-to-end shape of the differential: an ASCII grammar must
+    not accept a non-ASCII homoglyph of one of its keywords."""
+    from abnf.grammars import rfc7230
+
+    assert rfc7230.Rule("transfer-coding").parse_all("chunked")
+    for source in ("chun\u212aed", "compre\u017f\u017f"):
+        with pytest.raises(ParseError):
+            rfc7230.Rule("transfer-coding").parse_all(source)
+
+
+def test_x3_case_sensitive_does_not_fold():
+    """Case-sensitive matching is unchanged: no folding of any kind."""
     parser = Literal("ss", case_sensitive=True)
+    with pytest.raises(ParseError):
+        next(parser.lparse("SS", 0))
     with pytest.raises(ParseError):
         next(parser.lparse("ß", 0))
 

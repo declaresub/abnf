@@ -77,6 +77,31 @@ containing one raises `ValueError`; both messages say so and point at
 [issue #173](https://github.com/declaresub/abnf/issues/173).
 ```
 
+## Case-insensitivity is ASCII-only
+
+A quoted string in a grammar is case-insensitive by default — `"chunked"`
+matches `Chunked` — and RFC 5234 §2.3 fixes the character set for those
+literals as US-ASCII. `abnf` folds case over US-ASCII and nothing else, so
+matching stays inside the character set the grammar is written in:
+
+```python
+Rule("transfer-coding").parse_all("CHUNKED")        # matches
+Rule("transfer-coding").parse_all("chun\u212aed")   # KELVIN SIGN: no match
+```
+
+Full Unicode case folding — Python's `str.casefold()`, which is what `abnf`
+used before 2.7.0 — would match both, because `'\u212a'.casefold() == 'k'`.
+That over-accepts against an ASCII grammar, and it disagrees with peers that
+fold only ASCII, which is where protocol parsers get their differentials.
+
+Folding only ASCII is also length-preserving, so a literal always consumes
+exactly as many code points as it has. Under full folding it did not:
+`'ß'.casefold()` is `'ss'`, so `"ss"` matched a lone `'ß'` but not the `'ß'` in
+`'ßx'`, because the comparison folds a fixed-width window of the source.
+
+A literal containing non-ASCII characters still matches itself exactly; folding
+leaves those code points alone rather than rejecting them.
+
 ## Why there is no bytes API
 
 A `bytes` entry point would buy no capability — latin-1 already gives exact
