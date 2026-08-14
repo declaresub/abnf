@@ -17,6 +17,16 @@
   the case-insensitive lookup of *rule names*, which continues to use full
   folding on both backends.
 
+* Document the Rust engine's rule registry and how it grows in a long-running
+  process: 40 entries after `import abnf`, 1,176 with all bundled grammars
+  loaded, and one more per rule created at runtime, at roughly 1.6 KiB each.
+  A fixed cost for the ordinary import-once case; it accumulates only for
+  processes that build grammars per request or in a loop.  The pure-Python
+  `Rule._obj_map` grows the same way, so this is not specific to the Rust
+  backend.  The note also warns against `abnf_rust._ext.clear_bridge()`, a
+  private diagnostic that silently breaks any grammar defined after it runs
+  (https://github.com/declaresub/abnf/issues/187).
+
 * `NodeVisitor` computes its `visit_*` dispatch table once per class instead of
   rebuilding it from `dir(self)` on every instantiation.  `dir()` walks the whole
   MRO and sorts the result, which is a lot of work to repeat for an answer that
