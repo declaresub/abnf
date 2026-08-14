@@ -70,13 +70,12 @@ rust = [
     # bound clamps to the next major so a future `abnf-rust` release
     # with a breaking change can't silently come in via the extra.
     #
-    # Raise this bound whenever the two packages have to agree on
-    # behaviour, not just on API.  2.8 is such a release: the engine
-    # moved to a code-point source model, so surrogate handling and
-    # offset semantics come from the extension.  An older `abnf-rust`
-    # would still import and parse, and would silently deliver the
-    # behaviour this version's own documentation says it does not.
-    'abnf-rust>=2.8,<3',
+    # The floor can only name a version that is already on PyPI: the
+    # release workflow resolves this dependency (via `uv export`, for
+    # the SBOM) *before* publishing, so naming the version being
+    # released makes the release unbuildable.  Raise it in the cycle
+    # after the one that introduces the requirement, never in it.
+    'abnf-rust>=2.7,<3',
 ]
 # Documentation toolchain (Sphinx + MyST for Markdown prose + autodoc for the
 # API reference from docstrings).  Kept separate from `dev` so running the test

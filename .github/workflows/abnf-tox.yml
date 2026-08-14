@@ -127,3 +127,40 @@ jobs:
     - name: Run tests
       run: pytest --ignore=tests/fuzz --ignore=tests/benchmarks
 
+  # ----------------------------------------------------------------
+  # Release-dependency resolvability
+  # ----------------------------------------------------------------
+  #
+  # The release workflow resolves the runtime dependency closure to
+  # build the SBOM, and that resolution happens *before* anything is
+  # published.  So a dependency bound naming a version that is not on
+  # PyPI yet -- the one being released, say -- makes the release
+  # unbuildable, and nothing in the ordinary test matrix would notice:
+  # this is the only place the resolution is exercised outside a tag
+  # build.  Run the same command here, where it costs seconds and
+  # fails a PR instead of a release.
+
+  lockfile:
+    name: Release deps resolve
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      with:
+        persist-credentials: false
+
+    - name: Install uv
+      run: |
+        python3 -m pip install --user 'uv==0.11.8'
+        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+    - name: uv.lock agrees with pyproject.toml
+      run: uv lock --check
+
+    - name: Runtime dependency closure resolves
+      # The exact command the release workflow runs for the SBOM.
+      # Written to a real path, not /dev/null: uv writes a temp file
+      # beside the target and renames it, which /dev cannot host.
+      run: |
+        uv export --no-dev --extra rust --no-hashes --no-emit-project \
+          --format requirements-txt -o "$RUNNER_TEMP/requirements.txt"
