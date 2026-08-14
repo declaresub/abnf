@@ -19,6 +19,7 @@ use crate::errors::parse_error_to_pyerr;
 
 use crate::external::PyCallbackParser;
 use crate::iter::{lparse_iter, LparseIter};
+use crate::source::CodePoints;
 
 // ----------------------------------------------------------------
 // Repeat (config object)
@@ -89,9 +90,14 @@ impl PyAlternation {
         Ok(Self { inner: alt.into() })
     }
 
-    fn lparse(&self, py: Python<'_>, source: &str, start: usize) -> PyResult<Py<LparseIter>> {
-        let byte_start = crate::offset::cp_to_byte(source, start);
-        let result = crate::recursion::call_lparse(|| self.inner.lparse(source, byte_start))?;
+    fn lparse(
+        &self,
+        py: Python<'_>,
+        source: &Bound<'_, PyString>,
+        start: usize,
+    ) -> PyResult<Py<LparseIter>> {
+        let cps = CodePoints::new(source)?;
+        let result = crate::recursion::call_lparse(|| self.inner.lparse(cps.as_slice(), start))?;
         lparse_iter(py, result, source)
     }
 
@@ -137,9 +143,14 @@ impl PyConcatenation {
         })
     }
 
-    fn lparse(&self, py: Python<'_>, source: &str, start: usize) -> PyResult<Py<LparseIter>> {
-        let byte_start = crate::offset::cp_to_byte(source, start);
-        let result = crate::recursion::call_lparse(|| self.inner.lparse(source, byte_start))?;
+    fn lparse(
+        &self,
+        py: Python<'_>,
+        source: &Bound<'_, PyString>,
+        start: usize,
+    ) -> PyResult<Py<LparseIter>> {
+        let cps = CodePoints::new(source)?;
+        let result = crate::recursion::call_lparse(|| self.inner.lparse(cps.as_slice(), start))?;
         lparse_iter(py, result, source)
     }
 
@@ -168,9 +179,14 @@ impl PyRepetition {
         })
     }
 
-    fn lparse(&self, py: Python<'_>, source: &str, start: usize) -> PyResult<Py<LparseIter>> {
-        let byte_start = crate::offset::cp_to_byte(source, start);
-        let result = crate::recursion::call_lparse(|| self.inner.lparse(source, byte_start))?;
+    fn lparse(
+        &self,
+        py: Python<'_>,
+        source: &Bound<'_, PyString>,
+        start: usize,
+    ) -> PyResult<Py<LparseIter>> {
+        let cps = CodePoints::new(source)?;
+        let result = crate::recursion::call_lparse(|| self.inner.lparse(cps.as_slice(), start))?;
         lparse_iter(py, result, source)
     }
 
@@ -199,9 +215,14 @@ impl PyOption {
         })
     }
 
-    fn lparse(&self, py: Python<'_>, source: &str, start: usize) -> PyResult<Py<LparseIter>> {
-        let byte_start = crate::offset::cp_to_byte(source, start);
-        let result = crate::recursion::call_lparse(|| self.inner.lparse(source, byte_start))?;
+    fn lparse(
+        &self,
+        py: Python<'_>,
+        source: &Bound<'_, PyString>,
+        start: usize,
+    ) -> PyResult<Py<LparseIter>> {
+        let cps = CodePoints::new(source)?;
+        let result = crate::recursion::call_lparse(|| self.inner.lparse(cps.as_slice(), start))?;
         lparse_iter(py, result, source)
     }
 
@@ -213,37 +234,6 @@ impl PyOption {
 // ----------------------------------------------------------------
 // Literal
 // ----------------------------------------------------------------
-
-/// If `value` is a `str` — or a tuple containing one — that cannot be
-/// converted to a Rust `String`, return its `repr` for use in a
-/// diagnostic.  The only way a genuine `str` fails to convert is by
-/// containing a surrogate code point, which is well-formed in Python
-/// and unrepresentable in Rust.  Returns `None` when the value simply
-/// is not a string, which is an ordinary type error.
-///
-/// `repr` is used rather than the value itself because it renders
-/// surrogates as escapes and so is safe to interpolate.
-fn unrepresentable_str(value: &Bound<'_, PyAny>) -> Option<String> {
-    fn bad(obj: &Bound<'_, PyAny>) -> Option<String> {
-        if obj.is_instance_of::<PyString>() && obj.extract::<String>().is_err() {
-            return Some(
-                obj.repr()
-                    .map(|r| r.to_string_lossy().into_owned())
-                    .unwrap_or_else(|_| "<unrepresentable>".to_string()),
-            );
-        }
-        None
-    }
-
-    if let Some(r) = bad(value) {
-        return Some(r);
-    }
-    // Range bounds arrive as a 2-tuple, e.g. %xD800-DBFF.
-    if let Ok(items) = value.extract::<(Bound<'_, PyAny>, Bound<'_, PyAny>)>() {
-        return bad(&items.0).or_else(|| bad(&items.1));
-    }
-    None
-}
 
 #[pyclass(name = "Literal", module = "abnf_rust._ext", from_py_object)]
 #[derive(Clone, Debug)]
@@ -257,48 +247,45 @@ pub struct PyLiteral {
 impl PyLiteral {
     #[new]
     #[pyo3(signature = (value, case_sensitive=false))]
-    fn new(py: Python<'_>, value: &Bound<'_, PyAny>, case_sensitive: bool) -> PyResult<Self> {
-        if let Ok(s) = value.extract::<String>() {
-            Ok(Self {
-                inner: Literal::string(s, case_sensitive).into(),
+    fn new(value: &Bound<'_, PyAny>, case_sensitive: bool) -> PyResult<Self> {
+        // Read the literal as code points rather than as a Rust
+        // `String`: `%xD800` and friends are legal ABNF, and a `str`
+        // holding one extracts to no Rust text type (issue #173).
+        if let Ok(s) = value.cast::<PyString>() {
+            let cps = CodePoints::new(s)?;
+            return Ok(Self {
+                inner: Literal::from_code_points(cps.as_slice().to_vec(), case_sensitive).into(),
                 case_sensitive,
-            })
-        } else if let Ok((lo, hi)) = value.extract::<(String, String)>() {
-            let lo_char = lo.chars().next().ok_or_else(|| {
-                PyTypeError::new_err("Literal range bounds must be single characters")
-            })?;
-            let hi_char = hi.chars().next().ok_or_else(|| {
-                PyTypeError::new_err("Literal range bounds must be single characters")
-            })?;
-            Ok(Self {
-                inner: Literal::range(lo_char, hi_char).into(),
-                case_sensitive: true,
-            })
-        } else if let Some(offender) = unrepresentable_str(value) {
-            // A `str` that fails to extract is not a type error.  It
-            // is a string this backend cannot represent: Rust `str`
-            // is well-formed UTF-8, so a lone surrogate (`%xD800` and
-            // friends) has nowhere to go.  Saying "must be a string"
-            // about something that *is* a string sends the reader off
-            // in the wrong direction, so name the real problem.
-            let msg = format!(
-                "the Rust backend cannot represent the literal value {offender}: \
-                 Rust strings are well-formed UTF-8, so surrogate code points \
-                 (%xD800-DFFF) have no representation.  Set ABNF_NO_RUST=1 to \
-                 use the pure-Python backend, which accepts them.  \
-                 See https://github.com/declaresub/abnf/issues/173"
-            );
-            Err(crate::errors::grammar_error(py, &msg))
-        } else {
-            Err(PyTypeError::new_err(
-                "value argument must be a string or a 2-tuple of strings.",
-            ))
+            });
         }
+        if let Ok((lo, hi)) = value.extract::<(Bound<'_, PyAny>, Bound<'_, PyAny>)>() {
+            if let (Ok(lo), Ok(hi)) = (lo.cast::<PyString>(), hi.cast::<PyString>()) {
+                let lo = CodePoints::new(lo)?;
+                let hi = CodePoints::new(hi)?;
+                let (Some(lo), Some(hi)) = (lo.as_slice().first(), hi.as_slice().first()) else {
+                    return Err(PyTypeError::new_err(
+                        "Literal range bounds must be single characters",
+                    ));
+                };
+                return Ok(Self {
+                    inner: Literal::range(*lo, *hi).into(),
+                    case_sensitive: true,
+                });
+            }
+        }
+        Err(PyTypeError::new_err(
+            "value argument must be a string or a 2-tuple of strings.",
+        ))
     }
 
-    fn lparse(&self, py: Python<'_>, source: &str, start: usize) -> PyResult<Py<LparseIter>> {
-        let byte_start = crate::offset::cp_to_byte(source, start);
-        let result = crate::recursion::call_lparse(|| self.inner.lparse(source, byte_start))?;
+    fn lparse(
+        &self,
+        py: Python<'_>,
+        source: &Bound<'_, PyString>,
+        start: usize,
+    ) -> PyResult<Py<LparseIter>> {
+        let cps = CodePoints::new(source)?;
+        let result = crate::recursion::call_lparse(|| self.inner.lparse(cps.as_slice(), start))?;
         lparse_iter(py, result, source)
     }
 
@@ -314,12 +301,14 @@ impl PyLiteral {
             return Err(PyTypeError::new_err("not a Literal"));
         };
         Ok(match &lit.kind {
-            LiteralKind::String { value, .. } => {
-                let s: &str = value.as_ref();
-                s.into_pyobject(py)?.into_any().unbind()
-            }
+            LiteralKind::String { value, .. } => crate::source::from_code_points(py, value)?
+                .into_any()
+                .unbind(),
             LiteralKind::Range { lo, hi, .. } => {
-                (lo.to_string(), hi.to_string())
+                (
+                    crate::source::from_code_points(py, &[*lo])?,
+                    crate::source::from_code_points(py, &[*hi])?,
+                )
                     .into_pyobject(py)?
                     .into_any()
                     .unbind()
@@ -351,11 +340,16 @@ impl PyProse {
     /// *not* implement as a generator: it raises synchronously on
     /// call.  Mirror that here so `with pytest.raises(ParseError):
     /// Prose().lparse(...)` works as written.
-    fn lparse(&self, py: Python<'_>, source: &str, start: usize) -> PyResult<Py<LparseIter>> {
-        let byte_start = crate::offset::cp_to_byte(source, start);
-        match crate::recursion::call_lparse(|| self.inner.lparse(source, byte_start))? {
+    fn lparse(
+        &self,
+        py: Python<'_>,
+        source: &Bound<'_, PyString>,
+        start: usize,
+    ) -> PyResult<Py<LparseIter>> {
+        let cps = CodePoints::new(source)?;
+        match crate::recursion::call_lparse(|| self.inner.lparse(cps.as_slice(), start))? {
             Ok(_) => lparse_iter(py, Ok(smallvec::SmallVec::new()), source),
-            Err(err) => Err(parse_error_to_pyerr(py, err, source)),
+            Err(err) => Err(parse_error_to_pyerr(py, err)),
         }
     }
 

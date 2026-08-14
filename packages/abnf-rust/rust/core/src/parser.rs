@@ -14,6 +14,21 @@ use crate::prose::Prose;
 use crate::repetition::Repetition;
 use crate::rule::NamedRule;
 
+/// The source, as the parser sees it: a sequence of Unicode code
+/// points.
+///
+/// Not `&str`.  `abnf` parses code points -- a num-val names one, and
+/// a Python `str` is a sequence of them -- and that domain is wider
+/// than Rust's text types: `char` is a Unicode *scalar value* and
+/// `str` is well-formed UTF-8, so neither can hold a surrogate.
+/// Surrogates reach a parser in ordinary use (`surrogateescape` is
+/// how Python represents undecodable filenames and `sys.argv`), and a
+/// grammar may name them outright with `%xD800-DBFF`.  Indexing is by
+/// code point throughout, which is also the unit the Python API has
+/// always exposed for `offset` and `start` -- so no translation
+/// happens at the boundary any more (issue #173).
+pub type Src<'a> = &'a [u32];
+
 /// Inline-stored node list.  Most match boundaries between
 /// combinators carry exactly one node (a `NamedRule` wrap produces
 /// a single-node match), so inlining 1 element covers the hot path
@@ -41,7 +56,7 @@ pub type ArcParser = Arc<Parser>;
 /// `lparse(source, start) -> matches` semantics into the
 /// [`ParseResult`] shape.
 pub trait ExternalParser: std::fmt::Debug + Send + Sync + 'static {
-    fn lparse(&self, source: &str, start: usize) -> ParseResult;
+    fn lparse(&self, source: Src<'_>, start: usize) -> ParseResult;
 }
 
 /// Tagged union over every combinator type.
@@ -58,7 +73,7 @@ pub enum Parser {
 }
 
 impl Parser {
-    pub fn lparse(&self, source: &str, start: usize) -> ParseResult {
+    pub fn lparse(&self, source: Src<'_>, start: usize) -> ParseResult {
         match self {
             Parser::Alternation(p) => p.lparse(source, start),
             Parser::Concatenation(p) => p.lparse(source, start),

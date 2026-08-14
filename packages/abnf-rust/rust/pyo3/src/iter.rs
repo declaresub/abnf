@@ -11,6 +11,7 @@
 
 use pyo3::exceptions::PyStopIteration;
 use pyo3::prelude::*;
+use pyo3::types::PyString;
 use smallvec::SmallVec;
 
 use abnf_core::Match;
@@ -21,9 +22,10 @@ use crate::nodes::PyMatch;
 #[pyclass]
 pub struct LparseIter {
     matches: smallvec::IntoIter<[Match; 1]>,
-    /// Reference-counted source kept alive for the duration of
-    /// iteration so the literal-value `Arc<str>`s remain valid.
-    source: std::sync::Arc<str>,
+    /// The caller's own source string, kept alive for the duration
+    /// of iteration: each match materialises its node values by
+    /// slicing it.
+    source: Py<PyString>,
     pending_error: Option<PyErr>,
 }
 
@@ -38,7 +40,7 @@ impl LparseIter {
             return Err(err);
         }
         match self.matches.next() {
-            Some(m) => Py::new(py, PyMatch::from_rust(py, &m, &self.source)?),
+            Some(m) => Py::new(py, PyMatch::from_rust(py, &m, self.source.bind(py))?),
             None => Err(PyStopIteration::new_err(())),
         }
     }
@@ -48,17 +50,17 @@ impl LparseIter {
 pub fn lparse_iter(
     py: Python<'_>,
     result: abnf_core::ParseResult,
-    source: &str,
+    source: &Bound<'_, PyString>,
 ) -> PyResult<Py<LparseIter>> {
     let (matches, pending_error) = match result {
         Ok(ms) => (ms, None),
-        Err(e) => (SmallVec::new(), Some(parse_error_to_pyerr(py, e, source))),
+        Err(e) => (SmallVec::new(), Some(parse_error_to_pyerr(py, e))),
     };
     Py::new(
         py,
         LparseIter {
             matches: matches.into_iter(),
-            source: std::sync::Arc::from(source),
+            source: source.clone().unbind(),
             pending_error,
         },
     )

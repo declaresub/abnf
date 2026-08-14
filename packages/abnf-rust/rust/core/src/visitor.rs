@@ -6,9 +6,9 @@ use crate::alternation::Alternation;
 use crate::concatenation::Concatenation;
 use crate::error::ParseError;
 use crate::literal::Literal;
-use crate::node::{Node, NodeKind};
+use crate::node::{LiteralNode, Node, NodeKind};
 use crate::option::OptionParser;
-use crate::parser::ArcParser;
+use crate::parser::{ArcParser, Src};
 use crate::prose::Prose;
 use crate::registry::RuleRegistry;
 use crate::repetition::{Repeat, Repetition};
@@ -21,12 +21,12 @@ pub enum DefinedAs {
 }
 
 /// Walk a `rulelist` node, installing each rule into `registry`.
-pub fn visit_rulelist(node: &Node, registry: &mut RuleRegistry) -> Vec<Arc<NamedRule>> {
+pub fn visit_rulelist(node: &Node, src: Src<'_>, registry: &mut RuleRegistry) -> Vec<Arc<NamedRule>> {
     let mut result = Vec::new();
     for child in node.children.iter() {
         if let NodeKind::Internal(inner) = child {
             if inner.name.as_ref() == "rule" {
-                result.push(visit_rule(inner, registry));
+                result.push(visit_rule(inner, src, registry));
             }
         }
     }
@@ -34,7 +34,7 @@ pub fn visit_rulelist(node: &Node, registry: &mut RuleRegistry) -> Vec<Arc<Named
 }
 
 /// Walk a `rule` node, install its definition, and return the handle.
-pub fn visit_rule(node: &Node, registry: &mut RuleRegistry) -> Arc<NamedRule> {
+pub fn visit_rule(node: &Node, src: Src<'_>, registry: &mut RuleRegistry) -> Arc<NamedRule> {
     let mut name: Option<Arc<str>> = None;
     let mut defined_as: DefinedAs = DefinedAs::Define;
     let mut elements_parser: Option<ArcParser> = None;
@@ -42,9 +42,9 @@ pub fn visit_rule(node: &Node, registry: &mut RuleRegistry) -> Arc<NamedRule> {
     for child in node.children.iter() {
         let NodeKind::Internal(inner) = child else { continue };
         match inner.name.as_ref() {
-            "rulename" => name = Some(rulename_text(inner)),
-            "defined-as" => defined_as = visit_defined_as(inner),
-            "elements" => elements_parser = Some(visit_elements(inner, registry)),
+            "rulename" => name = Some(rulename_text(inner, src)),
+            "defined-as" => defined_as = visit_defined_as(inner, src),
+            "elements" => elements_parser = Some(visit_elements(inner, src, registry)),
             _ => {}
         }
     }
@@ -65,8 +65,8 @@ pub fn visit_rule(node: &Node, registry: &mut RuleRegistry) -> Arc<NamedRule> {
     registry.define(name.as_ref(), final_def)
 }
 
-fn visit_defined_as(node: &Node) -> DefinedAs {
-    let trimmed = node.value();
+fn visit_defined_as(node: &Node, src: Src<'_>) -> DefinedAs {
+    let trimmed = node.value(src);
     let trimmed = trimmed.trim();
     if trimmed == "=/" {
         DefinedAs::Extend
@@ -75,22 +75,22 @@ fn visit_defined_as(node: &Node) -> DefinedAs {
     }
 }
 
-fn visit_elements(node: &Node, registry: &mut RuleRegistry) -> ArcParser {
+fn visit_elements(node: &Node, src: Src<'_>, registry: &mut RuleRegistry) -> ArcParser {
     for child in node.children.iter() {
         let NodeKind::Internal(inner) = child else { continue };
         if inner.name.as_ref() == "alternation" {
-            return visit_alternation(inner, registry);
+            return visit_alternation(inner, src, registry);
         }
     }
     panic!("visit_elements: alternation child missing")
 }
 
-fn visit_alternation(node: &Node, registry: &mut RuleRegistry) -> ArcParser {
+fn visit_alternation(node: &Node, src: Src<'_>, registry: &mut RuleRegistry) -> ArcParser {
     let mut parts: Vec<ArcParser> = Vec::new();
     for child in node.children.iter() {
         let NodeKind::Internal(inner) = child else { continue };
         if inner.name.as_ref() == "concatenation" {
-            parts.push(visit_concatenation(inner, registry));
+            parts.push(visit_concatenation(inner, src, registry));
         }
     }
     if parts.len() == 1 {
@@ -100,12 +100,12 @@ fn visit_alternation(node: &Node, registry: &mut RuleRegistry) -> ArcParser {
     }
 }
 
-fn visit_concatenation(node: &Node, registry: &mut RuleRegistry) -> ArcParser {
+fn visit_concatenation(node: &Node, src: Src<'_>, registry: &mut RuleRegistry) -> ArcParser {
     let mut parts: Vec<ArcParser> = Vec::new();
     for child in node.children.iter() {
         let NodeKind::Internal(inner) = child else { continue };
         if inner.name.as_ref() == "repetition" {
-            parts.push(visit_repetition(inner, registry));
+            parts.push(visit_repetition(inner, src, registry));
         }
     }
     if parts.len() == 1 {
@@ -115,14 +115,14 @@ fn visit_concatenation(node: &Node, registry: &mut RuleRegistry) -> ArcParser {
     }
 }
 
-fn visit_repetition(node: &Node, registry: &mut RuleRegistry) -> ArcParser {
+fn visit_repetition(node: &Node, src: Src<'_>, registry: &mut RuleRegistry) -> ArcParser {
     let mut repeat: Option<Repeat> = None;
     let mut element: Option<ArcParser> = None;
     for child in node.children.iter() {
         let NodeKind::Internal(inner) = child else { continue };
         match inner.name.as_ref() {
-            "repeat" => repeat = Some(visit_repeat(inner)),
-            "element" => element = Some(visit_element(inner, registry)),
+            "repeat" => repeat = Some(visit_repeat(inner, src)),
+            "element" => element = Some(visit_element(inner, src, registry)),
             _ => {}
         }
     }
@@ -133,7 +133,7 @@ fn visit_repetition(node: &Node, registry: &mut RuleRegistry) -> ArcParser {
     }
 }
 
-fn visit_repeat(node: &Node) -> Repeat {
+fn visit_repeat(node: &Node, src: Src<'_>) -> Repeat {
     let mut min_src = String::new();
     let mut saw_star = false;
     let mut max_src = String::new();
@@ -142,14 +142,14 @@ fn visit_repeat(node: &Node) -> Repeat {
             NodeKind::Internal(inner) => {
                 if inner.name.as_ref() == "DIGIT" {
                     if saw_star {
-                        max_src.push_str(&inner.value());
+                        max_src.push_str(&inner.value(src));
                     } else {
-                        min_src.push_str(&inner.value());
+                        min_src.push_str(&inner.value(src));
                     }
                 }
             }
             NodeKind::Literal(lit) => {
-                if lit.value.as_ref() == "*" {
+                if lit_is(lit, src, '*') {
                     saw_star = true;
                 }
             }
@@ -172,49 +172,49 @@ fn visit_repeat(node: &Node) -> Repeat {
     }
 }
 
-fn visit_element(node: &Node, registry: &mut RuleRegistry) -> ArcParser {
+fn visit_element(node: &Node, src: Src<'_>, registry: &mut RuleRegistry) -> ArcParser {
     for child in node.children.iter() {
         let NodeKind::Internal(inner) = child else { continue };
         return match inner.name.as_ref() {
-            "rulename" => visit_rulename(inner, registry),
-            "group" => visit_group(inner, registry),
-            "option" => visit_option(inner, registry),
-            "char-val" => visit_char_val(inner),
-            "num-val" => visit_num_val(inner),
-            "prose-val" => visit_prose_val(inner, registry),
+            "rulename" => visit_rulename(inner, src, registry),
+            "group" => visit_group(inner, src, registry),
+            "option" => visit_option(inner, src, registry),
+            "char-val" => visit_char_val(inner, src),
+            "num-val" => visit_num_val(inner, src),
+            "prose-val" => visit_prose_val(inner, src, registry),
             other => panic!("visit_element: unexpected child '{other}'"),
         };
     }
     panic!("visit_element: empty children")
 }
 
-fn visit_rulename(node: &Node, registry: &mut RuleRegistry) -> ArcParser {
-    registry.get_or_create(rulename_text(node).as_ref())
+fn visit_rulename(node: &Node, src: Src<'_>, registry: &mut RuleRegistry) -> ArcParser {
+    registry.get_or_create(rulename_text(node, src).as_ref())
 }
 
-fn visit_group(node: &Node, registry: &mut RuleRegistry) -> ArcParser {
+fn visit_group(node: &Node, src: Src<'_>, registry: &mut RuleRegistry) -> ArcParser {
     for child in node.children.iter() {
         let NodeKind::Internal(inner) = child else { continue };
         if inner.name.as_ref() == "alternation" {
-            return visit_alternation(inner, registry);
+            return visit_alternation(inner, src, registry);
         }
     }
     panic!("visit_group: alternation child missing")
 }
 
-fn visit_option(node: &Node, registry: &mut RuleRegistry) -> ArcParser {
+fn visit_option(node: &Node, src: Src<'_>, registry: &mut RuleRegistry) -> ArcParser {
     for child in node.children.iter() {
         let NodeKind::Internal(inner) = child else { continue };
         if inner.name.as_ref() == "alternation" {
-            let alt = visit_alternation(inner, registry);
+            let alt = visit_alternation(inner, src, registry);
             return OptionParser::new(alt).into();
         }
     }
     panic!("visit_option: alternation child missing")
 }
 
-fn visit_prose_val(node: &Node, registry: &mut RuleRegistry) -> ArcParser {
-    let raw = node.value();
+fn visit_prose_val(node: &Node, src: Src<'_>, registry: &mut RuleRegistry) -> ArcParser {
+    let raw = node.value(src);
     let inner = if raw.starts_with('<') && raw.ends_with('>') {
         &raw[1..raw.len() - 1]
     } else {
@@ -237,16 +237,16 @@ fn looks_like_rulename(s: &str) -> bool {
 
 // ---------- char-val (RFC 7405) ----------
 
-fn visit_char_val(node: &Node) -> ArcParser {
+fn visit_char_val(node: &Node, src: Src<'_>) -> ArcParser {
     for child in node.children.iter() {
         let NodeKind::Internal(inner) = child else { continue };
         return match inner.name.as_ref() {
             "case-insensitive-string" => {
-                let s = quoted_string_value(inner);
+                let s = quoted_string_value(inner, src);
                 Literal::string(s, false).into()
             }
             "case-sensitive-string" => {
-                let s = quoted_string_value(inner);
+                let s = quoted_string_value(inner, src);
                 Literal::string(s, true).into()
             }
             other => panic!("visit_char_val: unexpected child '{other}'"),
@@ -255,11 +255,11 @@ fn visit_char_val(node: &Node) -> ArcParser {
     panic!("visit_char_val: empty children")
 }
 
-fn quoted_string_value(node: &Node) -> String {
+fn quoted_string_value(node: &Node, src: Src<'_>) -> String {
     for child in node.children.iter() {
         let NodeKind::Internal(inner) = child else { continue };
         if inner.name.as_ref() == "quoted-string" {
-            let raw = inner.value();
+            let raw = inner.value(src);
             if raw.len() >= 2 && raw.starts_with('"') && raw.ends_with('"') {
                 return raw[1..raw.len() - 1].to_string();
             }
@@ -271,20 +271,20 @@ fn quoted_string_value(node: &Node) -> String {
 
 // ---------- num-val ----------
 
-fn visit_num_val(node: &Node) -> ArcParser {
+fn visit_num_val(node: &Node, src: Src<'_>) -> ArcParser {
     for child in node.children.iter() {
         let NodeKind::Internal(inner) = child else { continue };
         return match inner.name.as_ref() {
-            "bin-val" => parse_num_val(inner, "BIT", 2),
-            "dec-val" => parse_num_val(inner, "DIGIT", 10),
-            "hex-val" => parse_num_val(inner, "HEXDIG", 16),
+            "bin-val" => parse_num_val(inner, src, "BIT", 2),
+            "dec-val" => parse_num_val(inner, src, "DIGIT", 10),
+            "hex-val" => parse_num_val(inner, src, "HEXDIG", 16),
             other => panic!("visit_num_val: unexpected child '{other}'"),
         };
     }
     panic!("visit_num_val: empty children")
 }
 
-fn parse_num_val(node: &Node, digit_node_name: &str, base: u32) -> ArcParser {
+fn parse_num_val(node: &Node, src: Src<'_>, digit_node_name: &str, base: u32) -> ArcParser {
     let mut iter = node.children.iter();
     iter.next();
 
@@ -297,43 +297,45 @@ fn parse_num_val(node: &Node, digit_node_name: &str, base: u32) -> ArcParser {
     for child in iter {
         match child {
             NodeKind::Internal(inner) if inner.name.as_ref() == digit_node_name => {
-                current_buffer.push_str(&inner.value());
+                current_buffer.push_str(&inner.value(src));
             }
-            NodeKind::Literal(lit) => match lit.value.as_ref() {
-                "." => {
-                    groups.push(std::mem::take(current_buffer));
-                }
-                "-" => {
-                    range_op = true;
-                    current_buffer = &mut second_buffer;
-                }
-                _ => {}
-            },
+            NodeKind::Literal(lit) if lit_is(lit, src, '.') => {
+                groups.push(std::mem::take(current_buffer));
+            }
+            NodeKind::Literal(lit) if lit_is(lit, src, '-') => {
+                range_op = true;
+                current_buffer = &mut second_buffer;
+            }
             _ => {}
         }
     }
     if range_op {
-        let first_char = decode_codepoint(&buffer, base);
-        let last_char = decode_codepoint(&second_buffer, base);
-        return Literal::range(first_char, last_char).into();
+        let lo = decode_codepoint(&buffer, base);
+        let hi = decode_codepoint(&second_buffer, base);
+        return Literal::range(lo, hi).into();
     }
     if !buffer.is_empty() {
         groups.push(buffer);
     }
-    let value: String = groups
-        .iter()
-        .map(|s| decode_codepoint(s, base))
-        .collect();
-    Literal::string(value, true).into()
+    let value: Vec<u32> = groups.iter().map(|s| decode_codepoint(s, base)).collect();
+    Literal::from_code_points(value, true).into()
 }
 
-fn decode_codepoint(digits: &str, base: u32) -> char {
-    let n = u32::from_str_radix(digits, base).expect("invalid num-val digits");
-    char::from_u32(n).expect("num-val out of Unicode range")
+/// Whether `lit` matched exactly the ASCII character `ch`.
+fn lit_is(lit: &LiteralNode, src: Src<'_>, ch: char) -> bool {
+    lit.span(src) == [u32::from(ch)]
 }
 
-fn rulename_text(node: &Node) -> Arc<str> {
-    Arc::from(node.value())
+/// A num-val names a code point, which is not necessarily a Unicode
+/// scalar value: `%xD800-DBFF` is a legal ABNF range naming
+/// surrogates.  Returning `u32` rather than `char` is what lets the
+/// engine represent it (issue #173).
+fn decode_codepoint(digits: &str, base: u32) -> u32 {
+    u32::from_str_radix(digits, base).expect("invalid num-val digits")
+}
+
+fn rulename_text(node: &Node, src: Src<'_>) -> Arc<str> {
+    Arc::from(node.value(src))
 }
 
 // ---------- end-to-end entry points ----------
@@ -342,14 +344,19 @@ pub fn parse_rule_source(
     source: &str,
     registry: &mut RuleRegistry,
 ) -> Result<Arc<NamedRule>, ParseError> {
-    let mut src = source.to_string();
-    if !src.ends_with("\r\n") {
-        src.push_str("\r\n");
+    // Grammar text is text: it is ABNF, which is ASCII, and it
+    // arrives as a `str`.  Only the *parsed* source needs the wider
+    // code-point domain, so the conversion happens once here.
+    let mut owned = source.to_string();
+    if !owned.ends_with("\r\n") {
+        owned.push_str("\r\n");
     }
+    let src: Vec<u32> = owned.chars().map(u32::from).collect();
+    let src = src.as_slice();
     let rule_rule = registry
         .get("rule")
         .expect("meta-grammar not installed: 'rule' missing");
-    let matches = rule_rule.lparse(&src, 0)?;
+    let matches = rule_rule.lparse(src, 0)?;
     let mut best = matches;
     best.sort_by_key(|m| std::cmp::Reverse(m.start));
     let top = best
@@ -360,18 +367,19 @@ pub fn parse_rule_source(
         Some(NodeKind::Internal(n)) => n,
         _ => return Err(ParseError::new("parse_rule_source: unexpected match shape", 0)),
     };
-    Ok(visit_rule(&parse_tree, registry))
+    Ok(visit_rule(&parse_tree, src, registry))
 }
 
 pub fn parse_rulelist_source(
     source: &str,
     registry: &mut RuleRegistry,
 ) -> Result<Vec<Arc<NamedRule>>, ParseError> {
-    let normalised = normalise_crlf(source);
+    let normalised: Vec<u32> = normalise_crlf(source).chars().map(u32::from).collect();
+    let normalised = normalised.as_slice();
     let rulelist_rule = registry
         .get("rulelist")
         .expect("meta-grammar not installed: 'rulelist' missing");
-    let matches = rulelist_rule.lparse(&normalised, 0)?;
+    let matches = rulelist_rule.lparse(normalised, 0)?;
     let mut best = matches;
     best.sort_by_key(|m| std::cmp::Reverse(m.start));
     let top = best
@@ -393,7 +401,7 @@ pub fn parse_rulelist_source(
             ));
         }
     };
-    Ok(visit_rulelist(&parse_tree, registry))
+    Ok(visit_rulelist(&parse_tree, normalised, registry))
 }
 
 fn normalise_crlf(src: &str) -> String {

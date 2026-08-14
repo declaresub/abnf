@@ -2,7 +2,7 @@
 //!
 //! Two different questions, deliberately kept apart:
 //!
-//! * [`ascii_fold`] folds literals, over US-ASCII only.  RFC 5234 §2.3
+//! * [`ascii_fold_cp`] folds literals, over US-ASCII only.  RFC 5234 §2.3
 //!   makes literals case-insensitive and says their character set is
 //!   US-ASCII, so nothing outside ASCII takes part.  It is also
 //!   length-preserving, which full folding is not.
@@ -12,11 +12,17 @@
 
 use caseless::Caseless;
 
-/// Fold `s` over US-ASCII only: `A-Z` map to `a-z`, everything else is
-/// left exactly as it is.  Length-preserving, so a folded candidate has
-/// the same length as the source region it came from.
-pub fn ascii_fold(s: &str) -> String {
-    s.to_ascii_lowercase()
+/// Fold one code point over US-ASCII only: `A-Z` map to `a-z`,
+/// everything else is left exactly as it is -- including surrogates,
+/// which are ordinary values here.  Length-preserving by construction,
+/// since it maps one code point to one code point.
+#[inline]
+pub fn ascii_fold_cp(cp: u32) -> u32 {
+    if cp.wrapping_sub(u32::from(b'A')) < 26 {
+        cp + 32
+    } else {
+        cp
+    }
 }
 
 /// Returns `s.casefold()` as a new `String`.  ASCII-only input takes a

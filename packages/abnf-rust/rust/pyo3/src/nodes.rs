@@ -1,10 +1,15 @@
 //! Python wrappers for `Node`, `LiteralNode`, `Match`.
 //!
 //! Mirrors the public attribute surface of the same-named Python
-//! classes in `abnf._parser_python`.  Offsets and lengths are
-//! translated from byte units to code-point units at the boundary so
-//! Python users see `offset`/`length` consistent with the pure-Python
-//! implementation.
+//! classes in `abnf._parser_python`.  Offsets and lengths need no
+//! translation: the engine indexes by code point, which is what a
+//! Python `str` index already is.
+//!
+//! Values are Python `str` objects sliced out of the caller's own
+//! source rather than Rust strings built up during the walk.  A node
+//! covers a contiguous span of the source, so one slice per node
+//! reproduces exactly what concatenating its children would -- and it
+//! is the only representation that survives a lone surrogate.
 //!
 //! Each pyclass caches its concatenated `value` string at
 //! construction time.  Computing the value eagerly in Rust during the
@@ -17,31 +22,49 @@ use std::sync::Arc;
 
 use pyo3::class::basic::CompareOp;
 use pyo3::prelude::*;
+use pyo3::types::PyString;
 use pyo3::types::PyList;
 
 use abnf_core::{LiteralNode, Match, Node, NodeKind};
 
-use crate::offset::{byte_to_cp, cp_to_byte};
+use crate::source::substring;
 
 // ----------------------------------------------------------------
 // LiteralNode
 // ----------------------------------------------------------------
 
 #[pyclass(name = "LiteralNode", module = "abnf_rust._ext", from_py_object)]
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct PyLiteralNode {
+    /// The matched text, as a Python `str` sliced out of the source.
+    /// Not a Rust `String`: a match may cover a lone surrogate, which
+    /// no Rust text type can hold (issue #173).
     #[pyo3(get)]
-    pub value: String,
+    pub value: Py<PyString>,
     #[pyo3(get)]
     pub offset: usize,
     #[pyo3(get)]
     pub length: usize,
 }
 
+impl Clone for PyLiteralNode {
+    /// `Py<PyString>` is refcounted, so cloning needs the GIL; pyo3
+    /// only derives `Clone` for it under the `py-clone` feature, which
+    /// panics if the token is unavailable.  Attaching explicitly is
+    /// the supported way to say "I have a thread state here".
+    fn clone(&self) -> Self {
+        Python::attach(|py| Self {
+            value: self.value.clone_ref(py),
+            offset: self.offset,
+            length: self.length,
+        })
+    }
+}
+
 #[pymethods]
 impl PyLiteralNode {
     #[new]
-    fn new(value: String, offset: usize, length: usize) -> Self {
+    fn new(value: Py<PyString>, offset: usize, length: usize) -> Self {
         Self { value, offset, length }
     }
 
@@ -56,46 +79,42 @@ impl PyLiteralNode {
         PyList::empty(py)
     }
 
-    fn __repr__(&self) -> String {
-        format!(
-            "LiteralNode(value={:?}, offset={}, length={})",
-            self.value, self.offset, self.length
-        )
+    fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
+        Ok(format!(
+            "LiteralNode(value={}, offset={}, length={})",
+            self.value.bind(py).repr()?,
+            self.offset,
+            self.length
+        ))
     }
 
-    fn __eq__(&self, other: &Self) -> bool {
-        self.value == other.value
-            && self.offset == other.offset
+    fn __eq__(&self, py: Python<'_>, other: &Self) -> PyResult<bool> {
+        Ok(self.offset == other.offset
             && self.length == other.length
+            && self.value.bind(py).as_any().eq(other.value.bind(py).as_any())?)
     }
 
-    fn __hash__(&self) -> u64 {
-        use std::collections::hash_map::DefaultHasher;
-        use std::hash::{Hash, Hasher};
-        let mut h = DefaultHasher::new();
-        self.value.hash(&mut h);
-        self.offset.hash(&mut h);
-        self.length.hash(&mut h);
-        h.finish()
+    fn __hash__(&self, py: Python<'_>) -> PyResult<isize> {
+        // Hash on the same fields `__eq__` compares, and let Python
+        // hash the text so the two agree for every string it can hold.
+        let mut h = self.value.bind(py).as_any().hash()?;
+        h = h.wrapping_mul(1_000_003).wrapping_add(self.offset as isize);
+        h = h.wrapping_mul(1_000_003).wrapping_add(self.length as isize);
+        Ok(h)
     }
 }
 
 impl PyLiteralNode {
-    pub fn from_rust(ln: &LiteralNode, source: &str) -> Self {
-        // Convert byte offsets to code-point offsets to match Python
-        // semantics.  ASCII-only source skips the count entirely.
-        let (cp_offset, cp_length) = if source.is_ascii() {
-            (ln.offset, ln.length)
-        } else {
-            let before = &source[..ln.offset];
-            let matched = &source[ln.offset..ln.offset + ln.length];
-            (before.chars().count(), matched.chars().count())
-        };
-        Self {
-            value: ln.value.as_ref().to_string(),
-            offset: cp_offset,
-            length: cp_length,
-        }
+    /// Offsets need no translation: the engine indexes by code point,
+    /// which is what Python `str` indices already are.  The value is
+    /// the corresponding slice of the caller's own string.
+    pub fn from_rust(ln: &LiteralNode, source: &Bound<'_, PyString>) -> PyResult<Self> {
+        let value = substring(source, ln.offset, ln.offset + ln.length)?;
+        Ok(Self {
+            value: value.unbind(),
+            offset: ln.offset,
+            length: ln.length,
+        })
     }
 }
 
@@ -111,8 +130,12 @@ pub struct PyNode {
     /// Concatenated value of all descendant literals, computed once
     /// at construction time.  See module docstring for why this
     /// matters for performance.
+    ///
+    /// A node's value is always a contiguous span of the source, so
+    /// this is one slice of the caller's `str` rather than a rebuilt
+    /// string -- which is also what lets it hold surrogates.
     #[pyo3(get)]
-    pub value: String,
+    pub value: Py<PyString>,
     children: Vec<Py<PyAny>>,
 }
 
@@ -122,13 +145,14 @@ impl PyNode {
     #[pyo3(signature = (name, *children))]
     fn new(py: Python<'_>, name: String, children: Vec<Py<PyAny>>) -> PyResult<Self> {
         // When constructed from Python (e.g. by the
-        // `_parser_python.py` visitor wrapping a match's nodes), we
-        // do still need to materialise the value — fall back to the
-        // recursive Python walk in this rare path.
-        let mut value = String::new();
+        // `_parser_python.py` visitor wrapping a match's nodes), there
+        // is no source object to slice, so concatenate the children's
+        // values the way Python's own `Node.value` does.  Rare path.
+        let value = PyString::new(py, "");
+        let mut value = value.unbind();
         for child in &children {
-            let v: String = child.bind(py).getattr("value")?.extract()?;
-            value.push_str(&v);
+            let v = child.bind(py).getattr("value")?;
+            value = value.bind(py).as_any().add(v)?.cast_into::<PyString>()?.unbind();
         }
         Ok(Self { name, value, children })
     }
@@ -142,8 +166,9 @@ impl PyNode {
         format!("Node({:?}, ...)", self.name)
     }
 
-    fn __richcmp__(&self, other: &Self, op: CompareOp) -> PyResult<bool> {
-        let eq = self.name == other.name && self.value == other.value;
+    fn __richcmp__(&self, py: Python<'_>, other: &Self, op: CompareOp) -> PyResult<bool> {
+        let eq = self.name == other.name
+            && self.value.bind(py).as_any().eq(other.value.bind(py).as_any())?;
         Ok(match op {
             CompareOp::Eq => eq,
             CompareOp::Ne => !eq,
@@ -155,45 +180,60 @@ impl PyNode {
 }
 
 impl PyNode {
-    /// Build a `PyNode` from a Rust `Node`, computing the cached
-    /// value while walking the children.  Sole call site for the
+    /// Build a `PyNode` from a Rust `Node`.  Sole call site for the
     /// hot conversion path.
-    pub fn from_rust(py: Python<'_>, n: &Node, source: &str) -> PyResult<Self> {
+    ///
+    /// The value is one slice of `source` covering the node's span,
+    /// rather than a concatenation of the children's values: a node
+    /// covers a contiguous run of the source, so the two are the same
+    /// text.
+    pub fn from_rust(py: Python<'_>, n: &Node, source: &Bound<'_, PyString>) -> PyResult<Self> {
         let mut children: Vec<Py<PyAny>> = Vec::with_capacity(n.children.len());
-        let mut value = String::new();
         for child in n.children.iter() {
-            let (py_child, child_value) = node_kind_to_py_with_value(py, child, source)?;
-            value.push_str(&child_value);
-            children.push(py_child);
+            children.push(node_kind_to_py(py, child, source)?);
         }
+        let value = span_value(py, n.children.iter(), source)?;
         Ok(Self {
             name: n.name.as_ref().to_string(),
-            value,
+            value: value.unbind(),
             children,
         })
     }
 }
 
-/// Convert a `NodeKind` to a Python object, also returning the
-/// node's concatenated value (cheaply computed during the walk).
-fn node_kind_to_py_with_value(
+/// The text spanned by `nodes`: from the first descendant literal to
+/// the last.  Empty when they cover no literal at all (e.g. an
+/// `Option` that matched nothing).
+fn span_value<'a, 'py, I>(
+    py: Python<'py>,
+    nodes: I,
+    source: &Bound<'py, PyString>,
+) -> PyResult<Bound<'py, PyString>>
+where
+    I: IntoIterator<Item = &'a NodeKind>,
+{
+    let bounds = nodes.into_iter().fold(None, |acc, n| {
+        match (acc, n.span_bounds()) {
+            (None, s) => s,
+            (s, None) => s,
+            (Some((a0, a1)), Some((b0, b1))) => Some((a0.min(b0), a1.max(b1))),
+        }
+    });
+    match bounds {
+        Some((start, end)) => substring(source, start, end),
+        None => Ok(PyString::new(py, "")),
+    }
+}
+
+/// Convert a `NodeKind` to a Python object.
+fn node_kind_to_py(
     py: Python<'_>,
     kind: &NodeKind,
-    source: &str,
-) -> PyResult<(Py<PyAny>, String)> {
+    source: &Bound<'_, PyString>,
+) -> PyResult<Py<PyAny>> {
     Ok(match kind {
-        NodeKind::Internal(n) => {
-            let py_node = PyNode::from_rust(py, n, source)?;
-            let value = py_node.value.clone();
-            let obj = Py::new(py, py_node)?.into_any();
-            (obj, value)
-        }
-        NodeKind::Literal(l) => {
-            let py_lit = PyLiteralNode::from_rust(l, source);
-            let value = py_lit.value.clone();
-            let obj = Py::new(py, py_lit)?.into_any();
-            (obj, value)
-        }
+        NodeKind::Internal(n) => Py::new(py, PyNode::from_rust(py, n, source)?)?.into_any(),
+        NodeKind::Literal(l) => Py::new(py, PyLiteralNode::from_rust(l, source)?)?.into_any(),
     })
 }
 
@@ -207,28 +247,33 @@ fn node_kind_to_py_with_value(
 pub struct PyMatch {
     /// Match nodes as Python objects.
     pub nodes: Vec<Py<PyAny>>,
-    /// Match end position as a **code-point** offset (Python `str`
-    /// index semantics).  `PyMatch::from_rust` translates from the
-    /// byte offset used by the Rust core; `PyMatch::new` accepts the
-    /// code-point offset directly because Python callers always pass
-    /// code-point indices.
+    /// Match end position, a code-point offset (Python `str` index
+    /// semantics).  No translation happens any more: the engine
+    /// indexes by code point too.
     #[pyo3(get)]
     pub start: usize,
     /// Cached concatenated value across all nodes, populated at
     /// construction time so `__hash__` (called per insert into
     /// `set(...)` dedup) is O(1) instead of walking the entire
     /// parse tree on every call.
-    cached_value: String,
+    cached_value: Py<PyString>,
 }
 
 #[pymethods]
 impl PyMatch {
     #[new]
     fn new(py: Python<'_>, nodes: Vec<Py<PyAny>>, start: usize) -> PyResult<Self> {
-        let mut cached_value = String::new();
+        // Constructed from Python, so there is no source to slice:
+        // concatenate the nodes' values as Python does.
+        let mut cached_value = PyString::new(py, "").unbind();
         for node in &nodes {
-            let v: String = node.bind(py).getattr("value")?.extract()?;
-            cached_value.push_str(&v);
+            let v = node.bind(py).getattr("value")?;
+            cached_value = cached_value
+                .bind(py)
+                .as_any()
+                .add(v)?
+                .cast_into::<PyString>()?
+                .unbind();
         }
         Ok(Self { nodes, start, cached_value })
     }
@@ -238,83 +283,68 @@ impl PyMatch {
         PyList::new(py, &self.nodes)
     }
 
-    fn __hash__(&self) -> u64 {
-        use std::collections::hash_map::DefaultHasher;
-        use std::hash::{Hash, Hasher};
-        let mut h = DefaultHasher::new();
-        self.cached_value.hash(&mut h);
-        self.start.hash(&mut h);
-        h.finish()
+    fn __hash__(&self, py: Python<'_>) -> PyResult<isize> {
+        let h = self.cached_value.bind(py).as_any().hash()?;
+        Ok(h.wrapping_mul(1_000_003).wrapping_add(self.start as isize))
     }
 
-    fn __eq__(&self, other: &Self) -> bool {
-        self.start == other.start && self.cached_value == other.cached_value
+    fn __eq__(&self, py: Python<'_>, other: &Self) -> PyResult<bool> {
+        Ok(self.start == other.start
+            && self.cached_value.bind(py).as_any().eq(other.cached_value.bind(py).as_any())?)
     }
 
-    fn __str__(&self) -> String {
-        format!("Match(value={}, start={})", self.cached_value, self.start)
+    fn __str__(&self, py: Python<'_>) -> String {
+        format!("Match(value={}, start={})", self.cached_value.bind(py), self.start)
     }
 }
 
 impl PyMatch {
-    pub fn from_rust(py: Python<'_>, m: &Match, source: &str) -> PyResult<Self> {
+    pub fn from_rust(py: Python<'_>, m: &Match, source: &Bound<'_, PyString>) -> PyResult<Self> {
         let mut nodes = Vec::with_capacity(m.nodes.len());
-        let mut cached_value = String::new();
         for nk in &m.nodes {
-            let (obj, v) = node_kind_to_py_with_value(py, nk, source)?;
-            cached_value.push_str(&v);
-            nodes.push(obj);
+            nodes.push(node_kind_to_py(py, nk, source)?);
         }
-        // Translate the byte offset returned by the core into a
-        // code-point offset so it lines up with Python `str` indices.
-        let start = byte_to_cp(source, m.start);
-        Ok(Self { nodes, start, cached_value })
+        let cached_value = span_value(py, m.nodes.iter(), source)?;
+        Ok(Self {
+            nodes,
+            start: m.start,
+            cached_value: cached_value.unbind(),
+        })
     }
 }
 
 /// Convert a Python `Match`-like object back into a Rust `Match`.
 ///
-/// The Python `Match.start` is a code-point offset (per Python `str`
-/// semantics); the Rust core expects a byte offset.  `source` is the
-/// original UTF-8 string the parse is running against and is used to
-/// translate.
-pub fn py_match_to_rust(py_match: &Bound<'_, PyAny>, source: &str) -> PyResult<Match> {
+/// Both sides count in code points now, so offsets pass straight
+/// through.
+pub fn py_match_to_rust(py_match: &Bound<'_, PyAny>) -> PyResult<Match> {
     use abnf_core::NodeList;
     use smallvec::SmallVec;
-    let cp_start: usize = py_match.getattr("start")?.extract()?;
-    let start = cp_to_byte(source, cp_start);
+    let start: usize = py_match.getattr("start")?.extract()?;
     let nodes_py = py_match.getattr("nodes")?;
     let mut nodes: NodeList = SmallVec::new();
     for item in nodes_py.try_iter()? {
         let item = item?;
-        nodes.push(py_to_node_kind(&item, source)?);
+        nodes.push(py_to_node_kind(&item)?);
     }
     Ok(Match::new(nodes, start))
 }
 
-fn py_to_node_kind(obj: &Bound<'_, PyAny>, source: &str) -> PyResult<NodeKind> {
+fn py_to_node_kind(obj: &Bound<'_, PyAny>) -> PyResult<NodeKind> {
     // Distinguish terminal vs internal by Python type, not by the
     // `name` attribute: ABNF rule names like `literal` in RFC 9051
     // collide with the conventional `"literal"` node-name terminal
     // nodes use, so a string-based check would misclassify rule
     // wrappers as terminals.
     //
-    // Terminal `offset`/`length` are code-point units on the Python
-    // side and byte units on the Rust side; translate via `source`.
+    // A terminal contributes only its span; the text itself is read
+    // back out of the source when the tree is rebuilt for Python.
     if let Ok(lit) = obj.cast::<PyLiteralNode>() {
         let lit = lit.borrow();
-        let arc: Arc<str> = Arc::from(lit.value.as_str());
-        let byte_offset = cp_to_byte(source, lit.offset);
-        let byte_length = cp_to_byte(source, lit.offset + lit.length) - byte_offset;
-        return Ok(NodeKind::Literal(LiteralNode::new(arc, byte_offset, byte_length)));
+        return Ok(NodeKind::Literal(LiteralNode::new(lit.offset, lit.length)));
     }
-    if let (Ok(value_obj), Ok(offset_obj), Ok(length_obj)) = (
-        obj.getattr("value"),
-        obj.getattr("offset"),
-        obj.getattr("length"),
-    ) {
-        if let (Ok(value), Ok(cp_offset), Ok(cp_length)) = (
-            value_obj.extract::<String>(),
+    if let (Ok(offset_obj), Ok(length_obj)) = (obj.getattr("offset"), obj.getattr("length")) {
+        if let (Ok(offset), Ok(length)) = (
             offset_obj.extract::<usize>(),
             length_obj.extract::<usize>(),
         ) {
@@ -323,10 +353,7 @@ fn py_to_node_kind(obj: &Bound<'_, PyAny>, source: &str) -> PyResult<NodeKind> {
                 .and_then(|n| n.extract())
                 .unwrap_or_else(|_| "literal".to_string());
             if name == "literal" {
-                let arc: Arc<str> = Arc::from(value);
-                let byte_offset = cp_to_byte(source, cp_offset);
-                let byte_length = cp_to_byte(source, cp_offset + cp_length) - byte_offset;
-                return Ok(NodeKind::Literal(LiteralNode::new(arc, byte_offset, byte_length)));
+                return Ok(NodeKind::Literal(LiteralNode::new(offset, length)));
             }
         }
     }
@@ -335,7 +362,7 @@ fn py_to_node_kind(obj: &Bound<'_, PyAny>, source: &str) -> PyResult<NodeKind> {
     let mut children: Vec<NodeKind> = Vec::new();
     for item in children_py.try_iter()? {
         let item = item?;
-        children.push(py_to_node_kind(&item, source)?);
+        children.push(py_to_node_kind(&item)?);
     }
     Ok(NodeKind::Internal(Node::new(Arc::from(name), children)))
 }

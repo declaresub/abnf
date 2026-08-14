@@ -12,7 +12,7 @@ use crate::cache::{CachedResult, ParseCache};
 use crate::concatenation::{sort_by_longest, Concatenation};
 use crate::error::ParseError;
 use crate::matcher::Match;
-use crate::parser::{ArcParser, MatchList, NodeList, ParseResult};
+use crate::parser::{ArcParser, MatchList, NodeList, ParseResult, Src};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Repeat {
@@ -65,7 +65,7 @@ impl Repetition {
         &self.cache
     }
 
-    pub fn lparse(&self, source: &str, start: usize) -> ParseResult {
+    pub fn lparse(&self, source: Src<'_>, start: usize) -> ParseResult {
         {
             // Tolerate a poisoned mutex: a panic in some unrelated
             // earlier code path must not permanently brick this rule.
@@ -200,7 +200,7 @@ mod tests {
 
         // Pre-fix this would panic with "ParseCache mutex poisoned".
         // Post-fix the parse succeeds.
-        let result = parser.lparse("xxx", 0);
+        let result = parser.lparse(&[0x78, 0x78, 0x78], 0);
         assert!(result.is_ok(), "expected Ok, got {result:?}");
     }
 }

@@ -10,22 +10,20 @@ use pyo3::types::PyType;
 
 use abnf_core::ParseError;
 
-use crate::offset::byte_to_cp;
 
 /// Look up `abnf.parser.ParseError` (importing the module if needed)
 /// and return a `PyErr` instance carrying `(parser_description, start)`.
 ///
-/// `err.start` is a UTF-8 byte offset (core convention); it is
-/// translated to a code-point offset against `source` before being
-/// passed to Python, so `parse_error.start` indexes the user's `str`
-/// correctly on non-ASCII input.
-pub fn parse_error_to_pyerr(py: Python<'_>, err: ParseError, source: &str) -> PyErr {
+/// `err.start` is already a code-point offset -- the engine indexes by
+/// code point -- so it indexes the user's `str` directly, with no
+/// translation and no need for the source here.
+pub fn parse_error_to_pyerr(py: Python<'_>, err: ParseError) -> PyErr {
     let cls = match get_parse_error_class(py) {
         Ok(c) => c,
         Err(e) => return e,
     };
-    let cp_start = byte_to_cp(source, err.start);
-    let exc = match cls.call1((err.parser.as_str(), cp_start)) {
+
+    let exc = match cls.call1((err.parser.as_str(), err.start)) {
         Ok(o) => o,
         Err(e) => return e,
     };

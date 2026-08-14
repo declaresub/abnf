@@ -10,10 +10,17 @@ use std::sync::Arc;
 
 use abnf_core::{ArcParser, Literal, NamedRule, ParseScope, Repeat, Repetition};
 
+/// The engine indexes by code point (issue #173), so tests build their
+/// source the same way the PyO3 layer does.
+fn cps(s: &str) -> Vec<u32> {
+    s.chars().map(u32::from).collect()
+}
+
+
 /// `ident = 1*%x61-7A`
 fn ident_rule() -> Arc<NamedRule> {
     let rule = Arc::new(NamedRule::new("ident"));
-    let letter: ArcParser = Literal::range('a', 'z').into();
+    let letter: ArcParser = Literal::range(0x61, 0x7A).into();
     rule.set_definition(Repetition::new(Repeat::new(1, None), letter).into());
     rule
 }
@@ -27,7 +34,7 @@ fn keyword_rule() -> Arc<NamedRule> {
 
 fn longest(rule: &NamedRule, source: &str) -> Option<usize> {
     let _scope = ParseScope::enter();
-    rule.lparse(source, 0)
+    rule.lparse(&cps(source), 0)
         .ok()
         .and_then(|matches| matches.iter().map(|m| m.start).max())
 }

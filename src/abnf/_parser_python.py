@@ -853,24 +853,6 @@ class Rule:
         # `StopIteration` in practice.
         try:
             longest_match = next(g)
-        except UnicodeEncodeError as exc:
-            # Only reachable on the Rust backend, which carries the source
-            # across the FFI as a UTF-8 `&str`.  A Python str may contain lone
-            # surrogates -- from `surrogateescape` on an undecodable filename,
-            # or an unpaired \uD800 out of `json.loads` -- and those have no
-            # UTF-8 representation, so the conversion fails before any parsing
-            # happens.  The pure-Python backend parses such input fine.
-            # Replace the codec traceback, which says nothing about abnf, with
-            # the limitation and its workaround.  See GitHub issue #173.
-            # UnicodeEncodeError is itself a ValueError, so `except ValueError`
-            # callers are unaffected by the re-raise.
-            msg = (
-                "the Rust backend cannot parse input containing lone surrogate "
-                "code points; set ABNF_NO_RUST=1 to use the pure-Python "
-                "backend, which accepts them.  "
-                "See https://github.com/declaresub/abnf/issues/173"
-            )
-            raise ValueError(msg) from exc
         except RecursionError as exc:
             # Deeply-nested input exhausts the Python call stack (the parser is
             # recursive-descent).  Convert to ParseError so the documented
