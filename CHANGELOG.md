@@ -1,6 +1,10 @@
 # Changelog
 
-## 2.8.0
+## 2.8.1
+
+*2.8.0 was tagged but never published: its release build failed before either
+package reached PyPI, and `v*` tags are immutable, so the fix ships under a new
+version.  Nothing was ever available at 2.8.0.*
 
 * **Behaviour change.**  Case-insensitive literal matching now folds case over
   US-ASCII only, per RFC 5234 §2.3, which fixes the character set for literals

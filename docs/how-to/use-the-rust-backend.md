@@ -74,7 +74,7 @@ is not reclaimed either, so this is not specific to the Rust backend.
 
 ```{note}
 There is no way to reclaim this memory, and that is deliberate. A private
-`clear_bridge()` used to empty the registry; it was removed in 2.8.0 because it
+`clear_bridge()` used to empty the registry; it was removed in 2.8.1 because it
 could not do the job and broke correctness in the attempt.
 
 Clearing frees very little: a rule's compiled tree embeds the handles of the
