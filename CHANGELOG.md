@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+* Tests for RFC 3986's `path` rule, and a documented caveat about first-match
+  alternation.  `path` lists `path-abempty` first, and that alternative matches
+  the empty string, which looks like it should swallow every input.  It does
+  not under the default longest-match semantics, and the grammar is left as the
+  RFC writes it; the tests pin that, along with the cases where `path-empty` is
+  genuinely reached (`hier-part` and `relative-part` of an empty path, as in
+  `mailto:`).  Under `first_match_alternation = True` the concern is real --
+  `path` then matches nothing at all -- so the alternation docs now warn that an
+  alternative which can match empty makes everything after it unreachable, which
+  is why first match is not a drop-in switch for a grammar transcribed from an
+  RFC (https://github.com/declaresub/abnf/issues/24).
+
 * Export `Parser` from the top-level `abnf` package.  It is the protocol the
   combinators satisfy, and it is useful for annotating code that accepts or
   returns a parser -- which meant reaching into `abnf.parser` for it.  Being a
