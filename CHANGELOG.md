@@ -1,13 +1,21 @@
 # Changelog
 
-## Unreleased
+## 2.8.0
 
-* Raise the `[rust]` extra's floor to `abnf-rust>=2.8`.  The two packages
-  release under one tag, and this release is one where they must agree on
-  behaviour rather than just on API: the engine moved to a code-point source
-  model, so surrogate handling and offset semantics come from the extension.
-  An older `abnf-rust` would still import and parse, and would silently
-  deliver the behaviour this version's own documentation says it does not.
+* **Behaviour change.**  Case-insensitive literal matching now folds case over
+  US-ASCII only, per RFC 5234 §2.3, which fixes the character set for literals
+  as US-ASCII.  Previously both backends folded the full Unicode range
+  (`str.casefold()` in Python, the `caseless` crate in Rust), which accepted
+  input outside the character set the grammar was written in: `%x212A` (KELVIN
+  SIGN) matched a `"k"` in a literal and `%x017F` (LATIN SMALL LETTER LONG S)
+  matched an `"s"`, so RFC 7230 accepted `compre\u017f\u017f` as a
+  transfer-coding.  Against a peer folding only ASCII, that is a parser
+  differential.  ASCII folding is also length-preserving, which removes a
+  position dependence: `Literal("ss", case_sensitive=False)` matched a lone
+  `'ß'` but not the `'ß'` in `'ßx'`.  Literals containing non-ASCII characters
+  still match themselves exactly; case-sensitive matching is unaffected, as is
+  the case-insensitive lookup of *rule names*, which continues to use full
+  folding on both backends.
 
 * `first_match_alternation` now reaches alternations nested inside a group or
   repetition, whether set grammar-wide or on a single rule.  Both forms were
@@ -34,26 +42,6 @@
   The attribute is a descriptor rather than a property, so that the documented
   spelling type-checks: assigning a `bool` in a subclass body is an
   incompatible override of a `property`, which pyright rejects in user code.
-
-* Tests for RFC 3986's `path` rule, and a documented caveat about first-match
-  alternation.  `path` lists `path-abempty` first, and that alternative matches
-  the empty string, which looks like it should swallow every input.  It does
-  not under the default longest-match semantics, and the grammar is left as the
-  RFC writes it; the tests pin that, along with the cases where `path-empty` is
-  genuinely reached (`hier-part` and `relative-part` of an empty path, as in
-  `mailto:`).  Under `first_match_alternation = True` the concern is real --
-  `path` then matches nothing at all -- so the alternation docs now warn that an
-  alternative which can match empty makes everything after it unreachable, which
-  is why first match is not a drop-in switch for a grammar transcribed from an
-  RFC (https://github.com/declaresub/abnf/issues/24).
-
-* Export `Parser` from the top-level `abnf` package.  It is the protocol the
-  combinators satisfy, and it is useful for annotating code that accepts or
-  returns a parser -- which meant reaching into `abnf.parser` for it.  Being a
-  `Protocol`, it describes a shape rather than a base class: `Rule`, the
-  built-in combinators (including the Rust-backed ones) and a parser you write
-  yourself all satisfy it without inheriting anything
-  (https://github.com/declaresub/abnf/issues/17).
 
 * The Rust engine represents the source as **code points** rather than as
   `&str`, which fixes the last behavioural difference between the two backends.
@@ -82,6 +70,14 @@
   relies on a node's value always being a contiguous span of the source --
   checked here over 2.6 million nodes across the test corpus.
 
+* Export `Parser` from the top-level `abnf` package.  It is the protocol the
+  combinators satisfy, and it is useful for annotating code that accepts or
+  returns a parser -- which meant reaching into `abnf.parser` for it.  Being a
+  `Protocol`, it describes a shape rather than a base class: `Rule`, the
+  built-in combinators (including the Rust-backed ones) and a parser you write
+  yourself all satisfy it without inheriting anything
+  (https://github.com/declaresub/abnf/issues/17).
+
 * Remove `abnf_rust._ext.clear_bridge()`, a private diagnostic that emptied the
   Rust engine's rule registry.  It could not do its job and broke correctness in
   the attempt: a rule's compiled tree embeds the handles of the rules it
@@ -93,30 +89,65 @@
   actually works -- caching the `Rule` subclass for a grammar rather than
   rebuilding it (https://github.com/declaresub/abnf/issues/187).
 
-* **Behaviour change.**  Case-insensitive literal matching now folds case over
-  US-ASCII only, per RFC 5234 §2.3, which fixes the character set for literals
-  as US-ASCII.  Previously both backends folded the full Unicode range
-  (`str.casefold()` in Python, the `caseless` crate in Rust), which accepted
-  input outside the character set the grammar was written in: `%x212A` (KELVIN
-  SIGN) matched a `"k"` in a literal and `%x017F` (LATIN SMALL LETTER LONG S)
-  matched an `"s"`, so RFC 7230 accepted `compre\u017f\u017f` as a
-  transfer-coding.  Against a peer folding only ASCII, that is a parser
-  differential.  ASCII folding is also length-preserving, which removes a
-  position dependence: `Literal("ss", case_sensitive=False)` matched a lone
-  `'ß'` but not the `'ß'` in `'ßx'`.  Literals containing non-ASCII characters
-  still match themselves exactly; case-sensitive matching is unaffected, as is
-  the case-insensitive lookup of *rule names*, which continues to use full
-  folding on both backends.
+* `Rule.exclude_rule` now applies to nested rule references under the Rust
+  backend.  It never had: the exclusion lives in the pure-Python `Rule.lparse`,
+  and the Rust engine resolves rule references internally, entering that method
+  only for the rule the caller parses directly.  A grammar written as
+  "identifier, but not a keyword" therefore accepted keywords whenever the
+  keyword rule appeared nested inside another rule -- a validator answering
+  "valid" for input it was written to reject.  `Rule.exclude_rule` now forwards
+  through the bridge the way `Rule.definition` already did, and the engine drops
+  matches whose span parses completely as the excluded rule, matching the
+  pure-Python semantics exactly (a partial match still does not disqualify).
+  https://github.com/declaresub/abnf/issues/179
 
-* Document the Rust engine's rule registry and how it grows in a long-running
-  process: 40 entries after `import abnf`, 1,176 with all bundled grammars
-  loaded, and one more per rule created at runtime, at roughly 1.6 KiB each.
-  A fixed cost for the ordinary import-once case; it accumulates only for
-  processes that build grammars per request or in a loop.  The pure-Python
-  `Rule._obj_map` grows the same way, so this is not specific to the Rust
-  backend.  The note also warns against `abnf_rust._ext.clear_bridge()`, a
-  private diagnostic that silently breaks any grammar defined after it runs
-  (https://github.com/declaresub/abnf/issues/187).
+* `Rule.exclude` is now a property whose setter notifies the backend, mirroring
+  `Rule.definition`, and `Rule.exclude_rule` is a thin wrapper over it.  Only the
+  method used to notify, so on the Rust backend `rule.exclude = None` cleared the
+  exclusion for the pure-Python parser while the engine went on applying it, and
+  assigning `rule.exclude = other` was ignored entirely.  Assignment is the only
+  way to *remove* an exclusion, so that was the case most likely to be hit.
+
+* An exclusion naming a rule that has no definition now raises `GrammarError` on
+  both backends.  The Rust engine treated the missing definition as an ordinary
+  parse failure -- "not excluded" -- and accepted input the grammar was written
+  to reject.
+
+* Memoisation is now scoped to a single parse on both backends, which fixes two
+  silent wrong-result bugs and a memory leak at once.
+
+  The `Repetition` cache used to live on the parser object and survive across
+  calls.  In the pure-Python backend it was keyed `(source, start)` and never
+  invalidated, so mutating a grammar after parsing with it -- `=/`, rule
+  redefinition, `Rule.exclude_rule`, or toggling `first_match_alternation` --
+  left stale results that silently overrode the new grammar.  In the Rust
+  backend it was keyed on position alone, with the source identified by its
+  address plus a fingerprint sampled from the first and last 64 bytes; two
+  sources of equal length differing only in between -- with the second at the
+  freed address of the first, which CPython's allocator does routinely -- were
+  taken for the same source, and the second parse returned the first one's
+  text.
+
+  Both are gone by construction.  The memo is created when `parse` is called
+  and discarded when it returns, so a grammar cannot change underneath it and
+  nothing is retained: parsing 2,000 distinct URIs previously grew the heap by
+  174 MiB with a 0% hit rate, and now grows it by nothing.  Cold parses got
+  faster on both backends -- 1-21% (Python) and 7-11% (Rust) -- because the
+  bookkeeping this replaces was not free.
+
+  **Re-parsing a byte-identical source now repeats the work**, since the memo
+  no longer outlives the call.  If you rely on that, memoize at the call site
+  with `functools.lru_cache`; it skips the parse entirely rather than replaying
+  sub-results, so it is far faster than the internal cache ever was, and its
+  size and lifetime belong to the code that knows the working set.
+
+* `ParseCache`, `ParseCache.clear_caches()` and `ParseCache.max_cache_size` are
+  deprecated.  The parser no longer holds a `ParseCache`, so there is nothing
+  to bound or clear; assigning the attribute or calling `clear_caches()` raises
+  a `DeprecationWarning`.  The class remains importable and still works as an
+  ordinary mapping.  Note that the documented spelling `Rule.max_cache_size`
+  never existed -- the attribute is on `ParseCache` -- so code following the old
+  documentation has always been a no-op.
 
 * `NodeVisitor` computes its `visit_*` dispatch table once per class instead of
   rebuilding it from `dir(self)` on every instantiation.  `dir()` walks the whole
@@ -167,29 +198,19 @@
   `min = 1` the discarded allocation is one `Arc` clone and a one-element `Vec`,
   which does not register against the parsing work at any input size tested.
 
-* `Rule.exclude_rule` now applies to nested rule references under the Rust
-  backend.  It never had: the exclusion lives in the pure-Python `Rule.lparse`,
-  and the Rust engine resolves rule references internally, entering that method
-  only for the rule the caller parses directly.  A grammar written as
-  "identifier, but not a keyword" therefore accepted keywords whenever the
-  keyword rule appeared nested inside another rule -- a validator answering
-  "valid" for input it was written to reject.  `Rule.exclude_rule` now forwards
-  through the bridge the way `Rule.definition` already did, and the engine drops
-  matches whose span parses completely as the excluded rule, matching the
-  pure-Python semantics exactly (a partial match still does not disqualify).
-  https://github.com/declaresub/abnf/issues/179
+* The parse benchmarks now measure a cold parse per iteration, because there is
+  no longer a cross-call cache for later iterations to hit.  Numbers published
+  before this change measured cache hits and are not comparable.
 
-* `Rule.exclude` is now a property whose setter notifies the backend, mirroring
-  `Rule.definition`, and `Rule.exclude_rule` is a thin wrapper over it.  Only the
-  method used to notify, so on the Rust backend `rule.exclude = None` cleared the
-  exclusion for the pure-Python parser while the engine went on applying it, and
-  assigning `rule.exclude = other` was ignored entirely.  Assignment is the only
-  way to *remove* an exclusion, so that was the case most likely to be hit.
-
-* An exclusion naming a rule that has no definition now raises `GrammarError` on
-  both backends.  The Rust engine treated the missing definition as an ordinary
-  parse failure -- "not excluded" -- and accepted input the grammar was written
-  to reject.
+* Document the Rust engine's rule registry and how it grows in a long-running
+  process: 40 entries after `import abnf`, 1,176 with all bundled grammars
+  loaded, and one more per rule created at runtime, at roughly 1.6 KiB each.
+  A fixed cost for the ordinary import-once case; it accumulates only for
+  processes that build grammars per request or in a loop.  The pure-Python
+  `Rule._obj_map` grows the same way, so this is not specific to the Rust
+  backend.  The note also warns against `abnf_rust._ext.clear_bridge()`, a
+  private diagnostic that silently breaks any grammar defined after it runs
+  (https://github.com/declaresub/abnf/issues/187).
 
 * Document `Rule.exclude_rule`.  Its docstring was reachable in the API
   reference, but nothing in the guides mentioned it, so the answer to "how do I
@@ -198,53 +219,24 @@
   semantics, and the fact that it filters candidate matches rather than aborting
   the parse.
 
-* Memoisation is now scoped to a single parse on both backends, which fixes two
-  silent wrong-result bugs and a memory leak at once.
+* Tests for RFC 3986's `path` rule, and a documented caveat about first-match
+  alternation.  `path` lists `path-abempty` first, and that alternative matches
+  the empty string, which looks like it should swallow every input.  It does
+  not under the default longest-match semantics, and the grammar is left as the
+  RFC writes it; the tests pin that, along with the cases where `path-empty` is
+  genuinely reached (`hier-part` and `relative-part` of an empty path, as in
+  `mailto:`).  Under `first_match_alternation = True` the concern is real --
+  `path` then matches nothing at all -- so the alternation docs now warn that an
+  alternative which can match empty makes everything after it unreachable, which
+  is why first match is not a drop-in switch for a grammar transcribed from an
+  RFC (https://github.com/declaresub/abnf/issues/24).
 
-  The `Repetition` cache used to live on the parser object and survive across
-  calls.  In the pure-Python backend it was keyed `(source, start)` and never
-  invalidated, so mutating a grammar after parsing with it -- `=/`, rule
-  redefinition, `Rule.exclude_rule`, or toggling `first_match_alternation` --
-  left stale results that silently overrode the new grammar.  In the Rust
-  backend it was keyed on position alone, with the source identified by its
-  address plus a fingerprint sampled from the first and last 64 bytes; two
-  sources of equal length differing only in between -- with the second at the
-  freed address of the first, which CPython's allocator does routinely -- were
-  taken for the same source, and the second parse returned the first one's
-  text.
-
-  Both are gone by construction.  The memo is created when `parse` is called
-  and discarded when it returns, so a grammar cannot change underneath it and
-  nothing is retained: parsing 2,000 distinct URIs previously grew the heap by
-  174 MiB with a 0% hit rate, and now grows it by nothing.  Cold parses got
-  faster on both backends -- 1-21% (Python) and 7-11% (Rust) -- because the
-  bookkeeping this replaces was not free.
-
-  **Re-parsing a byte-identical source now repeats the work**, since the memo
-  no longer outlives the call.  If you rely on that, memoize at the call site
-  with `functools.lru_cache`; it skips the parse entirely rather than replaying
-  sub-results, so it is far faster than the internal cache ever was, and its
-  size and lifetime belong to the code that knows the working set.
-
-* `ParseCache`, `ParseCache.clear_caches()` and `ParseCache.max_cache_size` are
-  deprecated.  The parser no longer holds a `ParseCache`, so there is nothing
-  to bound or clear; assigning the attribute or calling `clear_caches()` raises
-  a `DeprecationWarning`.  The class remains importable and still works as an
-  ordinary mapping.  Note that the documented spelling `Rule.max_cache_size`
-  never existed -- the attribute is on `ParseCache` -- so code following the old
-  documentation has always been a no-op.
-
-* The parse benchmarks now measure a cold parse per iteration, because there is
-  no longer a cross-call cache for later iterations to hit.  Numbers published
-  before this change measured cache hits and are not comparable.
-
-### Known issues
-
-* `Rule.exclude_rule` is silently ignored for nested rule references under the
-  Rust backend: the exclusion is implemented in the pure-Python `Rule.lparse`,
-  which the Rust path enters only for the top-level rule.  A grammar written to
-  reject a keyword will accept it.  `ABNF_NO_RUST=1` is a correct workaround.
-  https://github.com/declaresub/abnf/issues/179
+* Raise the `[rust]` extra's floor to `abnf-rust>=2.8`.  The two packages
+  release under one tag, and this release is one where they must agree on
+  behaviour rather than just on API: the engine moved to a code-point source
+  model, so surrogate handling and offset semantics come from the extension.
+  An older `abnf-rust` would still import and parse, and would silently
+  deliver the behaviour this version's own documentation says it does not.
 
 ## 2.7.0
 
@@ -325,6 +317,14 @@
   `ValueError`, where the pure-Python backend handles both.  Set
   `ABNF_NO_RUST=1` to use the pure-Python backend.
   https://github.com/declaresub/abnf/issues/173
+
+### Known issues
+
+* `Rule.exclude_rule` is silently ignored for nested rule references under the
+  Rust backend: the exclusion is implemented in the pure-Python `Rule.lparse`,
+  which the Rust path enters only for the top-level rule.  A grammar written to
+  reject a keyword will accept it.  `ABNF_NO_RUST=1` is a correct workaround.
+  https://github.com/declaresub/abnf/issues/179
 
 ## 2.6.0
 
