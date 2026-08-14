@@ -11,7 +11,23 @@
 //!
 //! The key is the Python object's pointer.  `Rule._obj_map` keeps
 //! every Rule alive for the lifetime of its class, so pointers are
-//! stable.
+//! stable -- and that immortality is load-bearing, not incidental.
+//! Were a `Rule` ever collected, the allocator could hand its address
+//! to a new `Rule`, which would then silently inherit the dead rule's
+//! compiled tree from this map.
+//!
+//! There is deliberately no operation to clear or prune the registry.
+//! A `clear_bridge()` existed until issue #187: because a rule's
+//! compiled tree embeds the `Arc<NamedRule>` handles of the rules it
+//! references, dropping the map does not free those trees -- it only
+//! desynchronises the two sides.  Rules defined afterwards look up
+//! `ALPHA`, `DIGIT` and friends, find nothing, and build fresh empty
+//! handles, so the grammar rejects valid input; and redefining an
+//! existing rule writes to an orphan while live trees keep the old
+//! handle.  Nor would clearing reclaim much: the Python side retains
+//! roughly a third of the per-rule cost in `_obj_map` regardless.
+//! Registry growth is a function of rules created, and is documented
+//! in `docs/how-to/use-the-rust-backend.md`.
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -78,24 +94,6 @@ pub fn set_exclude_for(
     };
     handle.set_exclude(excluded);
     Ok(())
-}
-
-/// Drop every entry in the bridge registry.
-///
-/// The registry holds one `Arc<NamedRule>` (plus its parser tree) for
-/// every Python `Rule` instance the engine has ever seen.  Long-lived
-/// processes that load grammars dynamically (e.g. via repeated
-/// `Rule.create(...)` on freshly-constructed classes) will accumulate
-/// entries indefinitely, since Python's class-level `_obj_map` keeps
-/// rule classes alive for the duration of the process.
-///
-/// Exposed as `abnf_rust._ext.clear_bridge()` so callers with that
-/// usage pattern can periodically drop the Rust-side shadow state.
-/// Subsequent parses re-populate the registry lazily.
-#[pyfunction]
-pub fn clear_bridge() {
-    let mut guard = BRIDGE.lock().unwrap_or_else(|e| e.into_inner());
-    guard.clear();
 }
 
 /// Current size of the bridge registry.  Primarily useful in tests

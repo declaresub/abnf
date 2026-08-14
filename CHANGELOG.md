@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+* Remove `abnf_rust._ext.clear_bridge()`, a private diagnostic that emptied the
+  Rust engine's rule registry.  It could not do its job and broke correctness in
+  the attempt: a rule's compiled tree embeds the handles of the rules it
+  references, so clearing the registry frees very little, while every grammar
+  defined afterwards gets fresh empty handles for `ALPHA`, `DIGIT` and friends
+  and silently rejects valid input.  Redefining a rule after a clear was
+  silently lost, too.  The registry's growth is documented instead, with the
+  measured cost on both backends, and the note now points at the lever that
+  actually works -- caching the `Rule` subclass for a grammar rather than
+  rebuilding it (https://github.com/declaresub/abnf/issues/187).
+
 * **Behaviour change.**  Case-insensitive literal matching now folds case over
   US-ASCII only, per RFC 5234 §2.3, which fixes the character set for literals
   as US-ASCII.  Previously both backends folded the full Unicode range
