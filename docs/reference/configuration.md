@@ -15,6 +15,19 @@ class MyGrammar(Rule):
     first_match_alternation = True
 ```
 
+It can also be set per rule:
+
+```python
+rfc3986.Rule("host").first_match_alternation = True
+```
+
+```{warning}
+Under first match, an alternative that can match the empty string makes every
+alternative after it unreachable. Grammars transcribed from RFCs often rely on
+longest match and list such an alternative first, so this is not a drop-in
+switch — see {doc}`../explanation/alternation-semantics`.
+```
+
 See {doc}`../explanation/alternation-semantics` for why this is configurable.
 
 ## `ParseCache.max_cache_size` (deprecated)
