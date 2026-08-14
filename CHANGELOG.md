@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+* `first_match_alternation` now reaches alternations nested inside a group or
+  repetition, whether set grammar-wide or on a single rule.  Both forms were
+  broken: as a class attribute it shadowed the property of the same name and
+  nothing read it, so it did nothing at all; set on a rule it flipped only that
+  rule's top-level `Alternation`, so `a = "a" ( "b" / "bc" )` and
+  `iuserinfo = *( iunreserved / pct-encoded / sub-delims / ":" )` could not be
+  configured -- the assignment was silently dropped, and reading the attribute
+  back returned `False`.  The alternations are now recorded as each rule is
+  built, which is the only approach open to both backends: the Rust
+  combinators expose no children, so the tree cannot be walked afterwards
+  (https://github.com/declaresub/abnf/issues/53).
+
+  Two consequences worth noting.  A grammar that sets the class attribute
+  today gets first-match semantics it was asking for but not receiving --
+  `abnf.grammars.rfc3987` sets it on every rule, and its parse results are
+  unchanged, because its alternatives are disjoint on their first character.
+  And setting the flag on a rule with no alternation stays a no-op rather than
+  raising: the grammar is valid, the same flag set grammar-wide covers many
+  such rules, and a single-alternative rule collapses to its element, so
+  raising would make the call brittle under ordinary edits.  Setting it on an
+  undefined rule still raises `GrammarError`.
+
+  The attribute is a descriptor rather than a property, so that the documented
+  spelling type-checks: assigning a `bool` in a subclass body is an
+  incompatible override of a `property`, which pyright rejects in user code.
+
 * Tests for RFC 3986's `path` rule, and a documented caveat about first-match
   alternation.  `path` lists `path-abempty` first, and that alternative matches
   the empty string, which looks like it should swallow every input.  It does

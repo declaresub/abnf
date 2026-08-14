@@ -15,11 +15,20 @@ class MyGrammar(Rule):
     first_match_alternation = True
 ```
 
-It can also be set per rule:
+Set in a class body it becomes the grammar's default, applied to every
+alternation built for it — including alternations nested inside a group or
+repetition, which a rule does not otherwise expose.
+
+It can also be set per rule, and reaches that rule's nested alternations too:
 
 ```python
 rfc3986.Rule("host").first_match_alternation = True
 ```
+
+A per-rule setting does not extend to rules that rule references — those are
+separate rules with their own setting. On a rule containing no alternation the
+setting is vacuous: it is not an error, and the attribute reads `False`.
+Setting it on an *undefined* rule raises `GrammarError`.
 
 ```{warning}
 Under first match, an alternative that can match the empty string makes every
