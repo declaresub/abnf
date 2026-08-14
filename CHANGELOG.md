@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+* **Behaviour change.**  Case-insensitive literal matching now folds case over
+  US-ASCII only, per RFC 5234 §2.3, which fixes the character set for literals
+  as US-ASCII.  Previously both backends folded the full Unicode range
+  (`str.casefold()` in Python, the `caseless` crate in Rust), which accepted
+  input outside the character set the grammar was written in: `%x212A` (KELVIN
+  SIGN) matched a `"k"` in a literal and `%x017F` (LATIN SMALL LETTER LONG S)
+  matched an `"s"`, so RFC 7230 accepted `compre\u017f\u017f` as a
+  transfer-coding.  Against a peer folding only ASCII, that is a parser
+  differential.  ASCII folding is also length-preserving, which removes a
+  position dependence: `Literal("ss", case_sensitive=False)` matched a lone
+  `'ß'` but not the `'ß'` in `'ßx'`.  Literals containing non-ASCII characters
+  still match themselves exactly; case-sensitive matching is unaffected, as is
+  the case-insensitive lookup of *rule names*, which continues to use full
+  folding on both backends.
+
 * `NodeVisitor` computes its `visit_*` dispatch table once per class instead of
   rebuilding it from `dir(self)` on every instantiation.  `dir()` walks the whole
   MRO and sorts the result, which is a lot of work to repeat for an answer that

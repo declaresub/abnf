@@ -1,11 +1,23 @@
-//! Unicode case-folding helpers.
+//! Case-folding helpers.
 //!
-//! Matches Python's `str.casefold()` semantics via the `caseless`
-//! crate.  An ASCII fast-path avoids allocation for the overwhelmingly
-//! common case where neither the pattern nor the candidate contains a
-//! non-ASCII code point.
+//! Two different questions, deliberately kept apart:
+//!
+//! * [`ascii_fold`] folds literals, over US-ASCII only.  RFC 5234 §2.3
+//!   makes literals case-insensitive and says their character set is
+//!   US-ASCII, so nothing outside ASCII takes part.  It is also
+//!   length-preserving, which full folding is not.
+//! * [`casefold`] matches Python's `str.casefold()` via the `caseless`
+//!   crate, and is used for *rule names*, where both backends have
+//!   always agreed on full folding.
 
 use caseless::Caseless;
+
+/// Fold `s` over US-ASCII only: `A-Z` map to `a-z`, everything else is
+/// left exactly as it is.  Length-preserving, so a folded candidate has
+/// the same length as the source region it came from.
+pub fn ascii_fold(s: &str) -> String {
+    s.to_ascii_lowercase()
+}
 
 /// Returns `s.casefold()` as a new `String`.  ASCII-only input takes a
 /// fast path that just lowercases ASCII bytes.
