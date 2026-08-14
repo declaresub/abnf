@@ -1128,7 +1128,7 @@ def test_h4_parse_error_start_is_codepoint_on_non_ascii():
 # makes literals case-insensitive and fixes their character set as
 # US-ASCII, so case-insensitivity is defined over ASCII and nothing else.
 #
-# Until 2.8.0 both backends used full Unicode folding (Python's
+# Until 2.8.1 both backends used full Unicode folding (Python's
 # `str.casefold()`, the `caseless` crate in Rust), which over-accepted:
 # an ASCII grammar matched '\u017f' (long s) against "s" and '\u212a'
 # (Kelvin sign) against "k", so e.g. RFC 7230 accepted 'compre\u017f\u017f'

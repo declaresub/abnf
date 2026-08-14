@@ -71,7 +71,7 @@ is a property of the decode, not of the parser.
 Both backends handle them, and identically. The Rust engine used to work in
 `char` and `&str` — Unicode *scalar values* and well-formed UTF-8, neither of
 which can hold a surrogate — so a grammar naming one failed to load and input
-containing one failed to cross the FFI. Since 2.8.0 it indexes by code point
+containing one failed to cross the FFI. Since 2.8.1 it indexes by code point
 like the pure-Python backend, and both accept the whole domain
 ([issue #173](https://github.com/declaresub/abnf/issues/173)).
 
@@ -88,7 +88,7 @@ Rule("transfer-coding").parse_all("chun\u212aed")   # KELVIN SIGN: no match
 ```
 
 Full Unicode case folding — Python's `str.casefold()`, which is what `abnf`
-used before 2.8.0 — would match both, because `'\u212a'.casefold() == 'k'`.
+used before 2.8.1 — would match both, because `'\u212a'.casefold() == 'k'`.
 That over-accepts against an ASCII grammar, and it disagrees with peers that
 fold only ASCII, which is where protocol parsers get their differentials.
 
