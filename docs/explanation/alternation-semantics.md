@@ -19,6 +19,25 @@ class FirstMatchGrammar(Rule):
     first_match_alternation = True
 ```
 
+Set on the class, it applies to every alternation in the grammar, including
+those nested inside a group or repetition — `a = "a" ( "b" / "bc" )` and
+`iuserinfo = *( iunreserved / pct-encoded / sub-delims / ":" )` are both
+covered. It is read as each rule is built, so set it in the class body, before
+the grammar is loaded.
+
+It can also be set on a single rule, which likewise reaches the alternations
+nested inside that rule:
+
+```python
+rfc3986.Rule("host").first_match_alternation = True
+```
+
+A per-rule setting covers that rule's own definition only. Rules it *references*
+keep their own setting — otherwise configuring one rule would silently change
+another. And a rule with no alternation at all has nothing to resolve, so
+setting the flag on it does nothing and the attribute continues to read
+`False`.
+
 ## Why it matters
 
 Consider `astring = 1*ASTRING-CHAR / string`. Under longest-match semantics, the

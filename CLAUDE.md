@@ -39,9 +39,15 @@ Key classes:
 - `Alternation`, `Concatenation`, `Repetition`, `Option`, `Literal`, `Prose` — Internal parser combinator primitives (not part of public API).
 - `ABNFGrammarRule` / `ABNFGrammarNodeVisitor` — Bootstrapped parser for ABNF grammar syntax itself; converts parsed ABNF text into `Rule`-based parser objects.
 
-**Alternation behavior** is controlled by `Rule.first_match_alternation` (class attribute):
+**Alternation behavior** is controlled by `Rule.first_match_alternation`:
 - `False` (default): longest match wins; ties broken by declaration order
 - `True`: first match returned immediately
+
+Set as a class attribute it is the grammar-wide default, read as each rule is
+built and applied to every `Alternation` including nested ones; set on a rule it
+flips the alternations recorded for that rule. Nested alternations are recorded
+at build time because the Rust combinators expose no children, so the parser
+tree cannot be walked from Python.
 
 ### Grammar Modules (`src/abnf/grammars/`)
 

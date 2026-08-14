@@ -612,6 +612,25 @@ class Prose:
 T = typing.TypeVar("T", bound="Rule")
 
 
+class _FirstMatchAlternation:
+    """Backs :attr:`Rule.first_match_alternation` for both class-level and
+    per-rule access.
+
+    Read on the class it reports the grammar-wide default; read on a rule it
+    reports that rule's alternations.  Written on a rule it flips them.
+    (Written in a *class body* it is replaced outright, which is what
+    ``Rule.__init_subclass__`` exists to undo.)
+    """
+
+    def __get__(self, instance: Rule | None, owner: type[Rule] | None = None) -> bool:
+        if instance is None:
+            return owner._first_match_default if owner is not None else False
+        return instance._get_first_match_alternation()
+
+    def __set__(self, instance: Rule, value: bool) -> None:
+        instance._set_first_match_alternation(value)
+
+
 class Rule:
     """A parser generated from an ABNF rule.
 
@@ -712,28 +731,87 @@ class Rule:
         typing.Callable[[Rule, Rule | None], None] | None
     ] = None
 
-    @property
-    def first_match_alternation(self) -> bool:
-        try:
-            definition = self.definition
-        except AttributeError:
-            return False
-        else:
-            return isinstance(definition, Alternation) and definition.first_match
+    #: Grammar-wide default for alternation semantics, applied to every
+    #: ``Alternation`` built for this class's rules -- including ones
+    #: nested inside a group or repetition, which is the whole point:
+    #: those are unreachable afterwards, since a rule exposes only its
+    #: top-level definition.  Written as ``first_match_alternation`` in
+    #: a subclass body; ``__init_subclass__`` moves it here so it does
+    #: not shadow the property of the same name.
+    _first_match_default: typing.ClassVar[bool] = False
 
-    @first_match_alternation.setter
-    def first_match_alternation(self, value: bool):
+    #: Alternations this rule's definition is built from, recorded at
+    #: grammar-build time.  ``None`` for a rule built directly from a
+    #: parser object, where there is nothing to record.
+    _alternations: tuple[Alternation, ...] | None = None
+
+    def __init_subclass__(cls, **kwargs: typing.Any) -> None:
+        super().__init_subclass__(**kwargs)
+        raw = cls.__dict__.get("first_match_alternation")
+        if isinstance(raw, bool):
+            cls._first_match_default = raw
+            # Restore the inherited property: a plain bool left in the
+            # class body would shadow it, so instances of this grammar
+            # could neither read nor set the flag per rule.  Deleting via
+            # the metaclass removes the class attribute; `del
+            # cls.first_match_alternation` would read as an attempt to
+            # delete the property itself, which has no deleter.
+            type.__delattr__(cls, "first_match_alternation")
+
+    def _alternation_parsers(self) -> tuple[Alternation, ...]:
+        """Every ``Alternation`` this rule's own definition is built
+        from, outermost first.
+
+        Recorded when the rule is built from ABNF text, because that is
+        the only moment the nested ones are in hand: the Rust backend's
+        combinators expose no children, so the tree cannot be walked
+        afterwards.  Rules constructed directly from a parser fall back
+        to the definition itself, which preserves the old behaviour for
+        hand-built rules.
+
+        Rules referenced by this one are deliberately not included --
+        they are separate rules, with their own setting.
+        """
+
+        recorded = getattr(self, "_alternations", None)
+        if recorded is not None:
+            return recorded
+        definition = getattr(self, "_definition", None)
+        return (definition,) if isinstance(definition, Alternation) else ()
+
+    def _get_first_match_alternation(self) -> bool:
+        """Whether alternation in this rule resolves to the first match.
+
+        ``False`` when the rule contains no alternation at all: there is
+        nothing to resolve, so there is nothing to report.
+        """
+
+        alternations = self._alternation_parsers()
+        return bool(alternations) and all(a.first_match for a in alternations)
+
+    def _set_first_match_alternation(self, value: bool) -> None:
         try:
-            definition = self.definition
+            _ = self.definition
         except AttributeError as exc:
             msg = f'Undefined rule "{self.name}"'
             raise GrammarError(msg) from exc
-        else:
-            if isinstance(definition, Alternation):
-                definition.first_match = value
-            else:
-                # skip.  Or should some exception be raised?
-                pass
+        for alternation in self._alternation_parsers():
+            alternation.first_match = value
+        # A rule with no alternation is not an error -- the same flag set
+        # grammar-wide covers plenty of such rules -- so setting it is
+        # simply vacuous, and the getter says so.
+
+    if typing.TYPE_CHECKING:
+        # Declared as a plain ``bool`` for type checkers.  At runtime it is
+        # the descriptor below, which serves both spellings of the same
+        # setting -- ``MyGrammar.first_match_alternation = True`` in a class
+        # body and ``rule.first_match_alternation = True`` on one rule.  A
+        # ``property`` cannot: assigning a bool in a subclass body is an
+        # incompatible override, so the documented spelling would not
+        # type-check for users.
+        first_match_alternation: bool
+    else:
+        first_match_alternation = _FirstMatchAlternation()
 
     def exclude_rule(self, rule: Rule) -> None:
         """
@@ -1593,6 +1671,10 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
 
     def __init__(self, rule_cls: type[Rule], *args: typing.Any, **kwargs: typing.Any):
         self.rule_cls = rule_cls
+        #: Alternations built for the rule currently being visited.
+        #: Kept because a nested one is otherwise unreachable once the
+        #: tree is assembled -- see ``Rule._alternation_parsers``.
+        self._alternations: list[Alternation] = []
         self.visit_char_val = CharValNodeVisitor()
         self.visit_num_val = NumValVisitor()
         # superclass init needs to happen here so that it will
@@ -1603,7 +1685,18 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
         """Creates an Alternation object from alternation node."""
         assert node.name == "alternation"
         args: list[Parser] = list(filter(NotNull, map(self.visit, node.children)))
-        return Alternation(*args) if len(args) > 1 else args[0]
+        if len(args) <= 1:
+            # A single alternative is not an alternation; ABNF allows
+            # writing one, and it collapses to the element itself.
+            return args[0]
+        return self._new_alternation(*args)
+
+    def _new_alternation(self, *args: Parser) -> Alternation:
+        """Build an `Alternation` with the grammar's semantics, and keep
+        hold of it so the rule can reach it later."""
+        alternation = Alternation(*args, first_match=self.rule_cls._first_match_default)
+        self._alternations.append(alternation)
+        return alternation
 
     def visit_concatenation(self, node: Node):
         """Creates a Concatention object from concatenation node."""
@@ -1689,6 +1782,10 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
         rule: Rule
         defined_as: str
         elements: Parser
+        # Collect the alternations built while visiting *this* rule; the
+        # unpacking below is what drives the lazy map, so the list is
+        # empty until then.
+        self._alternations = []
         rule, defined_as, elements = filter(NotNull, map(self.visit, node.children))
         # this assertion tells mypy that rule should actually be an object. Without, mypy
         # returns 'error: <nothing> has no attribute "definition"'
@@ -1718,9 +1815,15 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
                 GrammarWarning,
                 stacklevel=2,
             )
-        rule.definition = (
-            elements if defined_as == "=" else Alternation(rule.definition, elements)
-        )
+        if defined_as == "=":
+            rule.definition = elements
+            rule._alternations = tuple(self._alternations)
+        else:
+            # '=/' keeps the earlier definition as one arm, so its
+            # alternations stay live and stay configurable.
+            previous = rule._alternation_parsers()
+            rule.definition = self._new_alternation(rule.definition, elements)
+            rule._alternations = tuple(previous) + tuple(self._alternations)
         return rule
 
     def visit_rulelist(self, node: Node):

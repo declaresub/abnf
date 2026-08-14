@@ -1472,3 +1472,132 @@ def test_17_parser_recognises_combinators_and_user_parsers():
     assert isinstance(Rule("some-rule"), abnf.Parser)
     assert isinstance(MyParser(), abnf.Parser)
     assert not isinstance(object(), abnf.Parser)
+
+
+# ---------------------------------------------------------------------------
+# first_match_alternation (issue #53).  Setting it reached only a rule's
+# top-level `Alternation`, so `a = "a" ( "b" / "bc" )` and
+# `iuserinfo = *( ... / ... )` could not be configured at all -- the setter
+# silently did nothing.  The grammar-wide class attribute did nothing either:
+# it shadowed the property, and nothing read it.
+#
+# Both now work, by recording the alternations as the grammar is built.  That
+# is the only approach available to both backends: the Rust combinators expose
+# no children, so the tree cannot be walked after the fact.
+# ---------------------------------------------------------------------------
+
+
+class _FirstMatch(Rule):
+    first_match_alternation = True
+
+
+_FirstMatch.create('top = "a" / "ab"')
+_FirstMatch.create('nested = *( "a" / "ab" )')
+_FirstMatch.create('grouped = "x" ( "b" / "bc" )')
+
+
+class _LongestMatch(Rule):
+    pass
+
+
+_LongestMatch.create('top = "a" / "ab"')
+_LongestMatch.create('nested = *( "a" / "ab" )')
+_LongestMatch.create('grouped = "x" ( "b" / "bc" )')
+_LongestMatch.create('plain = "b" "c"')
+_LongestMatch.create("ref = top")
+
+
+@pytest.mark.parametrize(
+    "rule, source, first, longest",
+    [
+        ("top", "ab", 1, 2),
+        # the cases that could not be configured before
+        ("nested", "abab", 1, 4),
+        ("grouped", "xbc", 2, 3),
+    ],
+)
+def test_53_class_attribute_reaches_nested_alternations(
+    rule: str, source: str, first: int, longest: int
+):
+    assert _FirstMatch(rule).parse(source, 0)[1] == first
+    assert _LongestMatch(rule).parse(source, 0)[1] == longest
+
+
+def test_53_class_attribute_does_not_shadow_the_property():
+    """A bool in the class body used to replace the property outright,
+    leaving the grammar's rules unable to read or set the flag."""
+    assert _FirstMatch("top").first_match_alternation is True
+    assert _LongestMatch("top").first_match_alternation is False
+
+
+def test_53_per_rule_setter_reaches_nested_alternations():
+    rule = _LongestMatch("grouped")
+    assert rule.first_match_alternation is False
+
+    rule.first_match_alternation = True
+    assert rule.first_match_alternation is True
+    assert _LongestMatch("grouped").parse("xbc", 0)[1] == 2
+
+    rule.first_match_alternation = False
+    assert rule.first_match_alternation is False
+    assert _LongestMatch("grouped").parse("xbc", 0)[1] == 3
+
+
+def test_53_per_rule_setter_does_not_leak_into_referenced_rules():
+    """`ref = top` references a separate rule, which keeps its own
+    setting -- otherwise one rule's configuration would mutate another's."""
+    _LongestMatch("ref").first_match_alternation = True
+    try:
+        assert _LongestMatch("top").parse("ab", 0)[1] == 2
+    finally:
+        _LongestMatch("ref").first_match_alternation = False
+
+
+def test_53_rule_without_alternation_is_vacuous_not_an_error():
+    """`plain = "b" "c"` has nothing to resolve.  The grammar is valid, and
+    the same flag set grammar-wide covers plenty of such rules, so setting
+    it is simply vacuous -- and the getter says so."""
+    rule = _LongestMatch("plain")
+    rule.first_match_alternation = True
+    assert rule.first_match_alternation is False
+    rule.first_match_alternation = False
+
+
+def test_53_undefined_rule_still_raises():
+    class _Undefined(Rule):
+        pass
+
+    with pytest.raises(GrammarError):
+        _Undefined("nope").first_match_alternation = True
+
+
+def test_53_incremental_definition_keeps_both_alternations_configurable():
+    """`=/` wraps the earlier definition as one arm; alternations from
+    both halves must stay reachable."""
+
+    class _Incremental(Rule):
+        pass
+
+    _Incremental.create('r = "x" ( "b" / "bc" )')
+    _Incremental.create('r =/ "y" ( "c" / "cd" )')
+
+    rule = _Incremental("r")
+    rule.first_match_alternation = True
+    assert rule.first_match_alternation is True
+    assert _Incremental("r").parse("xbc", 0)[1] == 2
+    assert _Incremental("r").parse("ycd", 0)[1] == 2
+
+
+def test_53_hand_built_rule_still_honours_a_top_level_alternation():
+    """A rule constructed from a parser object has no recorded
+    alternations; the definition itself is the fallback."""
+
+    class _HandBuilt(Rule):
+        pass
+
+    _HandBuilt("r", Alternation(Literal("a"), Literal("ab")))
+    rule = _HandBuilt("r")
+    assert rule.first_match_alternation is False
+    rule.first_match_alternation = True
+    assert rule.first_match_alternation is True
+    assert _HandBuilt("r").parse("ab", 0)[1] == 1
