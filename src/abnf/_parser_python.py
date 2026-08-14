@@ -17,40 +17,44 @@ Nodes = list["Node"]
 
 
 class Match:
-    __slots__ = ("_hash", "nodes", "start")
+    """A span of consumed source, identified by its text and end offset.
+
+    Two matches are equal when they consumed the same text and ended at
+    the same offset, whatever node structure produced it -- an ambiguous
+    grammar can reach the same span more than one way, and the parser
+    treats those as one result.
+    """
+
+    __slots__ = ("nodes", "start")
 
     def __init__(self, nodes: Nodes, start: int):
         self.nodes = nodes
         self.start = start
 
+    def _value(self) -> str:
+        return "".join(node.value for node in self.nodes)
+
     def __hash__(self) -> int:
-        # Cache the hash on first access.  Match objects participate
-        # in `set` operations inside Repetition / Rule.lparse where
-        # they're hashed repeatedly; without caching, every hash
-        # call rebuilds the concatenated value string by walking
-        # every descendant node.
-        try:
-            return self._hash
-        except AttributeError:
-            value = "".join(n.value for n in self.nodes)
-            h = hash((value, self.start))
-            self._hash = h
-            return h
+        # Not memoised.  Nothing in the parser hashes a `Match` -- both
+        # `Repetition` and `Rule.lparse` deduplicate by end offset -- so a
+        # cached slot would cost eight bytes on every match built (a few
+        # thousand per parse) to speed up an operation the library never
+        # performs.  It also could not be invalidated: `nodes` is a plain
+        # mutable list, so a memo went stale the moment a caller touched it.
+        return hash((self._value(), self.start))
 
     def __str__(self):
-        return (
-            f"Match(value={''.join(n.value for n in self.nodes)}, start={self.start})"
-        )
+        return f"Match(value={self._value()}, start={self.start})"
 
     def __eq__(self, __o: object) -> bool:
         if not isinstance(__o, self.__class__):
             return False
-        # Fast inequality short-circuit before the value-building
-        # hash comparison — different end positions can never be
-        # equal under our value-and-start semantics anyway.
-        if self.start != __o.start:
-            return False
-        return hash(self) == hash(__o)
+        # Compare the values, not their hashes.  Hash equality is only
+        # evidence of equality; two matches that collided would have
+        # compared equal, and `__eq__` is the one place that has to be
+        # exact.  `start` differs far more often than the text does, so
+        # checking it first usually avoids building either string.
+        return self.start == __o.start and self._value() == __o._value()
 
 
 MatchSet = set[Match]
