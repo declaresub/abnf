@@ -48,6 +48,39 @@ choice when:
   generator-based, and trivially traceable;
 - `ABNF_NO_RUST=1` is convenient for a comparison.
 
+## Memory in a long-running process
+
+The engine keeps a registry mapping each Python `Rule` to its compiled
+counterpart. Entries are added when a rule is defined and are never removed, so
+the registry grows with the number of rules a process has ever created:
+
+| | entries |
+|---|---|
+| `import abnf` (the RFC 5234 core rules) | 40 |
+| plus all 32 bundled grammar modules | 1,176 |
+| plus 2,000 dynamically created grammars | 3,176 |
+
+At roughly 1.6 KiB per entry, the 2,000 dynamic grammars above cost about 3 MiB.
+
+For the ordinary case — importing grammar modules once at startup — this is a
+fixed cost and nothing to think about. It only accumulates if you build grammars
+at runtime: calling `Rule.create` on freshly-defined `Rule` subclasses in a loop,
+say, or per request. Note the pure-Python `Rule._obj_map` grows the same way and
+is not reclaimed either, so this is not specific to the Rust backend.
+
+```{warning}
+`abnf_rust._ext` exposes `clear_bridge()`, which empties the registry. It is a
+private diagnostic, not a supported knob, and calling it is **not safe**: the
+40 baseline entries are the core rules, so any grammar defined *after* a clear
+gets a fresh, empty handle for `ALPHA`, `DIGIT` and friends and silently fails
+to parse input it should accept.
+
+Grammars that were already fully built keep working — they hold their compiled
+handles directly — but redefining one of their rules after a clear also silently
+loses the change. There is currently no supported way to reclaim this memory --
+see [issue #187](https://github.com/declaresub/abnf/issues/187).
+```
+
 ## Build it for development
 
 To build and install the extension against your dev virtualenv (driving
