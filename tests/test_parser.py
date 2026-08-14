@@ -48,6 +48,76 @@ def test_next_longest():
     ]
 
 
+# ---------------------------------------------------------------------------
+# Match equality and hashing are used by callers, not by the parser -- both
+# Repetition and Rule.lparse deduplicate by end offset -- so nothing else in
+# the suite would notice these regressing.
+# ---------------------------------------------------------------------------
+
+
+def test_match_equality_is_by_value_and_end_offset():
+    ab = Match([cast(Node, LiteralNode("ab", 0, 2))], 2)
+    a_b = Match(
+        [cast(Node, LiteralNode("a", 0, 1)), cast(Node, LiteralNode("b", 1, 1))], 2
+    )
+    # Same text, same end: equal whatever node structure produced it.  An
+    # ambiguous grammar can reach one span several ways and the parser treats
+    # those as a single result.
+    assert ab == a_b
+    assert hash(ab) == hash(a_b)
+
+    # Same text, different end position.
+    assert ab != Match([cast(Node, LiteralNode("ab", 0, 2))], 3)
+    # Different text, same end position.
+    assert ab != Match([cast(Node, LiteralNode("xy", 0, 2))], 2)
+
+
+@pytest.mark.skipif(
+    __import__("abnf.parser", fromlist=["_BACKEND"])._BACKEND == "rust",
+    reason="Forcing a hash collision needs a subclass, and the Rust Match "
+    "pyclass cannot be subclassed.  The dispatch shim rebinds Match inside "
+    "_parser_python too, so the pure-Python class is unreachable here.",
+)
+def test_match_equality_does_not_rely_on_hash_equality():
+    # `__eq__` compares the values themselves.  Hash equality is only
+    # evidence of equality, so two matches that collided must still compare
+    # unequal.
+    class CollidingMatch(Match):
+        __slots__ = ()
+
+        def __hash__(self) -> int:
+            return 0
+
+    left = CollidingMatch([cast(Node, LiteralNode("a", 0, 1))], 1)
+    right = CollidingMatch([cast(Node, LiteralNode("b", 0, 1))], 1)
+    assert hash(left) == hash(right)
+    assert left != right
+
+
+def test_match_is_usable_in_a_set():
+    ab = Match([cast(Node, LiteralNode("ab", 0, 2))], 2)
+    same = Match(
+        [cast(Node, LiteralNode("a", 0, 1)), cast(Node, LiteralNode("b", 1, 1))], 2
+    )
+    other = Match([cast(Node, LiteralNode("ab", 0, 2))], 3)
+    assert len({ab, same, other}) == 2
+
+
+@pytest.mark.skipif(
+    __import__("abnf.parser", fromlist=["_BACKEND"])._BACKEND == "rust",
+    reason="The Rust Match hands back a fresh `nodes` list on each access, so "
+    "mutating it never reaches the match; the stale-memo question this pins "
+    "is specific to the pure-Python class, whose `nodes` is the live list.",
+)
+def test_match_hash_tracks_mutation():
+    # No memo, so a hash cannot go stale: `nodes` is the live list and a
+    # caller who edits it gets a hash for what the match now holds.
+    match = Match([cast(Node, LiteralNode("a", 0, 1))], 1)
+    before = hash(match)
+    match.nodes.append(cast(Node, LiteralNode("b", 1, 1)))
+    assert hash(match) != before
+
+
 def test_match_str():
     match = Match([], 0)
     assert str(match)

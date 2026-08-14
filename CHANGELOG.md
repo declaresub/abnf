@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+* `Match` no longer memoises its hash, and `Match.__eq__` compares values rather
+  than hashes.  Nothing in the parser hashes or compares a `Match` -- both
+  `Repetition` and `Rule.lparse` deduplicate by end offset -- so the cached slot
+  cost eight bytes on every match built, a few thousand per parse, to speed up
+  an operation the library never performs.  It also could not be invalidated:
+  `nodes` is a plain mutable list, so the memo went stale as soon as a caller
+  touched it.  `Match` is now 48 bytes rather than 56.
+
+  Comparing hashes meant two matches whose hashes collided compared equal;
+  `__eq__` now compares the text directly, which is the one place that has to be
+  exact.  Equality semantics are unchanged otherwise: matches are equal when
+  they consumed the same text and ended at the same offset, whatever node
+  structure produced it.  Hashing a `Match` repeatedly is ~4x slower without the
+  memo; parse times are unaffected.
+
 * The pure-Python `Repetition` stores its match list already sorted, so a memo
   hit iterates it directly instead of copying and re-sorting a list that cannot
   have changed.  A cold `rfc5322` mailbox parse takes ~1,700 such hits and is
