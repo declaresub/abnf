@@ -231,12 +231,13 @@
   is why first match is not a drop-in switch for a grammar transcribed from an
   RFC (https://github.com/declaresub/abnf/issues/24).
 
-* Raise the `[rust]` extra's floor to `abnf-rust>=2.8`.  The two packages
-  release under one tag, and this release is one where they must agree on
-  behaviour rather than just on API: the engine moved to a code-point source
-  model, so surrogate handling and offset semantics come from the extension.
-  An older `abnf-rust` would still import and parse, and would silently
-  deliver the behaviour this version's own documentation says it does not.
+* Raise the `[rust]` extra's floor to `abnf-rust>=2.7`, and check in CI that
+  the runtime dependency closure still resolves.  The floor can only name a
+  version already on PyPI: the release workflow resolves this dependency to
+  build the SBOM, before anything is published, so naming the version being
+  released makes the release unbuildable.  Nothing outside a tag build
+  exercised that resolution, so CI now runs the same command on every pull
+  request, along with `uv lock --check`.
 
 ## 2.7.0
 
