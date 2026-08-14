@@ -63,19 +63,17 @@ but have no character meaning, and they arrive in real data — `surrogateescape
 is how Python represents undecodable bytes in filenames, `sys.argv`, and
 environment variables, and an unpaired `\uD800` survives `json.loads`.
 
-A grammar can name them (`%xD800-DBFF`) and the pure-Python backend will match
-them, but whether they appear at all depends on how *you* decoded: a strict
-`utf-8` or `utf-16` decode rejects them, while `surrogatepass` and
-`surrogateescape` preserve them. That is a property of the decode, not of the
-parser.
+A grammar can name them (`%xD800-DBFF`) and match them, but whether they appear
+at all depends on how *you* decoded: a strict `utf-8` or `utf-16` decode
+rejects them, while `surrogatepass` and `surrogateescape` preserve them. That
+is a property of the decode, not of the parser.
 
-```{note}
-The Rust backend cannot represent surrogate code points, because Rust strings
-are well-formed UTF-8. A grammar containing one raises `GrammarError`, and input
-containing one raises `ValueError`; both messages say so and point at
-`ABNF_NO_RUST=1`, which selects the pure-Python backend. Tracked as
-[issue #173](https://github.com/declaresub/abnf/issues/173).
-```
+Both backends handle them, and identically. The Rust engine used to work in
+`char` and `&str` — Unicode *scalar values* and well-formed UTF-8, neither of
+which can hold a surrogate — so a grammar naming one failed to load and input
+containing one failed to cross the FFI. Since 2.7.0 it indexes by code point
+like the pure-Python backend, and both accept the whole domain
+([issue #173](https://github.com/declaresub/abnf/issues/173)).
 
 ## Case-insensitivity is ASCII-only
 

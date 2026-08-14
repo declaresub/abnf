@@ -16,7 +16,7 @@ use smallvec::SmallVec;
 
 use crate::concatenation::sort_by_longest;
 use crate::error::ParseError;
-use crate::parser::{ArcParser, MatchList, ParseResult};
+use crate::parser::{ArcParser, MatchList, ParseResult, Src};
 
 #[derive(Debug)]
 pub struct Alternation {
@@ -47,7 +47,7 @@ impl Alternation {
         self.first_match.store(value, Ordering::Relaxed);
     }
 
-    pub fn lparse(&self, source: &str, start: usize) -> ParseResult {
+    pub fn lparse(&self, source: Src<'_>, start: usize) -> ParseResult {
         let mut all: MatchList = SmallVec::new();
         let mut found = false;
         let first_match = self.first_match();

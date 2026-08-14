@@ -299,8 +299,8 @@ pub fn install_meta_grammar(registry: &mut RuleRegistry) {
                 0,
                 None,
                 alt(vec![
-                    Literal::range('\x20', '\x3D').into(),
-                    Literal::range('\x3F', '\x7E').into(),
+                    Literal::range(0x20, 0x3D).into(),
+                    Literal::range(0x3F, 0x7E).into(),
                 ]),
             ),
             lit_ci(">"),
@@ -337,8 +337,8 @@ pub fn install_meta_grammar(registry: &mut RuleRegistry) {
                 0,
                 None,
                 alt(vec![
-                    Literal::range('\x20', '\x21').into(),
-                    Literal::range('\x23', '\x7E').into(),
+                    Literal::range(0x20, 0x21).into(),
+                    Literal::range(0x23, 0x7E).into(),
                 ]),
             ),
             dquote.clone(),

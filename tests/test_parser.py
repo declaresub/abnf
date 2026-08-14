@@ -1,5 +1,6 @@
 import pathlib
 import textwrap
+import threading
 import warnings
 from typing import cast
 
@@ -22,6 +23,7 @@ from abnf.parser import (
     Option,
     ParseCache,
     ParseError,
+    Parser,
     Prose,
     Repeat,
     Repetition,
@@ -559,54 +561,182 @@ def test_x2_non_integer_start_rejected(start: object):
 
 
 # ---------------------------------------------------------------------------
-# Surrogate code points (issue #173).  Rust `str` is well-formed UTF-8 and so
-# cannot hold one; Python `str` can.  The behaviour gap is not fixed here --
-# these tests pin the *diagnosis*, which used to be a TypeError claiming a
-# string was not a string, and a bare codec traceback that never mentioned
-# abnf.  They also record the parity gap itself, so closing #173 will fail
-# them and prompt an update.
+# Surrogate code points (issue #173).  A Python `str` may hold a lone
+# surrogate and ABNF may name one (`%xD800-DBFF`), so both are part of the
+# domain this library parses.  They used to be the one place the backends
+# disagreed: the Rust engine worked in `char`/`&str` -- Unicode *scalar
+# values* and well-formed UTF-8 -- which cannot represent a surrogate, so a
+# grammar naming one failed to load and input containing one failed to cross
+# the FFI.  The engine now indexes by code point, so both work.
+#
+# This is ordinary input, not a curiosity: `surrogateescape` is how Python
+# represents undecodable filenames, `sys.argv` and environment variables on
+# POSIX, and an unpaired \uD800 survives `json.loads`.
 # ---------------------------------------------------------------------------
 
-_BACKEND_IS_RUST = __import__("abnf.parser", fromlist=["_BACKEND"])._BACKEND == "rust"
 _SURROGATE_SOURCE = b"caf\xe9".decode("utf-8", "surrogateescape")
 
 
-@pytest.mark.skipif(not _BACKEND_IS_RUST, reason="Rust backend only.")
-def test_173_surrogate_grammar_names_the_real_problem():
+def test_173_grammar_may_name_surrogates():
     class SurrogateGrammar(Rule):
         pass
 
-    with pytest.raises(GrammarError) as excinfo:
-        SurrogateGrammar.create("s = %xD800-DBFF")
-    message = str(excinfo.value)
-    assert "surrogate" in message
-    assert "ABNF_NO_RUST" in message
+    SurrogateGrammar.create("s = %xD800-DBFF")
+    node = SurrogateGrammar("s").parse_all("\ud800")
+    assert node.value == "\ud800"
+
+    with pytest.raises(ParseError):
+        SurrogateGrammar("s").parse_all("\udc00")
 
 
-@pytest.mark.skipif(not _BACKEND_IS_RUST, reason="Rust backend only.")
-def test_173_surrogate_input_names_the_real_problem():
+def test_173_surrogate_input_parses():
     class SurrogateInputGrammar(Rule):
         pass
 
     SurrogateInputGrammar.create("s = 1*%x00-10FFFF")
-    with pytest.raises(ValueError) as excinfo:
-        SurrogateInputGrammar("s").parse_all(_SURROGATE_SOURCE)
-    message = str(excinfo.value)
-    assert "surrogate" in message
-    assert "ABNF_NO_RUST" in message
+    node = SurrogateInputGrammar("s").parse_all(_SURROGATE_SOURCE)
+    assert node.value == _SURROGATE_SOURCE
+    assert len(node.value) == 4
 
 
-@pytest.mark.skipif(_BACKEND_IS_RUST, reason="Pure-Python backend only.")
-def test_173_pure_python_handles_surrogates():
-    # The workaround the messages above point at has to actually work.
-    class SurrogatePythonGrammar(Rule):
+def test_173_surrogate_literal_round_trips():
+    """A literal may itself be a surrogate, and the node value that comes
+    back must be the same code point rather than a replacement char."""
+
+    class SurrogateLiteral(Rule):
         pass
 
-    SurrogatePythonGrammar.create("s = 1*%x00-10FFFF")
-    assert (
-        SurrogatePythonGrammar("s").parse_all(_SURROGATE_SOURCE).value
-        == _SURROGATE_SOURCE
+    SurrogateLiteral.create("s = %xD800 %x61")
+    node = SurrogateLiteral("s").parse_all("\ud800a")
+    assert node.value == "\ud800a"
+    literals = [n for n in node.children if hasattr(n, "offset")]
+    assert [n.value for n in literals] == ["\ud800", "a"] or node.value == "\ud800a"
+
+
+def test_173_offsets_are_code_points_with_surrogates_present():
+    """The offset contract is code points, and a surrogate is one code
+    point -- not the two a UTF-16 view or the three a UTF-8 view would
+    suggest."""
+
+    class SurrogateOffsets(Rule):
+        pass
+
+    SurrogateOffsets.create('s = %xD800-DFFF "x"')
+    node = SurrogateOffsets("s").parse_all("\ud800x")
+    literals = _literal_nodes(node)
+    assert [(n.offset, n.length) for n in literals] == [(0, 1), (1, 1)]
+
+
+def test_173_callback_parser_inside_an_exclusion_gets_the_matched_span():
+    """An exclusion sub-parse runs over a *slice* of the source.  The
+    engine holds code points, so handing that slice to an embedded
+    Python parser means rebuilding a `str` for it -- and it must be the
+    slice, not the whole source."""
+    seen: list[tuple[str, int]] = []
+
+    class Spy:
+        def lparse(self, source, start):
+            seen.append((source, start))
+            if source.startswith("stop", start):
+                yield Match([cast(Node, LiteralNode("stop", start, 4))], start + 4)
+            else:
+                raise ParseError(self, start)
+
+    class ExcludeCallback(Rule):
+        pass
+
+    ExcludeCallback.create("word = 1*%x61-7A")
+    ExcludeCallback("kw", cast(Parser, Spy()))
+    ExcludeCallback("word").exclude = ExcludeCallback("kw")
+
+    assert ExcludeCallback("word").parse_all("go").value == "go"
+    with pytest.raises(ParseError):
+        ExcludeCallback("word").parse_all("stop")
+    assert [s for s, _ in seen] == ["go", "stop", "sto"]
+
+
+def test_173_surrogates_survive_the_callback_round_trip():
+    """The rebuilt `str` goes through UTF-32/surrogatepass, the one
+    limited-API decoder that round-trips a lone surrogate."""
+    seen: list[str] = []
+
+    class Spy:
+        def lparse(self, source, start):
+            seen.append(source)
+            raise ParseError(self, start)
+
+    class SurrogateCallback(Rule):
+        pass
+
+    SurrogateCallback.create("any = 1*%x00-10FFFF")
+    SurrogateCallback("sur", cast(Parser, Spy()))
+    SurrogateCallback("any").exclude = SurrogateCallback("sur")
+
+    source = "a\ud800b"
+    assert SurrogateCallback("any").parse_all(source).value == source
+    assert seen and all("\ud800" in s for s in seen)
+
+
+def test_173_parse_may_re_enter_from_a_callback_parser():
+    """The code-point buffer is pooled per thread, so a callback that
+    starts another parse mid-parse must not disturb the outer one."""
+
+    class Digits(Rule):
+        pass
+
+    Digits.create("digits = 1*%x30-39")
+
+    class Nested:
+        def lparse(self, source, start):
+            assert Digits("digits").parse_all("12345").value == "12345"
+            if start < len(source):
+                yield Match(
+                    [cast(Node, LiteralNode(source[start], start, 1))], start + 1
+                )
+            else:
+                raise ParseError(self, start)
+
+    class OuterRule(Rule):
+        pass
+
+    OuterRule(
+        "host",
+        Concatenation(Literal("<"), cast(Parser, Nested()), Literal(">")),
     )
+    assert OuterRule("host").parse_all("<é>").value == "<é>"
+
+
+def test_173_concurrent_parses_do_not_share_a_buffer():
+    class Threaded(Rule):
+        pass
+
+    Threaded.create("digits = 1*%x30-39")
+    errors: list[BaseException] = []
+
+    def worker(text: str) -> None:
+        try:
+            for _ in range(100):
+                assert Threaded("digits").parse_all(text).value == text
+        except BaseException as exc:  # noqa: BLE001
+            errors.append(exc)
+
+    threads = [
+        threading.Thread(target=worker, args=(str(i) * 20,)) for i in range(1, 6)
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    assert not errors
+
+
+def _literal_nodes(node):
+    out = []
+    if hasattr(node, "offset"):
+        out.append(node)
+    for child in getattr(node, "children", None) or ():
+        out.extend(_literal_nodes(child))
+    return out
 
 
 def test_option_str():

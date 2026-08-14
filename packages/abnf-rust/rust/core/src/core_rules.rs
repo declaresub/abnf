@@ -17,7 +17,7 @@ fn lit_ci(value: &str) -> ArcParser {
     Literal::string(value, false).into()
 }
 
-fn range(lo: char, hi: char) -> ArcParser {
+fn range(lo: u32, hi: u32) -> ArcParser {
     Literal::range(lo, hi).into()
 }
 
@@ -26,7 +26,7 @@ pub fn install_core_rules(registry: &mut RuleRegistry) {
     // ALPHA = %x41-5A / %x61-7A    ; A-Z / a-z
     registry.define(
         "ALPHA",
-        Alternation::new(vec![range('\x41', '\x5A'), range('\x61', '\x7A')]).into(),
+        Alternation::new(vec![range(0x41, 0x5A), range(0x61, 0x7A)]).into(),
     );
 
     // BIT = "0" / "1"
@@ -36,12 +36,12 @@ pub fn install_core_rules(registry: &mut RuleRegistry) {
     );
 
     // CHAR = %x01-7F
-    registry.define("CHAR", range('\x01', '\x7F'));
+    registry.define("CHAR", range(0x01, 0x7F));
 
     // CTL = %x00-1F / %x7F
     registry.define(
         "CTL",
-        Alternation::new(vec![range('\x00', '\x1F'), lit_cs("\x7F")]).into(),
+        Alternation::new(vec![range(0x00, 0x1F), lit_cs("\x7F")]).into(),
     );
 
     // CR = %x0D
@@ -53,7 +53,7 @@ pub fn install_core_rules(registry: &mut RuleRegistry) {
     registry.define("CRLF", Concatenation::new(vec![cr, lf_ref]).into());
 
     // DIGIT = %x30-39
-    registry.define("DIGIT", range('\x30', '\x39'));
+    registry.define("DIGIT", range(0x30, 0x39));
 
     // DQUOTE = %x22
     registry.define("DQUOTE", lit_cs("\x22"));
@@ -81,13 +81,13 @@ pub fn install_core_rules(registry: &mut RuleRegistry) {
     registry.define("LF", lit_cs("\x0A"));
 
     // OCTET = %x00-FF
-    registry.define("OCTET", range('\x00', '\u{00FF}'));
+    registry.define("OCTET", range(0x00, 0xFF));
 
     // SP = %x20
     registry.define("SP", lit_cs("\x20"));
 
     // VCHAR = %x21-7E
-    registry.define("VCHAR", range('\x21', '\x7E'));
+    registry.define("VCHAR", range(0x21, 0x7E));
 
     // WSP = SP / HTAB
     let sp_ref = registry.get_or_create("SP");

@@ -3,7 +3,7 @@
 //! Mirrors `abnf.parser.Option` (`_parser_python.py:267-288`):
 //! syntactic sugar over `Repetition(Repeat(0, 1), alternation)`.
 
-use crate::parser::{ArcParser, ParseResult};
+use crate::parser::{ArcParser, ParseResult, Src};
 use crate::repetition::{Repeat, Repetition};
 
 #[derive(Debug)]
@@ -21,7 +21,7 @@ impl OptionParser {
         }
     }
 
-    pub fn lparse(&self, source: &str, start: usize) -> ParseResult {
+    pub fn lparse(&self, source: Src<'_>, start: usize) -> ParseResult {
         self.repetition.lparse(source, start)
     }
 }

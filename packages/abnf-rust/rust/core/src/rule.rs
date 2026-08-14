@@ -12,7 +12,7 @@ use smallvec::{smallvec, SmallVec};
 use crate::error::ParseError;
 use crate::matcher::Match;
 use crate::node::{Node, NodeKind};
-use crate::parser::{ArcParser, MatchList, ParseResult};
+use crate::parser::{ArcParser, MatchList, ParseResult, Src};
 
 /// Maximum nested rule-recursion depth.  A left-recursive grammar
 /// (`a = a "x" / "x"`) would otherwise recurse through Rust native
@@ -191,7 +191,7 @@ impl NamedRule {
     ///
     /// Mirrors the pure-Python check, which runs `parse_all` over the
     /// matched value: a partial match does not disqualify anything.
-    fn is_excluded(excluded: &NamedRule, text: &str) -> bool {
+    fn is_excluded(excluded: &NamedRule, text: Src<'_>) -> bool {
         // An exclusion naming a rule that was never defined is a
         // broken grammar, not an input that failed to match.  The
         // pure-Python backend raises GrammarError here; without this
@@ -232,7 +232,7 @@ impl NamedRule {
         ParseError::new(self.error_label.clone(), start)
     }
 
-    pub fn lparse(&self, source: &str, start: usize) -> ParseResult {
+    pub fn lparse(&self, source: Src<'_>, start: usize) -> ParseResult {
         // Bound recursion depth so left-recursive grammars surface as
         // a catchable Python exception instead of overflowing the
         // native stack and SIGSEGVing the process.  `_guard` releases

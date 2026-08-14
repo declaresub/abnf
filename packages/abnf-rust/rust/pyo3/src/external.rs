@@ -12,7 +12,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyType;
 use smallvec::SmallVec;
 
-use abnf_core::{ExternalParser, ParseError, ParseResult};
+use abnf_core::{ExternalParser, ParseError, ParseResult, Src};
 
 use crate::nodes::py_match_to_rust;
 use crate::recursion::propagate_pyerr;
@@ -35,14 +35,20 @@ impl PyCallbackParser {
 }
 
 impl ExternalParser for PyCallbackParser {
-    fn lparse(&self, source: &str, start: usize) -> ParseResult {
+    fn lparse(&self, source: Src<'_>, start: usize) -> ParseResult {
         Python::attach(|py| -> ParseResult {
-            // The Rust core hands us a byte offset; the Python parser
-            // expects a code-point offset.  The translation is also
-            // inverted on the way back in `py_match_to_rust`.
-            let cp_start = crate::offset::byte_to_cp(source, start);
+            // Offsets pass straight through: both sides count code
+            // points.  The text has to be rebuilt, though -- the
+            // engine holds code points, and this is the one caller
+            // with no original `str` object to hand on.  Borrowing the
+            // outer source would not do: an exclusion sub-parse runs
+            // this parser over a *slice* of it.
+            let py_source = match crate::source::from_code_points(py, source) {
+                Ok(s) => s,
+                Err(e) => return Err(handle_pyerr(py, e, &self.description, start)),
+            };
             let bound = self.obj.bind(py);
-            let result = match bound.call_method1("lparse", (source, cp_start)) {
+            let result = match bound.call_method1("lparse", (&py_source, start)) {
                 Ok(r) => r,
                 Err(e) => return Err(handle_pyerr(py, e, &self.description, start)),
             };
@@ -56,7 +62,7 @@ impl ExternalParser for PyCallbackParser {
                     Ok(it) => it,
                     Err(e) => return Err(handle_pyerr(py, e, &self.description, start)),
                 };
-                let m = match py_match_to_rust(&item, source) {
+                let m = match py_match_to_rust(&item) {
                     Ok(m) => m,
                     Err(e) => return Err(handle_pyerr(py, e, &self.description, start)),
                 };

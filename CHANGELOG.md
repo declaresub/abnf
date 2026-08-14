@@ -2,6 +2,33 @@
 
 ## Unreleased
 
+* The Rust engine represents the source as **code points** rather than as
+  `&str`, which fixes the last behavioural difference between the two backends.
+  It previously worked in `char` and `&str` -- Unicode *scalar values* and
+  well-formed UTF-8 -- and neither can hold a surrogate, so `%xD800-DBFF`
+  failed to load as a grammar and input containing a lone surrogate failed to
+  cross the FFI with a `UnicodeEncodeError`.  That is ordinary input:
+  `surrogateescape` is how Python represents undecodable filenames, `sys.argv`
+  and environment variables, and an unpaired `\uD800` survives `json.loads`, so
+  a program that worked on the pure-Python backend broke when its user
+  installed `abnf[rust]` for speed.  Both now parse identically
+  (https://github.com/declaresub/abnf/issues/173).
+
+  Two consequences beyond the fix.  Offsets need no translation at the
+  boundary any more -- the engine counts in the same unit Python `str` indices
+  do -- so the byte/code-point conversion is gone, along with a `source
+  .is_ascii()` scan that ran *once per parse-tree node* and made a long ASCII
+  source O(nodes x length): a 1 MiB ASCII source with a small parse drops from
+  1146 to 142 us.  Against that, widening the source is now O(n) up front, so
+  the same shape over a 1 MiB *non-ASCII* source rises from 41 to 142 us, and
+  peak memory during a parse includes 4 bytes per code point.  The bundled
+  benchmarks, which parse realistic inputs, are 3-8% faster.
+
+  Node values are Python strings sliced from the caller's own source rather
+  than rebuilt in Rust, which is what lets a value hold a surrogate.  This
+  relies on a node's value always being a contiguous span of the source --
+  checked here over 2.6 million nodes across the test corpus.
+
 * Remove `abnf_rust._ext.clear_bridge()`, a private diagnostic that emptied the
   Rust engine's rule registry.  It could not do its job and broke correctness in
   the attempt: a rule's compiled tree embeds the handles of the rules it

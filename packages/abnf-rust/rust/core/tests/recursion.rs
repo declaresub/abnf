@@ -15,6 +15,13 @@ use std::sync::Arc;
 
 use abnf_core::{Alternation, ArcParser, Concatenation, Literal, NamedRule, OptionParser, Parser};
 
+/// The engine indexes by code point (issue #173), so tests build their
+/// source the same way the PyO3 layer does.
+fn cps(s: &str) -> Vec<u32> {
+    s.chars().map(u32::from).collect()
+}
+
+
 /// `nested = "(" [ nested ] ")"` -- recursion driven by input depth.
 fn nested_grammar() -> Arc<NamedRule> {
     let rule = Arc::new(NamedRule::new("nested"));
@@ -66,7 +73,7 @@ fn deep_nesting_panics_instead_of_overflowing_the_stack() {
     let source = format!("{}{}", "(".repeat(depth), ")".repeat(depth));
 
     let message = panic_message(move || {
-        let _ = rule.lparse(&source, 0);
+        let _ = rule.lparse(&cps(&source), 0);
     })
     .expect("deep nesting must trip the guard, not run to completion");
 
@@ -89,7 +96,8 @@ fn left_recursion_still_trips_the_level_counter() {
     let rule = left_recursive_grammar();
 
     let message = panic_message(move || {
-        let _ = rule.lparse("xxx", 0);
+        let src = cps("xxx");
+        let _ = rule.lparse(&src, 0);
     })
     .expect("left recursion must trip the guard");
 
@@ -111,9 +119,10 @@ fn the_guard_resets_between_parses() {
     let blown = rule.clone();
     let source = deep.clone();
     let _ = panic_message(move || {
-        let _ = blown.lparse(&source, 0);
+        let _ = blown.lparse(&cps(&source), 0);
     });
 
-    let matches = rule.lparse("()", 0).expect("shallow parse after a blown budget");
+    let src = cps("()");
+    let matches = rule.lparse(&src, 0).expect("shallow parse after a blown budget");
     assert_eq!(matches[0].start, 2);
 }

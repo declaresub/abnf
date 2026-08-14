@@ -6,7 +6,7 @@ use smallvec::{smallvec, SmallVec};
 
 use crate::error::ParseError;
 use crate::matcher::Match;
-use crate::parser::{ArcParser, MatchList, NodeList, ParseResult};
+use crate::parser::{ArcParser, MatchList, NodeList, ParseResult, Src};
 
 #[derive(Debug)]
 pub struct Concatenation {
@@ -18,7 +18,7 @@ impl Concatenation {
         Self { parsers }
     }
 
-    pub fn lparse(&self, source: &str, start: usize) -> ParseResult {
+    pub fn lparse(&self, source: Src<'_>, start: usize) -> ParseResult {
         let mut match_list: MatchList = smallvec![Match::new(SmallVec::new(), start)];
         for parser in &self.parsers {
             let mut next: MatchList = SmallVec::new();

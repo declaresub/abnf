@@ -2,50 +2,46 @@
 //!
 //! Two flavours:
 //!
-//! * `LiteralKind::String` — match a fixed string, case-sensitive or
-//!   case-insensitive (Python `Literal('foo')` /
+//! * `LiteralKind::String` — match a fixed sequence of code points,
+//!   case-sensitive or case-insensitive (Python `Literal('foo')` /
 //!   `Literal('foo', case_sensitive=True)`).
-//! * `LiteralKind::Range` — match a single character within an
-//!   inclusive code-point range (Python `Literal(('a', 'z'))`).
+//! * `LiteralKind::Range` — match a single code point within an
+//!   inclusive range (Python `Literal(('a', 'z'))`).
 //!
 //! Mirrors `abnf.parser.Literal._lparse_value` /
-//! `_lparse_range` (`src/abnf/_parser_python.py:326-353`).
+//! `_lparse_range` (`src/abnf/_parser_python.py:563-590`).
 //!
-//! ASCII fast paths are taken whenever the pattern (or the range
-//! bounds) are pure ASCII; that covers essentially every real-world
-//! ABNF grammar and skips the UTF-8 decoder on the hot match loop.
-//! Case-insensitive matching folds over US-ASCII only, per RFC 5234
-//! §2.3, so it is length-preserving and needs no escape hatch for
-//! candidates that are not themselves ASCII.
+//! Both the source and the pattern are code-point slices, so matching
+//! is a flat index-and-compare: no UTF-8 decoding, no char boundaries,
+//! and no separate ASCII fast path to keep in step with a slow one.
+//! Range bounds are `u32` rather than `char` so a grammar can name a
+//! surrogate, which `char` cannot represent (issue #173).
 
 use std::sync::Arc;
 
 use smallvec::smallvec;
 
-use crate::casefold::ascii_fold;
+use crate::casefold::ascii_fold_cp;
 use crate::error::ParseError;
 use crate::matcher::Match;
 use crate::node::{LiteralNode, NodeKind};
-use crate::parser::ParseResult;
+use crate::parser::{ParseResult, Src};
 
 #[derive(Debug, Clone)]
 pub enum LiteralKind {
     String {
-        value: Arc<str>,
-        pattern: Arc<str>,
-        value_chars: usize,
-        /// `value` is pure ASCII.  For ASCII strings,
-        /// `value_chars == value.len()` and `pattern.len() ==
-        /// value.len()`, which enables the byte-level fast path
-        /// in `lparse`.
-        is_ascii: bool,
+        /// The literal as written.
+        value: Box<[u32]>,
+        /// What a candidate is compared against: `value` when
+        /// case-sensitive, its ASCII fold otherwise.  ASCII folding is
+        /// length-preserving, so this always has the same length as
+        /// `value`, and a match consumes exactly that many code
+        /// points.
+        pattern: Box<[u32]>,
     },
     Range {
-        lo: char,
-        hi: char,
-        /// Both `lo` and `hi` fit in a single byte (< 128), which
-        /// enables the byte-level fast path in `lparse`.
-        is_ascii: bool,
+        lo: u32,
+        hi: u32,
     },
 }
 
@@ -61,40 +57,48 @@ pub struct Literal {
     error_label: Arc<str>,
 }
 
+/// Render code points for an error message.  Values that are not
+/// Unicode scalars (surrogates) show as U+FFFD; this is display text
+/// only, never a value handed back to the caller.
+fn display(cps: &[u32]) -> String {
+    cps.iter()
+        .map(|cp| char::from_u32(*cp).unwrap_or(char::REPLACEMENT_CHARACTER))
+        .collect()
+}
+
 impl Literal {
-    pub fn string(value: impl Into<Arc<str>>, case_sensitive: bool) -> Self {
-        let value: Arc<str> = value.into();
-        let pattern: Arc<str> = if case_sensitive {
-            value.clone()
+    pub fn string(value: impl AsRef<str>, case_sensitive: bool) -> Self {
+        let cps: Vec<u32> = value.as_ref().chars().map(u32::from).collect();
+        Self::from_code_points(cps, case_sensitive)
+    }
+
+    pub fn from_code_points(value: Vec<u32>, case_sensitive: bool) -> Self {
+        let pattern: Box<[u32]> = if case_sensitive {
+            value.clone().into_boxed_slice()
         } else {
-            ascii_fold(&value).into()
+            value.iter().map(|cp| ascii_fold_cp(*cp)).collect()
         };
-        let value_chars = value.chars().count();
-        let is_ascii = value.is_ascii() && pattern.is_ascii();
         let suffix = if case_sensitive {
             ", case_sensitive"
         } else {
             ""
         };
-        let error_label: Arc<str> =
-            format!("Literal('{value}'{suffix})").into();
+        let error_label: Arc<str> = format!("Literal('{}'{suffix})", display(&value)).into();
         Self {
             kind: LiteralKind::String {
-                value,
+                value: value.into_boxed_slice(),
                 pattern,
-                value_chars,
-                is_ascii,
             },
             case_sensitive,
             error_label,
         }
     }
 
-    pub fn range(lo: char, hi: char) -> Self {
-        let error_label: Arc<str> = format!("Literal(('{lo}', '{hi}'))").into();
-        let is_ascii = (lo as u32) < 128 && (hi as u32) < 128;
+    pub fn range(lo: u32, hi: u32) -> Self {
+        let error_label: Arc<str> =
+            format!("Literal(('{}', '{}'))", display(&[lo]), display(&[hi])).into();
         Self {
-            kind: LiteralKind::Range { lo, hi, is_ascii },
+            kind: LiteralKind::Range { lo, hi },
             case_sensitive: true,
             error_label,
         }
@@ -105,169 +109,52 @@ impl Literal {
         ParseError::new(self.error_label.clone(), start)
     }
 
-    pub fn lparse(&self, source: &str, start: usize) -> ParseResult {
+    #[inline]
+    fn matched(&self, start: usize, length: usize) -> ParseResult {
+        let node = NodeKind::Literal(LiteralNode::new(start, length));
+        Ok(smallvec![Match::new(smallvec![node], start + length)])
+    }
+
+    pub fn lparse(&self, source: Src<'_>, start: usize) -> ParseResult {
         match &self.kind {
-            LiteralKind::Range { lo, hi, is_ascii } => {
-                if *is_ascii {
-                    // Fast path: single-byte range check, no UTF-8
-                    // decode.  Falls back to a char read only when
-                    // the source byte at `start` is non-ASCII.
-                    let bytes = source.as_bytes();
-                    if start >= bytes.len() {
-                        return Err(self.parse_error(start));
-                    }
-                    let b = bytes[start];
-                    let lo_b = *lo as u8;
-                    let hi_b = *hi as u8;
-                    if b < 128 && b >= lo_b && b <= hi_b {
-                        let matched: Arc<str> =
-                            std::str::from_utf8(&bytes[start..=start])
-                                .map_err(|_| self.parse_error(start))?
-                                .into();
-                        let node = NodeKind::Literal(LiteralNode::new(
-                            matched, start, 1,
-                        ));
-                        return Ok(smallvec![Match::new(
-                            smallvec![node],
-                            start + 1
-                        )]);
-                    }
-                    return Err(self.parse_error(start));
-                }
-                // Slow path: full char decoding.
-                let remaining = source
-                    .get(start..)
-                    .ok_or_else(|| self.parse_error(start))?;
-                let ch = remaining
-                    .chars()
-                    .next()
-                    .ok_or_else(|| self.parse_error(start))?;
-                if ch >= *lo && ch <= *hi {
-                    let len = ch.len_utf8();
-                    let matched: Arc<str> = ch.to_string().into();
-                    let node = NodeKind::Literal(LiteralNode::new(matched, start, len));
-                    Ok(smallvec![Match::new(smallvec![node], start + len)])
+            LiteralKind::Range { lo, hi } => {
+                let cp = source.get(start).ok_or_else(|| self.parse_error(start))?;
+                if cp >= lo && cp <= hi {
+                    self.matched(start, 1)
                 } else {
                     Err(self.parse_error(start))
                 }
             }
-            LiteralKind::String {
-                value,
-                pattern,
-                value_chars,
-                is_ascii,
-            } => {
-                // Mirror Python's `if start < len(source)` guard
-                // (see `_lparse_value` in `_parser_python.py`).  This
-                // is the only path where `Literal('')` could match at
-                // EOF — Python explicitly raises there even for an
-                // empty literal, so we do too.  Without this check
-                // the byte-level fast path's `start + plen >
-                // source_bytes.len()` test would let `plen == 0`
-                // through and silently match the empty string at
-                // any out-of-range start.
+            LiteralKind::String { value, pattern } => {
+                // Mirror Python's `if start < len(source)` guard (see
+                // `_lparse_value`), which raises even for an empty
+                // literal at EOF.  Without it the length check below
+                // would let a zero-length pattern match at any
+                // out-of-range start.
                 if start >= source.len() {
                     return Err(self.parse_error(start));
                 }
-                if *is_ascii {
-                    // Fast path: byte-level comparison.  Pattern and
-                    // value are both ASCII, so `value_chars ==
-                    // pattern.len()` and we can slice the source by
-                    // byte.  Non-ASCII bytes in the source fail the
-                    // byte compare naturally: every pattern byte is
-                    // < 0x80, and ASCII folding leaves a non-ASCII
-                    // byte alone, so no such byte can ever compare
-                    // equal.
-                    //
-                    // Folding over ASCII is length-preserving, so an
-                    // ASCII pattern always consumes exactly
-                    // `pattern.len()` source bytes.  (Under the full
-                    // Unicode folding used before, it was not: 'ß'
-                    // folded to "ss", so a 2-byte pattern could match
-                    // a 1-char source and this path had to defer to
-                    // the char-based one whenever the candidate held
-                    // a non-ASCII byte.)
-                    let source_bytes = source.as_bytes();
-                    let pattern_bytes = pattern.as_bytes();
-                    let plen = pattern_bytes.len();
-                    if start + plen > source_bytes.len() {
-                        return Err(self.parse_error(start));
-                    }
-                    return self.lparse_ascii_candidate(
-                        &source_bytes[start..start + plen],
-                        pattern_bytes,
-                        start,
-                    );
-                }
-                // Slow path: char-based, reached only for a
-                // non-ASCII pattern -- which the ABNF grammar itself
-                // cannot produce, since `char-val` is ASCII, but the
-                // Python `Literal` constructor can.  ASCII folding
-                // preserves char count, so a candidate shorter than
-                // the pattern can never match either way.
-                let remaining = source
-                    .get(start..)
-                    .ok_or_else(|| self.parse_error(start))?;
-                let mut byte_end = 0usize;
-                let mut taken = 0usize;
-                for (i, ch) in remaining.char_indices() {
-                    if taken == *value_chars {
-                        byte_end = i;
-                        break;
-                    }
-                    taken += 1;
-                    byte_end = i + ch.len_utf8();
-                }
-                if taken < *value_chars {
+                let plen = value.len();
+                let end = start + plen;
+                if end > source.len() {
                     return Err(self.parse_error(start));
                 }
-                let candidate = &remaining[..byte_end];
+                let candidate = &source[start..end];
                 let matches = if self.case_sensitive {
-                    candidate == value.as_ref()
+                    candidate == pattern.as_ref()
                 } else {
-                    ascii_fold(candidate) == pattern.as_ref()
+                    candidate
+                        .iter()
+                        .zip(pattern.iter())
+                        .all(|(c, p)| ascii_fold_cp(*c) == *p)
                 };
                 if matches {
-                    let matched: Arc<str> = Arc::from(candidate);
-                    let len = byte_end;
-                    let node = NodeKind::Literal(LiteralNode::new(matched, start, len));
-                    return Ok(smallvec![Match::new(smallvec![node], start + len)]);
+                    self.matched(start, plen)
+                } else {
+                    Err(self.parse_error(start))
                 }
-                Err(self.parse_error(start))
             }
         }
-    }
-
-    /// ASCII-candidate fast path body.  Called from `lparse` once
-    /// the pattern is known to be ASCII and the candidate region
-    /// (or, for case-sensitive matching, the source bytes in that
-    /// region) is also ASCII.  Byte-level comparison with explicit
-    /// UTF-8 validation on success — the validation is cheap (a
-    /// SIMD-scanned check over a few bytes) and avoids any
-    /// `unsafe { from_utf8_unchecked }` surface area.
-    fn lparse_ascii_candidate(
-        &self,
-        candidate: &[u8],
-        pattern_bytes: &[u8],
-        start: usize,
-    ) -> ParseResult {
-        let matches = if self.case_sensitive {
-            candidate == pattern_bytes
-        } else {
-            candidate
-                .iter()
-                .zip(pattern_bytes.iter())
-                .all(|(c, p)| c.eq_ignore_ascii_case(p))
-        };
-        if !matches {
-            return Err(self.parse_error(start));
-        }
-        let s = std::str::from_utf8(candidate)
-            .expect("ASCII pattern match implies ASCII candidate");
-        let plen = pattern_bytes.len();
-        let matched: Arc<str> = Arc::from(s);
-        let node = NodeKind::Literal(LiteralNode::new(matched, start, plen));
-        Ok(smallvec![Match::new(smallvec![node], start + plen)])
     }
 }
 
@@ -275,44 +162,65 @@ impl Literal {
 mod tests {
     use super::*;
 
-    /// H2 regression: the ASCII fast path's `from_utf8` call must
-    /// remain sound for every input we throw at it.  Exercise the
-    /// path with adversarial non-ASCII source bytes that could
-    /// produce invalid UTF-8 slices if the safety invariant
-    /// (byte-match against ASCII pattern ⇒ candidate is ASCII)
-    /// were ever broken by a refactor.
-    #[test]
-    fn ascii_fast_path_rejects_non_ascii_source_without_panicking() {
-        // Case-insensitive pattern against source bytes whose values
-        // would matter if `eq_ignore_ascii_case` ever changed semantics.
-        let lit = Literal::string("abc", false);
-        // Source is a single non-ASCII codepoint padded with ASCII.
-        let cases: &[&str] = &[
-            "\u{00ff}bc",   // first byte 0xc3
-            "a\u{00ff}c",   // second byte non-ASCII
-            "ab\u{00ff}",   // last "byte" replaced by non-ASCII
-            "\u{1f600}bc",  // 4-byte UTF-8 codepoint at start
-            "ABC",          // matches case-insensitively (success path)
-            "abc",          // exact match
-        ];
-        for src in cases {
-            // Must not panic regardless of source contents.
-            let result = lit.lparse(src, 0);
-            match *src {
-                "ABC" | "abc" => assert!(result.is_ok(), "expected match on {src:?}"),
-                _ => assert!(result.is_err(), "expected ParseError on {src:?}"),
-            }
-        }
+    fn cps(s: &str) -> Vec<u32> {
+        s.chars().map(u32::from).collect()
     }
 
-    /// Same defence for case-sensitive ASCII fast path: non-ASCII
-    /// bytes in the candidate region must be rejected cleanly.
     #[test]
-    fn ascii_fast_path_case_sensitive_rejects_non_ascii() {
+    fn matches_case_insensitively_over_ascii_only() {
+        let lit = Literal::string("abc", false);
+        assert!(lit.lparse(&cps("ABC"), 0).is_ok());
+        assert!(lit.lparse(&cps("abc"), 0).is_ok());
+        // Non-ASCII never folds onto an ASCII pattern (X3).
+        assert!(lit.lparse(&cps("\u{ff21}bc"), 0).is_err());
+    }
+
+    #[test]
+    fn case_sensitive_requires_exact_code_points() {
         let lit = Literal::string("abc", true);
-        assert!(lit.lparse("abc", 0).is_ok());
-        assert!(lit.lparse("ABC", 0).is_err()); // case-sensitive => no match
-        assert!(lit.lparse("\u{00ff}bc", 0).is_err());
-        assert!(lit.lparse("a\u{1f600}c", 0).is_err());
+        assert!(lit.lparse(&cps("abc"), 0).is_ok());
+        assert!(lit.lparse(&cps("ABC"), 0).is_err());
+    }
+
+    #[test]
+    fn non_ascii_matches_itself() {
+        let lit = Literal::string("café", false);
+        assert!(lit.lparse(&cps("CAFé"), 0).is_ok());
+        assert!(lit.lparse(&cps("cafe"), 0).is_err());
+    }
+
+    /// #173: a range may name surrogates, which `char` cannot hold.
+    #[test]
+    fn range_covers_surrogates() {
+        let lit = Literal::range(0xD800, 0xDBFF);
+        assert!(lit.lparse(&[0xD800], 0).is_ok());
+        assert!(lit.lparse(&[0xDBFF], 0).is_ok());
+        assert!(lit.lparse(&[0xDC00], 0).is_err());
+        // ...and the whole code-point space is representable.
+        let all = Literal::range(0, 0x10FFFF);
+        assert!(all.lparse(&[0xDCE9], 0).is_ok());
+        assert!(all.lparse(&[0x10FFFF], 0).is_ok());
+    }
+
+    /// A literal may itself contain a surrogate.
+    #[test]
+    fn string_of_surrogates_matches() {
+        let lit = Literal::from_code_points(vec![0xD800, 0x61], false);
+        assert!(lit.lparse(&[0xD800, 0x61], 0).is_ok());
+        assert!(lit.lparse(&[0xD800, 0x62], 0).is_err());
+    }
+
+    #[test]
+    fn empty_literal_raises_at_eof() {
+        let lit = Literal::string("", false);
+        assert!(lit.lparse(&[], 0).is_err());
+        assert!(lit.lparse(&cps("x"), 0).is_ok());
+    }
+
+    #[test]
+    fn match_spans_are_code_point_indexed() {
+        let lit = Literal::string("é", false);
+        let m = lit.lparse(&cps("aé"), 1).expect("should match");
+        assert_eq!(m[0].start, 2, "one code point consumed, not two bytes");
     }
 }
