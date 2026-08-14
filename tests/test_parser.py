@@ -1092,14 +1092,15 @@ def test_x3_case_sensitive_does_not_fold():
 
 
 # ---------------------------------------------------------------------------
-# M7 regression: the Rust bridge registry (Python `Rule` id →
-# `Arc<NamedRule>`) grows monotonically as new rules are created.  For
-# long-lived processes that load grammars dynamically, that's a memory
-# leak — Python's class-level `_obj_map` already keeps every Rule
-# alive, but the Rust shadow adds a second `Arc` to the parser tree.
-# `clear_bridge()` lets callers drop the shadow state when they know
-# they're done with a batch of dynamic grammars; subsequent parses
-# repopulate the bridge lazily.
+# M7 / #187: the Rust bridge registry (Python `Rule` id -> `Arc<NamedRule>`)
+# grows as rules are created, and there is no way to reclaim it.  That is
+# by design on both sides: `Rule._obj_map` is a permanent symbol table, so
+# the Python backend retains every rule too -- about a third of the
+# per-rule cost.  A `clear_bridge()` used to exist; it could not free the
+# compiled trees (rules embed each other's handles directly) and it broke
+# every grammar defined afterwards, so it was removed.  Its absence is
+# part of the contract: the bridge keys on the Python object's address,
+# which is only sound because `_obj_map` makes those addresses immortal.
 # ---------------------------------------------------------------------------
 
 
@@ -1107,25 +1108,29 @@ def test_x3_case_sensitive_does_not_fold():
     __import__("abnf.parser", fromlist=["_BACKEND"])._BACKEND != "rust",
     reason="The bridge registry only exists under the Rust backend.",
 )
-def test_m7_clear_bridge_releases_entries():
-    from abnf_rust._ext import bridge_size, clear_bridge  # type: ignore[import-not-found]
+def test_187_bridge_has_no_clearing_operation():
+    import abnf_rust._ext as ext  # type: ignore[import-not-found]
 
-    # Start from a known state.
-    clear_bridge()
-    assert bridge_size() == 0
+    assert not hasattr(ext, "clear_bridge"), (
+        "clear_bridge() breaks every grammar defined after it runs (#187); "
+        "it must not come back without also solving Rule._obj_map"
+    )
 
-    # Define a grammar; rule construction populates the bridge as
-    # `_set_definition_hook` fires.
-    class _M7Grammar(Rule):
+
+@pytest.mark.skipif(
+    __import__("abnf.parser", fromlist=["_BACKEND"])._BACKEND != "rust",
+    reason="The bridge registry only exists under the Rust backend.",
+)
+def test_187_bridge_grows_with_rules_created():
+    from abnf_rust._ext import bridge_size  # type: ignore[import-not-found]
+
+    before = bridge_size()
+
+    class _BridgeGrowth(Rule):
         pass
 
-    _M7Grammar.create('a = "x"')
-    populated = bridge_size()
-    assert populated > 0, "expected the bridge to gain at least one entry"
-
-    # The headline fix: clear_bridge drops everything.
-    clear_bridge()
-    assert bridge_size() == 0
+    _BridgeGrowth.create('a = "x"')
+    assert bridge_size() > before, "expected the bridge to gain an entry"
 
 
 # ---------------------------------------------------------------------------
