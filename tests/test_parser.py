@@ -1433,3 +1433,42 @@ def test_170_deep_nesting_on_a_small_stack_is_catchable_not_fatal():
         f"expected a caught exception, got: stdout={result.stdout!r}, "
         f"stderr={result.stderr!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Public API surface (issue #17).  `Parser` is the protocol the combinators
+# satisfy, and it is useful as a type hint in code that accepts or returns a
+# parser -- so it belongs at the top level next to the other public names.
+# ---------------------------------------------------------------------------
+
+
+def test_17_parser_is_exported_from_the_top_level():
+    import abnf
+
+    assert abnf.Parser is _parser_python.Parser
+    assert "Parser" in abnf.__all__
+
+
+def test_17_public_names_are_all_importable():
+    """Everything `__all__` promises must actually be there, whichever
+    backend is active."""
+    import abnf
+
+    missing = [name for name in abnf.__all__ if not hasattr(abnf, name)]
+    assert not missing
+
+
+def test_17_parser_recognises_combinators_and_user_parsers():
+    """It is `runtime_checkable`, and structural -- so a Rust-backed
+    combinator satisfies it without inheriting anything."""
+    import abnf
+
+    class MyParser:
+        def lparse(self, source, start):
+            yield Match([], start)
+
+    assert isinstance(Literal("a"), abnf.Parser)
+    assert isinstance(Concatenation(Literal("a")), abnf.Parser)
+    assert isinstance(Rule("some-rule"), abnf.Parser)
+    assert isinstance(MyParser(), abnf.Parser)
+    assert not isinstance(object(), abnf.Parser)
