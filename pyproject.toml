@@ -69,7 +69,14 @@ rust = [
     # the same git tag.  Lower bound matches the current minor; upper
     # bound clamps to the next major so a future `abnf-rust` release
     # with a breaking change can't silently come in via the extra.
-    'abnf-rust>=2.5,<3',
+    #
+    # Raise this bound whenever the two packages have to agree on
+    # behaviour, not just on API.  2.8 is such a release: the engine
+    # moved to a code-point source model, so surrogate handling and
+    # offset semantics come from the extension.  An older `abnf-rust`
+    # would still import and parse, and would silently deliver the
+    # behaviour this version's own documentation says it does not.
+    'abnf-rust>=2.8,<3',
 ]
 # Documentation toolchain (Sphinx + MyST for Markdown prose + autodoc for the
 # API reference from docstrings).  Kept separate from `dev` so running the test

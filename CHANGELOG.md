@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+* Raise the `[rust]` extra's floor to `abnf-rust>=2.8`.  The two packages
+  release under one tag, and this release is one where they must agree on
+  behaviour rather than just on API: the engine moved to a code-point source
+  model, so surrogate handling and offset semantics come from the extension.
+  An older `abnf-rust` would still import and parse, and would silently
+  deliver the behaviour this version's own documentation says it does not.
+
 * `first_match_alternation` now reaches alternations nested inside a group or
   repetition, whether set grammar-wide or on a single rule.  Both forms were
   broken: as a class attribute it shadowed the property of the same name and
