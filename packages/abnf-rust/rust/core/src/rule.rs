@@ -268,7 +268,17 @@ impl NamedRule {
                 self.name
             ),
         });
-        let def = self.definition().ok_or_else(|| self.parse_error(start))?;
+        // A rule that was never defined is a broken grammar, not input
+        // that failed to match.  Returning a `ParseError` here would be
+        // indistinguishable from "this alternative did not match", so
+        // an enclosing `Alternation` or `Repetition` would swallow it
+        // as backtracking and a typo'd rule name would silently delete
+        // that branch of the grammar.  The pure-Python backend raises
+        // `GrammarError`; panic with the phrase the PyO3 layer maps to
+        // it, the same route `is_excluded` and the recursion guard use.
+        let Some(def) = self.definition() else {
+            panic!("Undefined rule \"{}\"", self.name);
+        };
         let inner = def.lparse(source, start)?;
 
         let excluded = self.exclude();

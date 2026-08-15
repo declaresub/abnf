@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+* A reference to a rule that was never defined now raises `GrammarError` on the
+  Rust backend, as it already did on the pure-Python one.  It was an ordinary
+  `ParseError`, which is indistinguishable from "this alternative did not
+  match", so an enclosing `Alternation` or `Repetition` swallowed it as
+  backtracking: given `a = b / "x"` with `b` undefined, the Rust engine matched
+  `"x"` and silently dropped the `b` branch, while pure Python raised.  A typo'd
+  rule name quietly narrowed the grammar rather than reporting a problem.
+
+  The identical defect was fixed for exclusions in 2.8.1; the plain definition
+  lookup one screen below it in `rule.rs` was missed
+  (https://github.com/declaresub/abnf/issues/201).
+
 ## 2.8.2
 
 * Fix `import abnf` crashing when `abnf-rust` is older than `abnf`.  The
