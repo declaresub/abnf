@@ -1,4 +1,8 @@
+import json
 import pathlib
+import re
+import subprocess
+import sys
 import textwrap
 import threading
 import warnings
@@ -7,6 +11,7 @@ from typing import cast
 import pytest
 
 from abnf import _parser_python
+from abnf import parser as _parser
 from abnf.parser import (
     ABNFGrammarNodeVisitor,
     ABNFGrammarRule,
@@ -1601,3 +1606,95 @@ def test_53_hand_built_rule_still_honours_a_top_level_alternation():
     rule.first_match_alternation = True
     assert rule.first_match_alternation is True
     assert _HandBuilt("r").parse("ab", 0)[1] == 1
+
+
+# ---------------------------------------------------------------------------
+# Backend capability gate (issue #199).  `abnf` 2.8.1 with `abnf-rust` 2.7.0 --
+# a pairing the dependency floor allowed -- died on `import abnf`, because the
+# dispatch shim reaches for `set_exclude_hook` (added to the extension in that
+# same release) outside the `try/except ImportError` that guards backend
+# selection.  `AttributeError` is not an `ImportError`, so the documented
+# fallback to pure Python never happened.
+#
+# `BACKEND_READY` cannot catch this: it is a static flag meaning "this build
+# finished", and an older extension sets it too.
+# ---------------------------------------------------------------------------
+
+
+def test_199_shim_declares_everything_it_binds():
+    """The required-attribute list must not drift from what the module
+    actually pulls off the backend."""
+    source = pathlib.Path(_parser.__file__).read_text(encoding="utf-8")
+    bound = set(re.findall(r"_backend\.(\w+)", source))
+    declared = set(_parser._REQUIRED_BACKEND_ATTRS)
+    assert bound <= declared, f"bound but not declared: {sorted(bound - declared)}"
+
+
+@pytest.mark.skipif(_parser._BACKEND != "rust", reason="Needs the extension to probe.")
+def test_199_active_backend_satisfies_the_requirements():
+    assert _parser._missing_backend_attrs(_parser._backend) == []
+
+
+def test_199_missing_attribute_is_detected():
+    class _Stub:
+        pass
+
+    stub = _Stub()
+    for name in _parser._REQUIRED_BACKEND_ATTRS:
+        if name != "set_exclude_hook":
+            setattr(stub, name, object())
+    assert _parser._missing_backend_attrs(stub) == ["set_exclude_hook"]
+
+
+@pytest.mark.skipif(
+    _parser._BACKEND != "rust", reason="Needs the extension to build a stub from."
+)
+def test_199_too_old_extension_falls_back_instead_of_crashing():
+    """End to end, in a subprocess: an extension missing a required name
+    must leave `import abnf` working, on the pure-Python backend, with a
+    warning that names what is missing."""
+    program = textwrap.dedent(
+        """
+        import sys, types, warnings, json
+        import abnf_rust as real
+
+        # Stand in for an older build: BACKEND_READY is True, but the
+        # name added in the importing version's release is absent.
+        stub = types.ModuleType("abnf_rust")
+        for name in dir(real):
+            if not name.startswith("_") and name != "set_exclude_hook":
+                setattr(stub, name, getattr(real, name))
+        sys.modules["abnf_rust"] = stub
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            import abnf
+            import abnf.parser as parser
+            messages = [str(w.message) for w in caught
+                        if issubclass(w.category, RuntimeWarning)]
+
+        from abnf.parser import Rule
+
+        class G(Rule):
+            pass
+
+        G.create("s = 1*%x61-7A")
+        print(json.dumps({
+            "backend": parser._BACKEND,
+            "messages": messages,
+            "parsed": G("s").parse_all("abc").value,
+        }))
+        """
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", program],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout.strip().splitlines()[-1])
+    assert payload["backend"] == "python"
+    assert payload["parsed"] == "abc"
+    assert any("set_exclude_hook" in m for m in payload["messages"])
+    assert any("too old" in m for m in payload["messages"])

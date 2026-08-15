@@ -15,8 +15,10 @@ The attribute ``_BACKEND`` on this module is either ``"python"`` or
 
 from __future__ import annotations
 
+import importlib.metadata as _metadata
 import os
 import typing
+import warnings
 
 # The pure-Python implementation is always loaded.  It supplies the
 # canonical Rule / NodeVisitor / exception types (which never have
@@ -43,6 +45,38 @@ from abnf._parser_python import (
 # pyclasses whose Python signatures pyright cannot statically resolve.
 _backend: typing.Any
 
+#: Every name this module binds from the backend.  An extension older
+#: than the `abnf` importing it will be missing whichever were added
+#: since, and reaching for one of those raises `AttributeError` --
+#: which is not an `ImportError`, so the fallback below would not
+#: catch it and `import abnf` would fail outright.  That is issue
+#: #199: `abnf` 2.8.1 with `abnf-rust` 2.7.0, a combination the
+#: dependency floor allowed, died on `set_exclude_hook`.
+#:
+#: `BACKEND_READY` cannot answer this on its own: it is a static flag
+#: meaning "this build finished", and an old extension sets it too.
+_REQUIRED_BACKEND_ATTRS = (
+    "Alternation",
+    "Concatenation",
+    "Repetition",
+    "Option",
+    "Literal",
+    "Prose",
+    "Repeat",
+    "Match",
+    "Node",
+    "LiteralNode",
+    "set_definition_hook",
+    "set_exclude_hook",
+    "bootstrap",
+)
+
+
+def _missing_backend_attrs(module: typing.Any) -> list[str]:
+    """Names this module needs that `module` does not provide."""
+
+    return [name for name in _REQUIRED_BACKEND_ATTRS if not hasattr(module, name)]
+
 if os.environ.get("ABNF_NO_RUST"):
     _backend = _py
     _BACKEND = "python"
@@ -56,6 +90,29 @@ else:
             # (e.g. an in-development build).  Fall back silently.
             msg = "abnf_rust backend not ready"
             raise ImportError(msg)
+
+        _missing = _missing_backend_attrs(_abnf_rust)
+        if _missing:
+            # An `abnf-rust` older than this `abnf`.  Unlike the
+            # in-development case above this is worth saying out loud:
+            # it costs the user the Rust backend, which is a large and
+            # otherwise invisible change in speed, and unlike a
+            # half-built extension it is something they can fix.
+            try:
+                _rust_version = _metadata.version("abnf-rust")
+            except _metadata.PackageNotFoundError:  # pragma: no cover
+                _rust_version = "unknown"
+            warnings.warn(
+                f"abnf_rust {_rust_version} is too old for abnf "
+                f"{_metadata.version('abnf')}: it does not provide "
+                f"{', '.join(_missing)}.  Falling back to the pure-Python "
+                "backend; upgrade abnf-rust to restore it.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            msg = "abnf_rust too old"
+            raise ImportError(msg)
+
         _backend = _abnf_rust
         _BACKEND = "rust"
     except ImportError:
