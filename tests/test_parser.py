@@ -1698,3 +1698,66 @@ def test_199_too_old_extension_falls_back_instead_of_crashing():
     assert payload["parsed"] == "abc"
     assert any("set_exclude_hook" in m for m in payload["messages"])
     assert any("too old" in m for m in payload["messages"])
+
+
+# ---------------------------------------------------------------------------
+# Undefined rule references (issue #201).  A rule that was never defined is a
+# broken grammar, not input that failed to match.  The Rust engine returned an
+# ordinary ParseError, which is indistinguishable from "this alternative did
+# not match" -- so an enclosing Alternation or Repetition swallowed it as
+# backtracking and a typo'd rule name silently deleted that branch.
+#
+# The same defect was fixed for exclusions in 2.8.1; the plain definition
+# lookup one screen below it in rule.rs was missed.
+# ---------------------------------------------------------------------------
+
+
+def test_201_undefined_rule_in_an_alternation_raises():
+    """The reported case: the branch must not be silently dropped."""
+
+    class UndefinedInAlternation(Rule):
+        pass
+
+    UndefinedInAlternation.create('a = b / "x"')  # `b` is never defined
+
+    # Input that the *other* alternative matches must still raise: the
+    # grammar is broken regardless of which branch would have won.
+    with pytest.raises(GrammarError, match="Undefined rule"):
+        UndefinedInAlternation("a").parse_all("x")
+
+    with pytest.raises(GrammarError, match="Undefined rule"):
+        UndefinedInAlternation("a").parse_all("zz")
+
+
+def test_201_undefined_rule_in_a_repetition_raises():
+    class UndefinedInRepetition(Rule):
+        pass
+
+    UndefinedInRepetition.create("a = *b")
+
+    with pytest.raises(GrammarError, match="Undefined rule"):
+        UndefinedInRepetition("a").parse_all("")
+
+
+def test_201_undefined_rule_referenced_directly_raises():
+    class UndefinedDirect(Rule):
+        pass
+
+    UndefinedDirect.create("a = b")
+
+    with pytest.raises(GrammarError, match="Undefined rule"):
+        UndefinedDirect("a").parse_all("x")
+
+
+def test_201_forward_reference_still_works_once_defined():
+    """The check must fire on a missing definition, not on definition
+    order: a rule may be referenced before it is defined."""
+
+    class ForwardReference(Rule):
+        pass
+
+    ForwardReference.create('a = b / "x"')
+    ForwardReference.create('b = "y"')
+
+    assert ForwardReference("a").parse_all("y").value == "y"
+    assert ForwardReference("a").parse_all("x").value == "x"
