@@ -1,5 +1,25 @@
 # Changelog
 
+## 2.8.2
+
+* Fix `import abnf` crashing when `abnf-rust` is older than `abnf`.  The
+  dispatch shim reached for `set_exclude_hook` -- added to the extension in
+  2.8.1 -- outside the `try/except ImportError` that guards backend selection,
+  and `AttributeError` is not an `ImportError`, so the documented fallback to
+  the pure-Python backend never happened.  `abnf` 2.8.1 with `abnf-rust` 2.7.0
+  was a combination the dependency floor allowed, and it died on import.
+
+  `abnf.parser` now checks that the extension provides everything it binds
+  before committing to it, and falls back with a `RuntimeWarning` naming what
+  is missing.  `BACKEND_READY` could not answer this: it is a static flag
+  meaning "this build finished", which an older extension sets too.
+
+  The `[rust]` extra's floor is raised to `abnf-rust>=2.8.1` as well.  The
+  bound is necessary but not sufficient -- it can only name a version already
+  published when the release is built, so it lags by one release, and it is
+  advisory for lockfile installs -- which is why the runtime check carries the
+  guarantee (https://github.com/declaresub/abnf/issues/199).
+
 ## 2.8.1
 
 *2.8.0 was tagged but never published: its release build failed before either

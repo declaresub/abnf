@@ -74,8 +74,16 @@ rust = [
     # release workflow resolves this dependency (via `uv export`, for
     # the SBOM) *before* publishing, so naming the version being
     # released makes the release unbuildable.  Raise it in the cycle
-    # after the one that introduces the requirement, never in it.
-    'abnf-rust>=2.7,<3',
+    # after the one that introduces the requirement, never in it --
+    # which is what this is: 2.8.1 added `set_exclude_hook` to the
+    # extension, and `abnf` 2.8.1 paired with an older one died on
+    # import (issue #199).
+    #
+    # The bound is necessary but not sufficient: it lags by a release
+    # and is only advisory for lockfile installs, so `abnf.parser`
+    # also checks the backend's capabilities and falls back rather
+    # than crashing.
+    'abnf-rust>=2.8.1,<3',
 ]
 # Documentation toolchain (Sphinx + MyST for Markdown prose + autodoc for the
 # API reference from docstrings).  Kept separate from `dev` so running the test

@@ -37,6 +37,32 @@ import abnf.parser
 abnf.parser._BACKEND   # 'python' or 'rust'
 ```
 
+## Keep the two packages in step
+
+`abnf` and `abnf-rust` release under one git tag and are meant to be installed
+at the same version. `pip install abnf[rust]` does that for you.
+
+An `abnf-rust` older than the `abnf` importing it is missing whatever the newer
+release added, so `abnf` checks before committing to it. If anything it needs is
+absent, it falls back to the pure-Python backend and warns:
+
+```text
+RuntimeWarning: abnf_rust 2.7.0 is too old for abnf 2.8.2: it does not provide
+set_exclude_hook.  Falling back to the pure-Python backend; upgrade abnf-rust
+to restore it.
+```
+
+Parsing still works — the fallback is a complete implementation — but it is
+slower, so the warning is worth acting on rather than filtering. Upgrading
+`abnf-rust` to match `abnf` restores the Rust backend.
+
+The warning exists because the version bound alone cannot prevent this: the
+floor can only name a version already published when the release is built, so
+it necessarily lags by one release, and it is advisory for anyone installing
+from a lockfile or a private index. Before 2.8.2 a mismatch was not a warning
+but an `AttributeError` from `import abnf`
+([issue #199](https://github.com/declaresub/abnf/issues/199)).
+
 ## When to skip it
 
 The pure-Python implementation is a complete, supported parser and is the right
