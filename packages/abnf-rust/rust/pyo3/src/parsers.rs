@@ -97,7 +97,9 @@ impl PyAlternation {
         start: usize,
     ) -> PyResult<Py<LparseIter>> {
         let cps = CodePoints::new(source)?;
-        let result = crate::recursion::call_lparse(|| self.inner.lparse(cps.as_slice(), start))?;
+        let result = crate::recursion::call_lparse(source.as_ptr() as usize, || {
+            self.inner.lparse(cps.as_slice(), start)
+        })?;
         lparse_iter(py, result, source)
     }
 
@@ -150,7 +152,9 @@ impl PyConcatenation {
         start: usize,
     ) -> PyResult<Py<LparseIter>> {
         let cps = CodePoints::new(source)?;
-        let result = crate::recursion::call_lparse(|| self.inner.lparse(cps.as_slice(), start))?;
+        let result = crate::recursion::call_lparse(source.as_ptr() as usize, || {
+            self.inner.lparse(cps.as_slice(), start)
+        })?;
         lparse_iter(py, result, source)
     }
 
@@ -186,7 +190,9 @@ impl PyRepetition {
         start: usize,
     ) -> PyResult<Py<LparseIter>> {
         let cps = CodePoints::new(source)?;
-        let result = crate::recursion::call_lparse(|| self.inner.lparse(cps.as_slice(), start))?;
+        let result = crate::recursion::call_lparse(source.as_ptr() as usize, || {
+            self.inner.lparse(cps.as_slice(), start)
+        })?;
         lparse_iter(py, result, source)
     }
 
@@ -222,7 +228,9 @@ impl PyOption {
         start: usize,
     ) -> PyResult<Py<LparseIter>> {
         let cps = CodePoints::new(source)?;
-        let result = crate::recursion::call_lparse(|| self.inner.lparse(cps.as_slice(), start))?;
+        let result = crate::recursion::call_lparse(source.as_ptr() as usize, || {
+            self.inner.lparse(cps.as_slice(), start)
+        })?;
         lparse_iter(py, result, source)
     }
 
@@ -285,7 +293,9 @@ impl PyLiteral {
         start: usize,
     ) -> PyResult<Py<LparseIter>> {
         let cps = CodePoints::new(source)?;
-        let result = crate::recursion::call_lparse(|| self.inner.lparse(cps.as_slice(), start))?;
+        let result = crate::recursion::call_lparse(source.as_ptr() as usize, || {
+            self.inner.lparse(cps.as_slice(), start)
+        })?;
         lparse_iter(py, result, source)
     }
 
@@ -347,7 +357,9 @@ impl PyProse {
         start: usize,
     ) -> PyResult<Py<LparseIter>> {
         let cps = CodePoints::new(source)?;
-        match crate::recursion::call_lparse(|| self.inner.lparse(cps.as_slice(), start))? {
+        match crate::recursion::call_lparse(source.as_ptr() as usize, || {
+            self.inner.lparse(cps.as_slice(), start)
+        })? {
             Ok(_) => lparse_iter(py, Ok(smallvec::SmallVec::new()), source),
             Err(err) => Err(parse_error_to_pyerr(py, err)),
         }

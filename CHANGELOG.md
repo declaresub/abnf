@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+* A custom parser that re-enters the engine on a *different* source no longer
+  corrupts the enclosing parse.  Memoisation is scoped by epoch and keyed by
+  position alone, so an epoch may only ever see one source; nested entries
+  shared the enclosing parse's epoch, on the reasoning that a callback
+  re-entering the engine is part of the same parse.  The `Parser` protocol is
+  public, though, and a parser you write may parse anything while it runs --
+  after which entries made against the inner source answered lookups against
+  the outer one, and the outer parse returned a wrong result.  The pure-Python
+  backend was never affected: its memo carries the source and checks identity
+  before use.
+
+  The FFI boundary now compares the `str` object's identity, as the
+  pure-Python memo does, and gives a genuinely different source its own epoch.
+  Same-source re-entry keeps sharing, which matters because an epoch change
+  resets the caches it touches -- claiming one unconditionally would wipe the
+  enclosing parse's memo on every callback
+  (https://github.com/declaresub/abnf/issues/202).
+
 * A reference to a rule that was never defined now raises `GrammarError` on the
   Rust backend, as it already did on the pure-Python one.  It was an ordinary
   `ParseError`, which is indistinguishable from "this alternative did not

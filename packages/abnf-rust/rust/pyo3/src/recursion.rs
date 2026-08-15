@@ -24,7 +24,7 @@
 //! tags into the right Python exception.  Other panics resume so
 //! they keep surfacing as `PanicException` via PyO3's defaults.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::panic::{self, AssertUnwindSafe};
 use std::sync::Once;
 
@@ -48,6 +48,17 @@ const PYERR_PANIC_TAG: &str = "pycallback-python-error";
 const UNDEFINED_RULE_TAG: &str = "Undefined rule";
 
 thread_local! {
+    /// Identity of the source the innermost active parse is running
+    /// over: the address of the Python `str` object, which is what
+    /// the pure-Python backend compares (`ctx[0] is source`) before
+    /// trusting a memo entry.  Zero when no parse is active.
+    ///
+    /// Not the code-point buffer's address: a nested call widens the
+    /// same `str` into a different pooled buffer, so that would report
+    /// "different source" for every re-entrant call and throw away the
+    /// enclosing parse's memo each time.
+    static CURRENT_SOURCE_ID: Cell<usize> = const { Cell::new(0) };
+
     /// Holds the most recent `PyErr` raised by a `PyCallbackParser`
     /// callback that should propagate (i.e. not a `ParseError`).
     /// Taken by `call_lparse` when it recognises the
@@ -56,6 +67,16 @@ thread_local! {
 }
 
 static HOOK_INSTALLED: Once = Once::new();
+
+/// Restores the enclosing parse's source identity on the way out, so
+/// a nested call cannot leave the wrong one behind.
+struct RestoreSourceId(usize);
+
+impl Drop for RestoreSourceId {
+    fn drop(&mut self) {
+        CURRENT_SOURCE_ID.with(|id| id.set(self.0));
+    }
+}
 
 /// Install the panic hook exactly once per process.
 pub fn install_panic_hook() {
@@ -99,7 +120,7 @@ pub fn propagate_pyerr(err: PyErr) -> ! {
 /// PyCallbackParser-stash panic to the saved `PyErr`.  Any other
 /// panic is re-raised so it surfaces normally via PyO3's
 /// `PanicException`.
-pub fn call_lparse<F>(f: F) -> PyResult<abnf_core::ParseResult>
+pub fn call_lparse<F>(source_id: usize, f: F) -> PyResult<abnf_core::ParseResult>
 where
     F: FnOnce() -> abnf_core::ParseResult,
 {
@@ -112,6 +133,24 @@ where
     // identity.  Nested entries -- a `PyCallbackParser` calling back
     // in -- share the epoch, so intra-parse reuse is preserved.
     let _scope = abnf_core::ParseScope::enter();
+
+    // ...but only while they are parsing the same text.  A custom
+    // parser may call back in on any source it likes, and cache
+    // entries are keyed by position alone, so sharing an epoch across
+    // two sources let the inner parse answer the outer one's lookups
+    // and the outer parse returned a wrong result (issue #202).
+    //
+    // Compare the `str` object's identity, exactly as the pure-Python
+    // memo does, and give a genuinely different source its own epoch.
+    // Same-source re-entry -- the common case -- keeps sharing, which
+    // matters because an epoch change resets the caches it touches:
+    // claiming one unconditionally would wipe the enclosing parse's
+    // memo on every callback.
+    let previous_source = CURRENT_SOURCE_ID.with(Cell::get);
+    let _source_scope = (previous_source != source_id)
+        .then(abnf_core::SourceScope::enter);
+    CURRENT_SOURCE_ID.with(|id| id.set(source_id));
+    let _restore = RestoreSourceId(previous_source);
     match panic::catch_unwind(AssertUnwindSafe(f)) {
         Ok(result) => Ok(result),
         Err(payload) => {
