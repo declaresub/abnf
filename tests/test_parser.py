@@ -1761,3 +1761,76 @@ def test_201_forward_reference_still_works_once_defined():
 
     assert ForwardReference("a").parse_all("y").value == "y"
     assert ForwardReference("a").parse_all("x").value == "x"
+
+
+# ---------------------------------------------------------------------------
+# Re-entrant parses over a different source (issue #202).  Memoisation is
+# scoped by epoch, and cache entries are keyed by position alone, so an epoch
+# may only ever see one source.  Nested FFI entries shared the enclosing
+# parse's epoch on the reasoning that a callback re-entering the engine is
+# part of the same parse -- but the `Parser` protocol is public, and a custom
+# parser may parse anything it likes while it runs.  Entries made against the
+# inner source then answered lookups against the outer one.
+#
+# The pure-Python backend was never affected: its memo carries the source and
+# checks identity (`ctx[0] is source`) before use.
+# ---------------------------------------------------------------------------
+
+
+def test_202_re_entrant_parse_on_a_different_source():
+    """The reported case: parsing other text mid-parse must not change
+    what the enclosing parse matches."""
+    inner = Repetition(Repeat(0, None), Literal("a"))
+
+    class ReEnter:
+        def lparse(self, source, start):
+            list(inner.lparse("bbbb", 0))  # a different source, mid-parse
+            yield Match([], start)  # then match zero width
+
+    outer = Concatenation(cast(Parser, ReEnter()), inner)
+    assert max(m.start for m in outer.lparse("aaa", 0)) == 3
+
+
+def test_202_re_entrant_parse_on_the_same_source_is_unaffected():
+    """Same-source re-entry keeps sharing the epoch -- an epoch change
+    resets the caches it touches, so claiming one unconditionally would
+    wipe the enclosing parse's memo on every callback."""
+
+    class Ambiguous(Rule):
+        pass
+
+    Ambiguous.create('amb = 1*("a" / "aa")')
+    inner = Ambiguous("amb")
+
+    class SameSource:
+        def lparse(self, source, start):
+            inner.parse(source, 0)  # the same source object
+            yield Match([], start)
+
+    class Outer(Rule):
+        pass
+
+    Outer(
+        "loop",
+        Repetition(
+            Repeat(1, None),
+            Concatenation(cast(Parser, SameSource()), Ambiguous("amb")),
+        ),
+    )
+    source = "a" * 12
+    assert Outer("loop").parse(source, 0)[1] == len(source)
+
+
+def test_202_nested_different_sources_restore_the_outer_scope():
+    """Two levels of re-entry, each on its own text: unwinding must put
+    the enclosing parse back on its own entries."""
+    inner = Repetition(Repeat(0, None), Literal("a"))
+
+    class Deep:
+        def lparse(self, source, start):
+            list(inner.lparse("bb", 0))
+            list(inner.lparse("cccc", 0))
+            yield Match([], start)
+
+    outer = Concatenation(cast(Parser, Deep()), inner)
+    assert max(m.start for m in outer.lparse("aaaa", 0)) == 4
