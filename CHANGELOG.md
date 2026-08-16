@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+* A duck-typed parser that happens to have a `name` attribute is no longer
+  mistaken for a `Rule` by the Rust backend.  Parsers were identified by
+  attribute shape -- anything with `name` and `lparse` -- so such an object
+  became a definition-less `NamedRule` and its own `lparse` was never called:
+  `Concatenation(Literal("x"), MyParser())` matched `"xz"` on the pure-Python
+  backend and failed on the Rust one, controlled by an attribute that looks
+  incidental.
+
+  It also entered the bridge, a registry keyed by the Python object's
+  *address*.  That is sound for rules, which `Rule._obj_map` keeps alive
+  forever, but not for an arbitrary user object: a freed one's address could
+  be handed to a new `Rule`, which then inherited its stale handle.
+  Reproduced -- defining such a rule wrote into a parser tree built from an
+  unrelated object, and the tree matched input the original parser always
+  rejected.
+
+  Rules are now identified by type.  Everything else with `lparse` takes the
+  callback path, which holds a reference to the object, so it cannot dangle
+  (https://github.com/declaresub/abnf/issues/203).
+
 * A custom parser that re-enters the engine on a *different* source no longer
   corrupts the enclosing parse.  Memoisation is scoped by epoch and keyed by
   position alone, so an epoch may only ever see one source; nested entries

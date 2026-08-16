@@ -8,7 +8,8 @@ use std::sync::Arc;
 
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
-use pyo3::types::{PyString, PyTuple};
+use pyo3::sync::PyOnceLock;
+use pyo3::types::{PyString, PyTuple, PyType};
 
 use abnf_core::{
     arc, Alternation, ArcParser, Concatenation, Literal, LiteralKind, OptionParser, Parser, Prose,
@@ -398,19 +399,31 @@ pub fn extract_parser(obj: &Bound<'_, PyAny>) -> PyResult<ArcParser> {
     if let Ok(p) = obj.cast::<PyProse>() {
         return Ok(p.borrow().inner.clone());
     }
-    // If the value is a Python Rule (or anything else carrying a
-    // `name`+`lparse` shape that fits the parser-by-name contract),
-    // look up — or lazily create — its shadow Rust `NamedRule` in
-    // the bridge registry.  This is the fast path that keeps rule
-    // references purely in Rust at parse time, instead of dispatching
-    // every reference through Python.
-    if obj.hasattr("name")? && obj.hasattr("lparse")? {
+    // If the value is a Python `Rule`, look up — or lazily create —
+    // its shadow Rust `NamedRule` in the bridge registry.  This is the
+    // fast path that keeps rule references purely in Rust at parse
+    // time, instead of dispatching every reference through Python.
+    //
+    // The test is `isinstance`, not the presence of `name` + `lparse`.
+    // Attribute shape caught anything with a `name`, which was wrong
+    // twice over (issue #203): such an object became a
+    // definition-less `NamedRule` whose own `lparse` was then never
+    // called, and it was entered into a registry keyed by the object's
+    // *address* — sound only because `Rule._obj_map` makes rules
+    // immortal, which is not true of an arbitrary user object.  A
+    // freed one's address could be handed to a new `Rule`, which then
+    // inherited its stale handle; defining that rule wrote into a
+    // parser tree built from an unrelated object.
+    static RULE_TYPE: PyOnceLock<Py<PyType>> = PyOnceLock::new();
+    let rule_type = RULE_TYPE.import(obj.py(), "abnf._parser_python", "Rule")?;
+    if obj.is_instance(rule_type)? {
         let handle = crate::bridge::get_or_create(obj)?;
         return Ok(arc(handle));
     }
-    // Last-resort fallback: any other object with an `lparse` method
-    // is wrapped as a `PyCallbackParser`.  Reserved for callers that
-    // pass duck-typed parsers without a `name` attribute.
+    // Any other object with an `lparse` method is wrapped as a
+    // `PyCallbackParser`, which holds a reference to it -- so unlike a
+    // bridge entry, it cannot outlive the object it refers to.  This
+    // is where every duck-typed parser goes, with or without a `name`.
     if obj.hasattr("lparse")? {
         let callback = PyCallbackParser::new(obj.clone().unbind(), "PyCallback");
         let parser: Parser = Parser::External(Arc::new(callback));
