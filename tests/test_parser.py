@@ -1909,3 +1909,87 @@ def test_203_real_rules_still_take_the_bridge_fast_path():
     before = bridge_size()
     BridgeFastPath("outer", Concatenation(Literal("x"), BridgeFastPath("inner")))
     assert bridge_size() > before
+
+
+# ---------------------------------------------------------------------------
+# Backend API parity (issue #204).  Four small divergences, grouped because
+# they share a cause: the Rust pyclasses reimplement parts of the Python API
+# surface and drifted from it.  The pure-Python implementation is the
+# reference in each case.
+# ---------------------------------------------------------------------------
+
+
+def test_204_repeat_bound_beyond_usize_is_not_an_error():
+    """Python's ints are unbounded, so this is odd but valid ABNF that
+    the reference backend parses happily -- the bound is never reached.
+    Raising `OverflowError` also escaped the documented exception
+    contract, being neither `GrammarError` nor `ParseError`."""
+
+    class HugeBound(Rule):
+        pass
+
+    HugeBound.create('a = 2*99999999999999999999"x"')
+    assert HugeBound("a").parse_all("xxx").value == "xxx"
+
+
+@pytest.mark.parametrize(
+    "args, expected",
+    [
+        ((3, 2), GrammarError),  # impossible range
+        ((0, -1), GrammarError),  # negative max is < min
+        ((0, "x"), TypeError),  # not a number at all
+    ],
+)
+def test_204_repeat_still_rejects_what_it_should(args, expected):
+    """Saturating a huge bound must not swallow the genuine errors."""
+    with pytest.raises(expected):
+        Repeat(*args)
+
+
+def test_204_range_literal_case_sensitivity_reads_the_same():
+    """A range compares by code point either way, so the attribute is
+    inert -- but it should read alike on both backends."""
+    assert Literal(("a", "z")).case_sensitive is False
+    assert Literal("a").case_sensitive is False
+    assert Literal("a", case_sensitive=True).case_sensitive is True
+
+
+def test_204_node_equality_is_structural():
+    """Comparing concatenated values called two different parse trees
+    equal whenever they spanned the same text."""
+
+    class Flat(Rule):
+        pass
+
+    class Nested(Rule):
+        pass
+
+    Flat.create('a = "xy" / ("x" "y")')
+    Nested.create('a = ("x" "y") / "xy"')
+
+    flat = Flat("a").parse_all("xy")
+    nested = Nested("a").parse_all("xy")
+    assert flat.value == nested.value == "xy"
+    assert len(flat.children) != len(nested.children)
+    assert flat != nested
+
+
+def test_204_node_equality_compares_children_recursively():
+    same = Node("r", cast(Node, Node("c", cast(Node, LiteralNode("a", 0, 1)))))
+    other = Node("r", cast(Node, Node("c", cast(Node, LiteralNode("b", 0, 1)))))
+    assert same == Node("r", cast(Node, Node("c", cast(Node, LiteralNode("a", 0, 1)))))
+    assert same != other
+    # ...and a node is never equal to something that is not one.
+    assert same != LiteralNode("a", 0, 1)
+    assert same != "r"
+
+
+def test_204_parse_tree_nodes_are_unhashable():
+    """`__eq__` without `__hash__` makes a class unhashable in Python,
+    and the reference `LiteralNode` does exactly that.  `Node` is
+    unhashable too, so no parse-tree node is hashable on either
+    backend."""
+    with pytest.raises(TypeError):
+        hash(LiteralNode("a", 0, 1))
+    with pytest.raises(TypeError):
+        hash(Node("x"))

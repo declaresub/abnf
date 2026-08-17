@@ -9,7 +9,7 @@ use std::sync::Arc;
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use pyo3::sync::PyOnceLock;
-use pyo3::types::{PyString, PyTuple, PyType};
+use pyo3::types::{PyInt, PyString, PyTuple, PyType};
 
 use abnf_core::{
     arc, Alternation, ArcParser, Concatenation, Literal, LiteralKind, OptionParser, Parser, Prose,
@@ -39,7 +39,39 @@ pub struct PyRepeat {
 impl PyRepeat {
     #[new]
     #[pyo3(signature = (min=0, max=None))]
-    fn new(py: Python<'_>, min: usize, max: Option<usize>) -> PyResult<Self> {
+    fn new(py: Python<'_>, min: usize, max: Option<&Bound<'_, PyAny>>) -> PyResult<Self> {
+        // A bound too large for `usize` saturates rather than raising.
+        // Python's ints are unbounded, so `2*99999999999999999999"x"`
+        // is odd but valid ABNF that the pure-Python backend parses
+        // happily -- the bound is simply never reached.  Raising
+        // `OverflowError` here made the two backends disagree, and
+        // `OverflowError` is neither `GrammarError` nor `ParseError`,
+        // so it escaped the documented exception contract as well.
+        // No input can reach `usize::MAX` repetitions, so saturating
+        // is indistinguishable from the unbounded value.
+        let max: Option<usize> = match max {
+            None => None,
+            Some(obj) if obj.is_none() => None,
+            Some(obj) => match obj.extract::<usize>() {
+                Ok(value) => Some(value),
+                // Not an integer at all: report that, not a bound problem.
+                Err(err) if obj.cast::<PyInt>().is_err() => return Err(err),
+                // An integer outside `usize`.  Negative falls through to
+                // the `max < min` check below, exactly as in Python;
+                // anything else is bigger than any input can reach.
+                Err(_) if obj.lt(0i64)? => {
+                    let msg = format!(
+                        "Repeat max ({}) is less than min ({min}); \
+                         a repetition of {min}*{} can never match.",
+                        obj.str()?,
+                        obj.str()?
+                    );
+                    return Err(crate::errors::grammar_error(py, &msg));
+                }
+                Err(_) => Some(usize::MAX),
+            },
+        };
+
         // Mirrors the check in the pure-Python `Repeat.__init__`:
         // `3*2` is an impossible range, and leaving it unvalidated
         // silently behaves as `3*`.  Both backends must reject it
@@ -278,7 +310,11 @@ impl PyLiteral {
                 };
                 return Ok(Self {
                     inner: Literal::range(*lo, *hi).into(),
-                    case_sensitive: true,
+                    // A range compares by code point either way, so
+                    // this attribute is inert -- but the pure-Python
+                    // constructor leaves it at its default, and the
+                    // two backends should read alike.
+                    case_sensitive,
                 });
             }
         }

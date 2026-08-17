@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+* Four small divergences between the backends, each resolved toward the
+  pure-Python implementation (https://github.com/declaresub/abnf/issues/204):
+
+  * A repeat bound too large for a machine word saturates rather than raising
+    `OverflowError`.  Python's ints are unbounded, so `2*99999999999999999999`
+    is odd but valid ABNF the pure-Python backend parses happily -- the bound
+    is never reached -- and `OverflowError` is neither `GrammarError` nor
+    `ParseError`, so it escaped the documented exception contract too.  Such a
+    bound reads back from `Repeat.max` as the machine maximum under the Rust
+    backend; no input can reach either value, so matching is unaffected.
+  * `Literal(('a', 'z')).case_sensitive` reads `False` rather than `True`.  A
+    range compares by code point either way, so this was the attribute alone.
+  * `Node` equality is structural -- name and children, compared recursively
+    -- rather than a comparison of concatenated values, which called two
+    different parse trees equal whenever they spanned the same text.  It
+    silently changed what a user's assertions meant depending on which backend
+    was installed.
+  * `LiteralNode` is unhashable, as it is in pure Python, where defining
+    `__eq__` without `__hash__` makes it so.  `Node` was already unhashable on
+    both, so no parse-tree node is hashable anywhere.
+
 * A duck-typed parser that happens to have a `name` attribute is no longer
   mistaken for a `Rule` by the Rust backend.  Parsers were identified by
   attribute shape -- anything with `name` and `lparse` -- so such an object
