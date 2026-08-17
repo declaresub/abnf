@@ -49,13 +49,13 @@ jobs:
         persist-credentials: false
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@7fd177fa680c9881b53cdab4d346d32574c9f7f4  # v3.35.4
+      uses: github/codeql-action/init@f3712979fa5f215279b101dd0a2e3bdfb4353324  # v3.37.7
       with:
         languages: ${{ matrix.language }}
         build-mode: ${{ matrix.build-mode }}
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@7fd177fa680c9881b53cdab4d346d32574c9f7f4  # v3.35.4
+      uses: github/codeql-action/analyze@f3712979fa5f215279b101dd0a2e3bdfb4353324  # v3.37.7
       with:
         # Category disambiguates the python and rust SARIF uploads in
         # the Code Scanning UI when both finish for the same commit.
