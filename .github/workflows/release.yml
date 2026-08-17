@@ -122,7 +122,7 @@ jobs:
         print(f"Set abnf-rust version to {version}")
 
     - name: Build sdist
-      uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b  # v1
+      uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b  # v1.51.0
       with:
         working-directory: packages/abnf-rust
         command: sdist
@@ -204,7 +204,7 @@ jobs:
     - name: Build wheel
       # sccache OFF on release builds: seal source rather than risk
       # a poisoned compilation cache reaching a release wheel.
-      uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b  # v1
+      uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b  # v1.51.0
       with:
         working-directory: packages/abnf-rust
         target: ${{ matrix.target.maturin-target }}
@@ -291,7 +291,7 @@ jobs:
         path: dist/
 
     - name: Publish to TestPyPI
-      uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # release/v1
+      uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # v1.14.2
       with:
         repository-url: https://test.pypi.org/legacy/
         # Make re-runs idempotent.  If a previous attempt for this
@@ -327,7 +327,7 @@ jobs:
         path: dist/
 
     - name: Publish to PyPI
-      uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # release/v1
+      uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # v1.14.2
       with:
         # Idempotent re-runs.  PyPI rejects duplicate filenames at
         # the project level, so this is purely a "skip what already
@@ -363,7 +363,7 @@ jobs:
         path: dist/
 
     - name: Publish to TestPyPI
-      uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # release/v1
+      uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # v1.14.2
       with:
         repository-url: https://test.pypi.org/legacy/
         skip-existing: true
@@ -392,7 +392,7 @@ jobs:
         path: dist/
 
     - name: Publish to PyPI
-      uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # release/v1
+      uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # v1.14.2
       with:
         skip-existing: true
         attestations: true
