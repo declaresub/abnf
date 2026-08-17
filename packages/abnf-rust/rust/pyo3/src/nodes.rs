@@ -94,13 +94,16 @@ impl PyLiteralNode {
             && self.value.bind(py).as_any().eq(other.value.bind(py).as_any())?)
     }
 
-    fn __hash__(&self, py: Python<'_>) -> PyResult<isize> {
-        // Hash on the same fields `__eq__` compares, and let Python
-        // hash the text so the two agree for every string it can hold.
-        let mut h = self.value.bind(py).as_any().hash()?;
-        h = h.wrapping_mul(1_000_003).wrapping_add(self.offset as isize);
-        h = h.wrapping_mul(1_000_003).wrapping_add(self.length as isize);
-        Ok(h)
+    /// Deliberately absent: defining `__eq__` without `__hash__`
+    /// makes a class unhashable in Python, and the pure-Python
+    /// `LiteralNode` does exactly that.  `Node` is unhashable on both
+    /// backends too, so no parse-tree node is hashable anywhere.
+    /// Adding one here made `set(literal_nodes)` work under the Rust
+    /// backend and raise `TypeError` under the other.
+    #[classattr]
+    #[pyo3(name = "__hash__")]
+    fn __hash__() -> Option<Py<PyAny>> {
+        None
     }
 }
 
@@ -167,8 +170,24 @@ impl PyNode {
     }
 
     fn __richcmp__(&self, py: Python<'_>, other: &Self, op: CompareOp) -> PyResult<bool> {
+        // Structural, as the pure-Python `Node.__eq__` is: name and
+        // children, compared recursively.  Comparing concatenated
+        // values instead called two different parse trees equal
+        // whenever they spanned the same text -- `"xy" / ("x" "y")`
+        // against `("x" "y") / "xy"`, say -- which silently changed
+        // what a user's assertions meant depending on the backend.
         let eq = self.name == other.name
-            && self.value.bind(py).as_any().eq(other.value.bind(py).as_any())?;
+            && self.children.len() == other.children.len()
+            && {
+                let mut equal = true;
+                for (a, b) in self.children.iter().zip(other.children.iter()) {
+                    if !a.bind(py).eq(b.bind(py))? {
+                        equal = false;
+                        break;
+                    }
+                }
+                equal
+            };
         Ok(match op {
             CompareOp::Eq => eq,
             CompareOp::Ne => !eq,
