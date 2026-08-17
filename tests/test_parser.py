@@ -1,3 +1,4 @@
+import gc
 import json
 import pathlib
 import re
@@ -6,6 +7,7 @@ import sys
 import textwrap
 import threading
 import warnings
+import weakref
 from typing import cast
 
 import pytest
@@ -1834,3 +1836,160 @@ def test_202_nested_different_sources_restore_the_outer_scope():
 
     outer = Concatenation(cast(Parser, Deep()), inner)
     assert max(m.start for m in outer.lparse("aaaa", 0)) == 4
+
+
+# ---------------------------------------------------------------------------
+# Parser identification (issue #203).  The Rust layer decided that anything
+# with `name` and `lparse` was a Rule, and registered it in the bridge -- a
+# registry keyed by the Python object's *address*.  Two defects followed:
+# such an object became a definition-less `NamedRule` whose own `lparse` was
+# never called, and the registry's soundness argument (rules are immortal,
+# via `Rule._obj_map`) does not hold for an arbitrary user object, so a freed
+# one's address could be handed to a new `Rule` that inherited its handle.
+#
+# Rules are now identified by type.  Everything else with `lparse` goes to the
+# callback path, which holds a reference to the object -- so it cannot dangle.
+# ---------------------------------------------------------------------------
+
+
+def test_203_duck_typed_parser_with_a_name_attribute_is_called():
+    """`name` is an ordinary attribute; it must not change dispatch."""
+
+    class NamedDuck:
+        name = "descriptive"
+
+        def lparse(self, source, start):
+            if start < len(source):
+                yield Match(
+                    [cast(Node, LiteralNode(source[start], start, 1))], start + 1
+                )
+            else:
+                raise ParseError(self, start)
+
+    parser = Concatenation(Literal("x"), cast(Parser, NamedDuck()))
+    match = next(iter(parser.lparse("xz", 0)))
+    assert match.nodes[-1].value == "z"
+
+
+def test_203_a_parser_tree_keeps_its_python_parsers_alive():
+    """The property that makes the address-reuse hazard impossible: an
+    embedded parser is owned by the tree, so its address cannot be
+    recycled while the tree still refers to it."""
+
+    class Duck:
+        name = "duck"
+
+        def lparse(self, source, start):
+            yield Match([cast(Node, LiteralNode(source[start], start, 1))], start + 1)
+
+    duck = Duck()
+    ref = weakref.ref(duck)
+    tree = Concatenation(Literal("x"), cast(Parser, duck))
+    del duck
+    gc.collect()
+    assert ref() is not None, "the tree does not own the parser it was built from"
+
+    del tree
+    gc.collect()
+    assert ref() is None, "the parser outlived every tree referring to it"
+
+
+@pytest.mark.skipif(
+    _parser._BACKEND != "rust", reason="The bridge only exists under Rust."
+)
+def test_203_real_rules_still_take_the_bridge_fast_path():
+    """Identifying rules by type must not cost the optimisation the
+    attribute check existed for."""
+    from abnf_rust._ext import bridge_size  # type: ignore[import-not-found]
+
+    class BridgeFastPath(Rule):
+        pass
+
+    BridgeFastPath.create('inner = "a"')
+    before = bridge_size()
+    BridgeFastPath("outer", Concatenation(Literal("x"), BridgeFastPath("inner")))
+    assert bridge_size() > before
+
+
+# ---------------------------------------------------------------------------
+# Backend API parity (issue #204).  Four small divergences, grouped because
+# they share a cause: the Rust pyclasses reimplement parts of the Python API
+# surface and drifted from it.  The pure-Python implementation is the
+# reference in each case.
+# ---------------------------------------------------------------------------
+
+
+def test_204_repeat_bound_beyond_usize_is_not_an_error():
+    """Python's ints are unbounded, so this is odd but valid ABNF that
+    the reference backend parses happily -- the bound is never reached.
+    Raising `OverflowError` also escaped the documented exception
+    contract, being neither `GrammarError` nor `ParseError`."""
+
+    class HugeBound(Rule):
+        pass
+
+    HugeBound.create('a = 2*99999999999999999999"x"')
+    assert HugeBound("a").parse_all("xxx").value == "xxx"
+
+
+@pytest.mark.parametrize(
+    "args, expected",
+    [
+        ((3, 2), GrammarError),  # impossible range
+        ((0, -1), GrammarError),  # negative max is < min
+        ((0, "x"), TypeError),  # not a number at all
+    ],
+)
+def test_204_repeat_still_rejects_what_it_should(args, expected):
+    """Saturating a huge bound must not swallow the genuine errors."""
+    with pytest.raises(expected):
+        Repeat(*args)
+
+
+def test_204_range_literal_case_sensitivity_reads_the_same():
+    """A range compares by code point either way, so the attribute is
+    inert -- but it should read alike on both backends."""
+    assert Literal(("a", "z")).case_sensitive is False
+    assert Literal("a").case_sensitive is False
+    assert Literal("a", case_sensitive=True).case_sensitive is True
+
+
+def test_204_node_equality_is_structural():
+    """Comparing concatenated values called two different parse trees
+    equal whenever they spanned the same text."""
+
+    class Flat(Rule):
+        pass
+
+    class Nested(Rule):
+        pass
+
+    Flat.create('a = "xy" / ("x" "y")')
+    Nested.create('a = ("x" "y") / "xy"')
+
+    flat = Flat("a").parse_all("xy")
+    nested = Nested("a").parse_all("xy")
+    assert flat.value == nested.value == "xy"
+    assert len(flat.children) != len(nested.children)
+    assert flat != nested
+
+
+def test_204_node_equality_compares_children_recursively():
+    same = Node("r", cast(Node, Node("c", cast(Node, LiteralNode("a", 0, 1)))))
+    other = Node("r", cast(Node, Node("c", cast(Node, LiteralNode("b", 0, 1)))))
+    assert same == Node("r", cast(Node, Node("c", cast(Node, LiteralNode("a", 0, 1)))))
+    assert same != other
+    # ...and a node is never equal to something that is not one.
+    assert same != LiteralNode("a", 0, 1)
+    assert same != "r"
+
+
+def test_204_parse_tree_nodes_are_unhashable():
+    """`__eq__` without `__hash__` makes a class unhashable in Python,
+    and the reference `LiteralNode` does exactly that.  `Node` is
+    unhashable too, so no parse-tree node is hashable on either
+    backend."""
+    with pytest.raises(TypeError):
+        hash(LiteralNode("a", 0, 1))
+    with pytest.raises(TypeError):
+        hash(Node("x"))
