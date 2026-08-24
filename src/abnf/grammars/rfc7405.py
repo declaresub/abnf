@@ -20,9 +20,11 @@ from .misc import load_grammar_rules
 #: the extension would apply to nothing above it.  They are defined
 #: below instead, copied from RFC 5234 unchanged.
 #:
-#: `char-val` itself was in the imported set, which silently replaced
-#: the extended rule with the plain one: `%s"abc"` did not parse at
-#: all.  See https://github.com/declaresub/abnf/issues/244 .
+#: These names never reached the import list in practice -- the
+#: comprehension below is evaluated while `rfc5234` is still being
+#: populated, so it sees only the eleven leaf rules.  Naming them makes
+#: the filter say what it means rather than depend on that timing.
+#: See https://github.com/declaresub/abnf/issues/244 .
 _REDEFINED = frozenset(
     {
         "char-val",
