@@ -55,5 +55,14 @@ class Rule(_Rule):
     ]
 
 
-# see https://www.rfc-editor.org/rfc/rfc3986#section-3.2.2 .
-Rule("host").first_match_alternation = True
+# RFC 3986 section 3.2.2 says that a host matching IPv4address "should be
+# considered an IPv4 address literal and not a reg-name".  That is a rule
+# about attributing a match of the whole host, and longest-match alternation
+# already satisfies it: a full IPv4 host ties with reg-name, and the tie is
+# broken by declaration order, which puts IPv4address first.
+#
+# `host` used to set `first_match_alternation`, citing that section.  Under
+# first match the alternation commits to IPv4address on a *prefix*: given
+# `1.2.3.4.5`, IPv4address matched `1.2.3.4`, reg-name was never tried, and
+# the whole URI was rejected -- as was any host of the shape
+# `1.2.3.4.in-addr.arpa`.  See https://github.com/declaresub/abnf/issues/232 .
