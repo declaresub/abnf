@@ -2093,3 +2093,60 @@ def test_219_parse_error_parser_is_documented_as_backend_dependent():
     doc = ParseError.__doc__ or ""
     assert "description string" in doc
     assert "start" in doc
+
+
+# Values returned by a custom parser (issue #220).  Engine-built terminals are
+# spans of the source, which is what lets their values be produced by slicing
+# it (#173).  A node handed *in* by a custom parser need not correspond to any
+# span: returning a normalised or synthesised value is a legitimate thing to
+# write, and the pure-Python backend keeps it.  Slicing the source for one of
+# those silently replaced it with unrelated text.
+# ---------------------------------------------------------------------------
+
+
+class _Synth:
+    """Returns a value that is not the text it spans."""
+
+    def lparse(self, source, start):
+        yield Match([cast(Node, LiteralNode("SYNTH", 0, 2))], 2)
+
+
+def test_220_a_returned_value_is_preserved():
+    match = next(iter(Concatenation(cast(Parser, _Synth())).lparse("abc", 0)))
+    assert match.nodes[0].value == "SYNTH"
+
+
+def test_220_an_enclosing_node_includes_the_returned_value():
+    """The enclosing value cannot be one slice of the source any more,
+    so it has to be joined from the parts."""
+
+    class Wrapper(Rule):
+        pass
+
+    Wrapper("wrap", Concatenation(cast(Parser, _Synth()), Literal("c")))
+    assert Wrapper("wrap").parse_all("abc").value == "SYNTHc"
+
+
+def test_220_a_returned_value_may_contain_a_surrogate():
+    """The value crosses the boundary as code points, so it is subject
+    to the same domain as the source (#173)."""
+
+    class Surrogate:
+        def lparse(self, source, start):
+            yield Match([cast(Node, LiteralNode("\ud800x", 0, 2))], 2)
+
+    match = next(iter(Concatenation(cast(Parser, Surrogate())).lparse("abc", 0)))
+    assert match.nodes[0].value == "\ud800x"
+
+
+def test_220_engine_built_values_are_unchanged():
+    """The slicing fast path still applies to everything the engine
+    builds itself, which is all of a normal parse."""
+
+    class Ordinary(Rule):
+        pass
+
+    Ordinary.create("s = 1*%x61-7A")
+    node = Ordinary("s").parse_all("abc")
+    assert node.value == "abc"
+    assert [c.value for c in node.children] == ["a", "b", "c"]
