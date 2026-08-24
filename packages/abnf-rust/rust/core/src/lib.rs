@@ -47,7 +47,7 @@ pub use error::ParseError;
 pub use literal::{Literal, LiteralKind};
 pub use matcher::Match;
 pub use meta_grammar::{build_meta_grammar, install_meta_grammar};
-pub use node::{LiteralNode, Node, NodeKind};
+pub use node::{ForeignNode, LiteralNode, Node, NodeKind};
 pub use option::OptionParser;
 pub use parser::{arc, ArcParser, ExternalParser, MatchList, NodeList, ParseResult, Parser, Src};
 pub use prose::Prose;

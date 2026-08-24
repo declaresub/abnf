@@ -1,5 +1,32 @@
 # Changelog
 
+## Unreleased
+
+* A value returned by a custom parser is no longer replaced by source text.
+  Since 2.8.1 the engine's terminals are spans of the source and their values
+  are produced by slicing it, which is sound for nodes the engine builds --
+  but a node handed *in* by a parser you write need not correspond to any
+  span.  Returning a normalised or synthesised value is a legitimate thing to
+  do, and the pure-Python backend keeps it; the Rust backend silently
+  substituted whatever text sat at that offset.  Such nodes now carry their
+  own value across the boundary, as code points, so a surrogate survives too
+  (https://github.com/declaresub/abnf/issues/220).
+
+  Parse performance is unaffected: the new node kind is behind an `Arc`, as
+  `Node`'s children already were.  Holding it inline, or behind a `Box`, cost
+  5-9% on the benchmarks -- node lists are cloned on every match extension, so
+  the variant's size and its clone land on every parse whether or not a
+  grammar ever produces one.
+
+* Document that `ParseError.parser` holds the parser object under the
+  pure-Python backend and a description string under the Rust one.  `start`
+  means the same thing either way, and is the attribute to branch on; `parser`
+  is diagnostic output, and reaching into it (`exc.parser.name`) is portable
+  only to pure Python.  The engine builds an error on every failed
+  alternative, so it carries a description prepared once at construction
+  rather than a reference to the parser, which is what keeps backtracking
+  cheap (https://github.com/declaresub/abnf/issues/219).
+
 ## 2.8.3
 
 * A reference to a rule that was never defined now raises `GrammarError` on the

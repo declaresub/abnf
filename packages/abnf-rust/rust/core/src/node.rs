@@ -75,11 +75,45 @@ impl LiteralNode {
     }
 }
 
+/// A terminal node supplied by an embedded Python parser, carrying the
+/// text that parser reported.
+///
+/// Engine-built terminals are spans of the source ([`LiteralNode`]),
+/// which is what lets the PyO3 layer produce their values by slicing.
+/// A node handed *in* by a `PyCallbackParser` need not correspond to
+/// any span: a custom parser may legitimately return a normalised or
+/// synthesised value, and the pure-Python backend keeps it.  Slicing
+/// the source for one of these replaced it with unrelated text
+/// (issue #220), so these carry their own.
+///
+/// Code points rather than a Rust string, for the same reason the
+/// source is: the value may contain a lone surrogate.
+#[derive(Debug, Clone)]
+pub struct ForeignNode {
+    pub value: Box<[u32]>,
+    /// Offset the parser reported.  Not necessarily where `value`
+    /// appears in the source -- it need not appear there at all.
+    pub offset: usize,
+    pub length: usize,
+}
+
+impl ForeignNode {
+    pub fn new(value: Box<[u32]>, offset: usize, length: usize) -> Self {
+        Self { value, offset, length }
+    }
+}
+
 /// Sum type for parse-tree children.
 #[derive(Debug, Clone)]
 pub enum NodeKind {
     Internal(Node),
     Literal(LiteralNode),
+    /// Behind an `Arc`, as `Node`'s children are, and for the same
+    /// reason: node lists are cloned on every match extension, so this
+    /// variant's clone lands on every parse whether or not a grammar
+    /// ever produces one.  Inline it also made `NodeKind` 40 bytes
+    /// rather than 32.
+    Foreign(Arc<ForeignNode>),
 }
 
 impl NodeKind {
@@ -94,6 +128,13 @@ impl NodeKind {
             NodeKind::Literal(l) => {
                 out.extend(
                     l.span(src)
+                        .iter()
+                        .map(|cp| char::from_u32(*cp).unwrap_or(char::REPLACEMENT_CHARACTER)),
+                );
+            }
+            NodeKind::Foreign(f) => {
+                out.extend(
+                    f.value
                         .iter()
                         .map(|cp| char::from_u32(*cp).unwrap_or(char::REPLACEMENT_CHARACTER)),
                 );
@@ -113,6 +154,11 @@ impl NodeKind {
     pub fn span_bounds(&self) -> Option<(usize, usize)> {
         match self {
             NodeKind::Literal(l) => Some((l.offset, l.offset + l.length)),
+            // A foreign node's text is its own, so its span says where
+            // the parser claims it sat, not where its value can be
+            // read from.  Callers computing a value from a span must
+            // check `contains_foreign` first.
+            NodeKind::Foreign(f) => Some((f.offset, f.offset + f.length)),
             NodeKind::Internal(n) => n.children.iter().fold(None, |acc, c| {
                 match (acc, c.span_bounds()) {
                     (None, s) => s,
@@ -123,3 +169,4 @@ impl NodeKind {
         }
     }
 }
+
