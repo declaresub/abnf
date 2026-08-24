@@ -1,0 +1,64 @@
+{
+ "OWS": [
+  "",
+  "\t",
+  "\t\t",
+  " ",
+  "  \t\t"
+ ],
+ "Strict-Transport-Security": [
+  "STriCt-tRANSPoRt-SECUrItY:\t  \t ;;",
+  "StRIct-trANspoRT-seCuRIty: \t\t ;\t |=.",
+  "StRict-TRAnSpOrt-SEcURity:!=&",
+  "sTRicT-trAnspOrt-securITY:\t",
+  "stRICT-tRaNSporT-sECuRitY:",
+  "stRict-tRaNSPOrT-Security:\t\t\t#",
+  "strICT-tRANspOrt-SecUrIty:\t",
+  "strIct-transpORT-sECurity: ^ ;|=\"\";$;!"
+ ],
+ "directive": [
+  "!w",
+  "#_=\"\"",
+  "%+=\"\"",
+  "'",
+  "*.=\"\"",
+  "1=1",
+  "_!=A"
+ ],
+ "directive-name": [
+  "!$",
+  "'",
+  "-#$",
+  "2",
+  "_!^",
+  "_|.",
+  "~"
+ ],
+ "directive-value": [
+  "\"\"",
+  "\"\\\u00f3\\\t\"",
+  "#",
+  "#A",
+  "#_",
+  "+",
+  "01",
+  "_"
+ ],
+ "quoted-string": [
+  "\"\"",
+  "\"\\ \"",
+  "\"\\w\\ ]\\\t\"",
+  "\"e\"",
+  "\"\u00c49\\\t!\""
+ ],
+ "token": [
+  "!",
+  "!$",
+  "'",
+  "+",
+  "_!^",
+  "_|.",
+  "~",
+  "~~"
+ ]
+}

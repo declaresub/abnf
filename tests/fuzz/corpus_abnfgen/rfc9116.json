@@ -1,0 +1,442 @@
+{
+ "UTF8-1": [
+  "\t",
+  "\u0014",
+  "\u001f",
+  "2",
+  ">",
+  "G",
+  "z",
+  "|"
+ ],
+ "UTF8-1-not-cr": [
+  "\u0005",
+  "\t",
+  "\u0014",
+  "\u0016",
+  "4",
+  "M",
+  "R",
+  "t"
+ ],
+ "UTF8-1-not-dash": [
+  "\u0011",
+  " ",
+  "2",
+  "4",
+  "I",
+  "[",
+  "^",
+  "w"
+ ],
+ "UTF8-2": [
+  "\u00c4\u00a3",
+  "\u00c9\u00b9",
+  "\u00cb\u0084",
+  "\u00cb\u0095",
+  "\u00cd\u0083",
+  "\u00d0\u00a6",
+  "\u00db\u0098",
+  "\u00df\u00ae"
+ ],
+ "UTF8-3": [
+  "\u00e0\u00a2\u00a2",
+  "\u00e0\u00aa\u00ba",
+  "\u00e0\u00b2\u00b5",
+  "\u00e2\u00a3\u00bc",
+  "\u00e5\u00ac\u00b1",
+  "\u00e7\u0092\u00a7",
+  "\u00e8\u009b\u00bf",
+  "\u00ed\u0081\u00a7"
+ ],
+ "UTF8-4": [
+  "\u00f0\u009f\u0084\u00a2",
+  "\u00f0\u00a9\u00a4\u00b5",
+  "\u00f0\u00b4\u0094\u00ba",
+  "\u00f1\u0095\u00ac\u00b1",
+  "\u00f2\u0086\u00a3\u00bc",
+  "\u00f3\u00a2\u0092\u00a7",
+  "\u00f3\u00a5\u009b\u00bf",
+  "\u00f4\u0086\u0083\u00a7"
+ ],
+ "UTF8-char": [
+  "u",
+  "\u00c4\u00a3",
+  "\u00cb\u0084",
+  "\u00d2\u0092",
+  "\u00d9\u00bb",
+  "\u00db\u00b9",
+  "\u00e0\u00bf\u0081",
+  "\u00f4\u0089\u00b7\u0098"
+ ],
+ "UTF8-char-not-cr": [
+  "\u0004",
+  "T",
+  "\u00c4\u00a3",
+  "\u00cb\u0084",
+  "\u00d2\u00a4",
+  "\u00d3\u009b",
+  "\u00d9\u00bb",
+  "\u00f4\u0089\u00b7\u0098"
+ ],
+ "UTF8-char-not-dash": [
+  "\u000f",
+  "a",
+  "\u00c4\u00a3",
+  "\u00cb\u0084",
+  "\u00d2\u00a4",
+  "\u00d3\u009b",
+  "\u00d9\u00bb",
+  "\u00f4\u0089\u00b7\u0098"
+ ],
+ "UTF8-octets": [
+  "",
+  "O\u00d3\u009b\u00d2\u00a4\u00f4\u008e\u009e\u008f",
+  "\u00cc\u00aca",
+  "\u00d8\u00ba\u00ed\u0085\u008e\u00d7\u009c",
+  "\u00ef\u00be\u00ae"
+ ],
+ "UTF8-tail": [
+  "\u0084",
+  "\u008a",
+  "\u008f",
+  "\u0099",
+  "\u009f",
+  "\u00a3",
+  "\u00bd",
+  "\u00be"
+ ],
+ "ack-field": [
+  "ACKNowLedGmeNTs: n:",
+  "AcKNowLedGMentS: p6x:/#",
+  "AcknowLEDGmENTS: U://[Vc._]#/",
+  "aCKnowLedgMENts: l:?#/",
+  "aCkNowLedgmEntS: H::?#4",
+  "acKnOwLeDgmeNtS: Q:?#%eb",
+  "acKnOwLedgmENtS: gX+:%fE??",
+  "acknowleDgments: y:@?/#"
+ ],
+ "armor-header": [
+  "-----BEGIN PGP SIGNATURE-----\r\n"
+ ],
+ "armor-keys": [
+  "",
+  "!E: \r\nz: P\r\n",
+  "#.:   \t\r\n",
+  "o3: \r\n!: \r\n~: \r\n': \r\n"
+ ],
+ "armor-tail": [
+  "-----END PGP SIGNATURE-----\r\n"
+ ],
+ "body": [
+  "\n\nCoNTaCt: t://[v5._]\n\neXpIRES: 1364-61-12T39:20:72z\r\n\n\nprEFErRED-LANGuaGes: rVFkJ\n\n\n",
+  "\nConTacT: Z: \n\nExpires: 9335-52-61t95:90:35z\t\n\nPRefErred-lAnGUaGEs: LawBP\n\n",
+  "\nconTaCt: L: \n\n\nexpIrEs: 1458-45-27t81:84:69z\n\n",
+  "-----BEGIN PGP SIGNED MESSAGE-----\r\nHash: !\r\nHash: W\r\n\r\nfROm \n-----BEGIN PGP SIGNATURE-----\r\n\r\ni\r\n-----END PGP SIGNATURE-----\r\n",
+  "-----BEGIN PGP SIGNED MESSAGE-----\r\nHash: $\r\n\r\nFrOM \n-----BEGIN PGP SIGNATURE-----\r\n\r\nC\r\n-----END PGP SIGNATURE-----\r\n",
+  "CoNtaCT: y:'\t\r\nEXPireS: 5689-69-24T27:15:68z \n\n\npreFErREd-lAnGUAges: DdajS\n",
+  "ConTact: F:\r\nEXpires: 8470-48-90t33:18:29z\r\n\n\n",
+  "cOntaCT: x://\t\n\n\neXPirEs: 8221-29-96t64:05:90-94:10\r\nPrEferrED-laNGUagEs: XyxPC\n"
+ ],
+ "can-field": [
+  "CAnOnIcAL: R1:%bd",
+  "CaNOniCal: n.6://[::a:c]#'",
+  "CanOnicAL: d2:@?/",
+  "cANOnIcAL: u+F:!?",
+  "caNONicaL: l+L:@",
+  "caNoniCal: Re.:1?",
+  "canOnIcAl: W-2:1#",
+  "canoniCaL: w:/??#"
+ ],
+ "cleartext": [
+  "",
+  "- \r\n\n",
+  "- -\r\n",
+  "- -\u00f4\u0080\u00b1\u008b\nFrOM \n\r\n- -\n",
+  "- FRoM \r\nfroM \r\n",
+  "From \u00e9\u00a2\u0092\r\nfrOm \r\n",
+  "\u00f4\u0084\u00b2\u00ab\r\n"
+ ],
+ "cleartext-header": [
+  "-----BEGIN PGP SIGNED MESSAGE-----\r\n"
+ ],
+ "comment": [
+  "#",
+  "# ",
+  "##V\ua1c8M",
+  "#`",
+  "#\ud94d\udd89",
+  "#\ud9fb\udcf8{"
+ ],
+ "contact-field": [
+  "CoNTacT: I:",
+  "CoNtacT: W:1#",
+  "cONTaCt: f://[b:7:f:f:B:B:A:B]?/#/",
+  "cOnTAct: V5+://[::a:c]??",
+  "cOnTaCt: s::?",
+  "cOntaCT: d2:@?/",
+  "coNTACt: t://[::]#/",
+  "coNtacT: Lj::#%d7"
+ ],
+ "date-time": [
+  "1761-79-09t47:22:90.4-68:65",
+  "1890-65-40T16:86:22Z",
+  "3963-70-62T72:51:29-99:51",
+  "4530-92-93T59:13:68Z",
+  "6798-73-33t65:66:99.9+55:82",
+  "7783-90-82t37:10:69-14:30",
+  "8084-55-69t95:05:07+92:41",
+  "8986-52-32t41:56:99.2z"
+ ],
+ "email": [
+  "\"\":();()",
+  "\"\":,;",
+  "\"\":;",
+  "%:\t;",
+  "<@+:\"\"@|>",
+  "<@[]:\"\"@=>",
+  "<D@?>",
+  "R:{@[];"
+ ],
+ "encryption-field": [
+  "ENCRypTion: F.:/?(",
+  "ENCryPtiOn: g.:-?/#/",
+  "ENcRyPtION: Y:",
+  "ENcrYptiON: d2:@?/",
+  "EnCRypTioN: Z-:/??",
+  "EncRyptioN: z1::#@",
+  "eNCRyPtION: R8l:/?I",
+  "encRypTion: A8:,?#/"
+ ],
+ "eol": [
+  "\n",
+  "\r\n",
+  " \n",
+  " \r\n",
+  "  \r\n"
+ ],
+ "expires-field": [
+  "EXPireS: 1925-68-26T65:44:82.0z",
+  "ExPIRes: 1435-41-04T96:77:96+25:82",
+  "ExPIreS: 9305-71-06t39:36:98.3Z",
+  "eXPIReS: 5568-96-28t57:83:90Z",
+  "eXpIreS: 7990-94-52T39:61:22.8+68:86",
+  "exPiREs: 2649-74-01t90:65:40+86:22",
+  "exPiRes: 4581-59-75t19:48:99.3-02:11",
+  "expIreS: 9549-53-58t20:08:25.6z"
+ ],
+ "ext-field": [
+  "&: \n",
+  "($/: \t ",
+  ")47: ",
+  "3: \t",
+  "83: \r",
+  "8: N",
+  "Jz: ",
+  "c: u?"
+ ],
+ "field": [
+  "EnCRYptiON: D:",
+  "EncrYpTion: r:/?#",
+  "HirINg: E:/?",
+  "aCKnowLedGmenTs: J://?",
+  "acKnOWlEDgMeNtS: d:~?",
+  "canonicaL: g:P?#",
+  "pOLiCY: w:#",
+  "pOlicy: Z://?"
+ ],
+ "field-name": [
+  ")",
+  "2e~+",
+  "3",
+  "45y",
+  "8",
+  "]",
+  "c",
+  "d~"
+ ],
+ "fs": [
+  ":"
+ ],
+ "hash-alg": [
+  "!!&",
+  "##$",
+  "#..",
+  "%!",
+  "-0D",
+  "2-",
+  "D",
+  "o"
+ ],
+ "hash-header": [
+  "Hash: !!,&\r\n",
+  "Hash: #,#\r\n",
+  "Hash: &,*,.\r\n",
+  "Hash: *,U,$\r\n",
+  "Hash: .!,`,~,D\r\n",
+  "Hash: 2!,!\r\n",
+  "Hash: 2-\r\n",
+  "Hash: JA,&,E\r\n"
+ ],
+ "hiring-field": [
+  "HiRIng: Y.:?/",
+  "HiRIng: Y://254.252.255.5#?",
+  "HiRiNg: p-::",
+  "HirIng: P:/#",
+  "HirIng: m:?",
+  "hIrInG: z+:",
+  "hIriNg: g.:-?/#/",
+  "hirIng: Yj:P??"
+ ],
+ "lang-field": [
+  "PREFerRed-LANguagES: XY-251,  rDWi-wrCP-071",
+  "PrEFERred-languages: teOX-XxPT-900-719D3-103I-F-2w-X-Z",
+  "PrEFerRed-LangUAGes: sYVIJ-qD-955X0-2ITX5,\t\taw-PLad-Gh-Y-Z9-x-2",
+  "PrEFerrEd-LaNgUAGES: EJtM-SmHM-gQ-X-m,\tfhxhT-kzEo-049-65UF-7-o1-x-K",
+  "PrEfErreD-LangUAgeS: ZNEHU-4FW9-Yj1g1-X-V,qepUO-tswz-782Y-x-3 ,WtdW,bE",
+  "PrefErred-lANguAGes: BX-54bg-G9F2d,\t pE-GZCC-96vJ6-z-7i, QEvf",
+  "pReFERREd-lanGUAGeS: YcJt-jOrw-x-R,Ci-gcvy-S06f7-z-99-x-1",
+  "pReFErReD-lanGuAges: SjkZ-rBGl-943is-23g7t-7-06"
+ ],
+ "lang-tag": [
+  "BPLa-g1z7p-9tg96",
+  "GO-WZF-U-X8-U0-H-19-D-34-X-z-7",
+  "RkdA-UBul-jO-z-zP-y-M1",
+  "UpYXp-X-U-K",
+  "cYxI-kp-3YT93-6zLn5-0x2IT-50gy7",
+  "osPF-27nb-99V1-X-3-g",
+  "wycv-oxoq-606-4GCV-59mE-E-vY-35",
+  "wzwi-LzYv-135-44Ad-8buz3"
+ ],
+ "lang-values": [
+  "HCae-NCgx-B74T3-6828-4-5C\t,yosP-bUfu-Av-9V11B-792Q-x-d ,TGVq-x-l",
+  "NsOO-xBtB-nC-W-62-1-F2-Y-zU\t\t\t, qxyrF-JpTn-y-aM-t-02-X-H\t\t,cfRub-wNLr-B6fE5,\tdmhI",
+  "PPBGU-363-n-bj",
+  "QlWx-ZNEH-458-X-E\t  ,ogex-WVFJ-X-U \t,EA-svgW-Vd-4-t1-x-L",
+  "bUxT-i-5Y-X-a",
+  "cYxI-kp-3YT93-6zLn5-0x2IT-Y-2y-X-8, dERge-ERpX-MN,uVrSY-OlgM-YGPU0-H-19-X-5",
+  "myIU-272-y-Z5-x-W",
+  "qsDDe-077-V-a6"
+ ],
+ "line": [
+  "\t\r\n",
+  "\r\n",
+  " \n",
+  "#\n",
+  "CANoNicAL: y:'\t\t\n",
+  "contaCT: t:/  \t\r\n",
+  "eNCryptioN: j://252.250.169.5\n",
+  "u: \r\n"
+ ],
+ "line-dash": [
+  "- -",
+  "- -\u0000\u00db\u00b9",
+  "- -\u000b",
+  "- -\u00ee\u0083\u00a7\u00cc\u00ac\u0004\u00d6\u00a2"
+ ],
+ "line-from": [
+  "- FRom \u0004",
+  "- frOM \u00f4\u0084\u00b2\u00ab\u00d6\u00b8\u0002",
+  "- frOm ",
+  "- frOm \u00f0\u00a9\u00a4\u00b5\u00e3\u00a2\u00a3",
+  "- froM ",
+  "FrOm \u00f3\u0084\u00ad\u00a6\u00f4\u008a\u008a\u00b6\u00ef\u0089\u00b0\u00dd\u00bd",
+  "fROm ",
+  "fROm \u000b"
+ ],
+ "line-nodash": [
+  "",
+  "- ",
+  "- \u000b",
+  "- \u00d9\u00bb\u0004",
+  "- \u00e0\u00bf\u0081\u00db\u00b9",
+  "\u00ed\u009e\u0095"
+ ],
+ "policy-field": [
+  "PoLIcy: Y.:?/",
+  "PoLIcy: Y://254.252.255.5#?",
+  "PoLiCy: p-::",
+  "PolIcy: P:/#",
+  "PolIcy: m:?",
+  "pOlIcY: z+:",
+  "pOliCy: g.:-?/#/",
+  "polIcy: Yj:P??"
+ ],
+ "signature": [
+  "-----BEGIN PGP SIGNATURE-----\r\n\r\n+\r\n+\r\n+\r\n-----END PGP SIGNATURE-----\r\n",
+  "-----BEGIN PGP SIGNATURE-----\r\n\r\n6o\r\n-----END PGP SIGNATURE-----\r\n",
+  "-----BEGIN PGP SIGNATURE-----\r\n\r\n8V\r\ny\r\n-----END PGP SIGNATURE-----\r\n",
+  "-----BEGIN PGP SIGNATURE-----\r\n': \tT\r\n\r\n++\r\nw\r\n-----END PGP SIGNATURE-----\r\n",
+  "-----BEGIN PGP SIGNATURE-----\r\n+: \r\n\r\n++\r\n2\r\n-----END PGP SIGNATURE-----\r\n",
+  "-----BEGIN PGP SIGNATURE-----\r\n.:   \r\nD: \r\n!: \r\n\r\nl\r\n-----END PGP SIGNATURE-----\r\n",
+  "-----BEGIN PGP SIGNATURE-----\r\nF: r\r\n&: *\r\n!: \r\n\r\n=\r\n-----END PGP SIGNATURE-----\r\n",
+  "-----BEGIN PGP SIGNATURE-----\r\n_: \t\r\nJ: \r\n+: \r\n\r\n=\r\n-----END PGP SIGNATURE-----\r\n"
+ ],
+ "signature-data": [
+  "++2\r\n",
+  "+GI\r\n",
+  "/0+\r\nsx\r\n",
+  "/9\r\ng\r\n+\r\n",
+  "=\r\n+1\r\n",
+  "=A/\r\n4\r\n",
+  "R\r\nn\r\nw\r\n",
+  "SF\r\n"
+ ],
+ "signed": [
+  "-----BEGIN PGP SIGNED MESSAGE-----\r\nHash: !\r\n\r\n-----BEGIN PGP SIGNATURE-----\r\n*: \r\n#: \r\n\r\n=\r\n/\r\n-----END PGP SIGNATURE-----\r\n",
+  "-----BEGIN PGP SIGNED MESSAGE-----\r\nHash: '\r\nHash: .\r\nHash: !\r\nHash: *\r\n\r\n-----BEGIN PGP SIGNATURE-----\r\n!: X\r\n`: \r\n\r\n=\r\n-----END PGP SIGNATURE-----\r\n",
+  "-----BEGIN PGP SIGNED MESSAGE-----\r\nHash: +,.\r\n\r\n-----BEGIN PGP SIGNATURE-----\r\n\r\n5\r\n/\r\n-----END PGP SIGNATURE-----\r\n",
+  "-----BEGIN PGP SIGNED MESSAGE-----\r\nHash: -\r\n\r\n-----BEGIN PGP SIGNATURE-----\r\n\r\n3\r\n=\r\n-----END PGP SIGNATURE-----\r\n",
+  "-----BEGIN PGP SIGNED MESSAGE-----\r\nHash: 2,*\r\nHash: !,!\r\n\r\n- -\n- -\r\n-----BEGIN PGP SIGNATURE-----\r\nA: \r\n!: \r\n\r\n/\r\n-----END PGP SIGNATURE-----\r\n",
+  "-----BEGIN PGP SIGNED MESSAGE-----\r\nHash: H,%\r\nHash: -,!\r\nHash: 8\r\nHash: *\r\n\r\n-----BEGIN PGP SIGNATURE-----\r\n+: \r\n!: \r\n\r\n+\r\n-----END PGP SIGNATURE-----\r\n",
+  "-----BEGIN PGP SIGNED MESSAGE-----\r\nHash: W,*,%\r\nHash: 8\r\nHash: '\r\n\r\n-----BEGIN PGP SIGNATURE-----\r\n-: g\r\n\r\n=\r\n-----END PGP SIGNATURE-----\r\n",
+  "-----BEGIN PGP SIGNED MESSAGE-----\r\nHash: a,',+\r\n\r\nfroM \n- -\r\n\n-----BEGIN PGP SIGNATURE-----\r\n\r\n=\r\n-----END PGP SIGNATURE-----\r\n"
+ ],
+ "token": [
+  "!!&#",
+  "#$o",
+  "%!",
+  "+",
+  "-0D#",
+  "..D",
+  "2-",
+  "O!!"
+ ],
+ "token-char": [
+  "!",
+  "#",
+  "$",
+  "&",
+  "-",
+  "2"
+ ],
+ "unsigned": [
+  "\t\r\nHiRInG: g://[V4.~]\nCOnTaCt: i:@\n\n#\n\nexpireS: 4644-54-10t72:67:01z \nPrefeRrED-lANGUaGes: yr,iI\r\n",
+  "\t\r\ncoNtacT: P.:/\t\r\n \r\n\neXPIREs: 3675-66-83t33:11:17Z\t\r\n \r\n\nPrEferREd-LAngUAgES: Mtdmh,RjiZ\nCoNtact: F:/ \r\n\n\n",
+  "\t\r\neNcRyption: i:/\ncONTAcT: d-:@#\t \r\ncOntAct: d:%cC \r\n\nexpireS: 7187-55-06t99:47:80Z\r\npREfeRRED-laNGUAGEs: ZMuQI\t \n",
+  " \r\n\ncONTACt: N5:?\r\n \r\nexPIrES: 2494-60-62t67:19:51-41:39\r\n \r\n\n\n\n\t\r\n#\n",
+  "#\r\nCONTACt: s2:%ae?# \t\r\n \neNCryPTioN: W://[VD.9]\n\nEXPiRES: 6765-84-07T81:08:37+29:90 \t\nCaNOnicAl: b:/\t\n",
+  "A: \r\ncontaCt: R://#\r\n \r\neXPirES: 1768-23-78t51:77:39+96:96\npREfErred-LaNGuaGES: gcgp,DK\t \n",
+  "cONtaCt: b-://[e:c:E:9:E:1:65.6.255.167]?#\r\n\n\n\nEXPireS: 5689-69-24T27:15:68z \r\nu: \r\n",
+  "conTACT: v:#\r\n# \n\n\nEXpIrEs: 6645-56-00T99:21:38+50:76\t\n#\r\n\n\n\n"
+ ],
+ "unstructured": [
+  "\n\r\r",
+  "\r",
+  "\r\r",
+  " #Sp\t",
+  " B \t ",
+  " t\t",
+  "(\tE "
+ ],
+ "uri": [
+  "A+A.:/",
+  "G++1:?/#@",
+  "R8l:?I#",
+  "S:/%31?//#",
+  "Y://211.71.9.219/",
+  "jz+1:/?/:#",
+  "p:?",
+  "y:?//"
+ ]
+}

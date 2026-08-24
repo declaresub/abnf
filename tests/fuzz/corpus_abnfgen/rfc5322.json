@@ -1,0 +1,1278 @@
+{
+ "CFWS": [
+  "\t",
+  " ",
+  "(\u0011) ",
+  "(()\t) ()() ",
+  "(0 )()()\t",
+  "(a )"
+ ],
+ "FWS": [
+  "\t\t\t",
+  "\r\n\t",
+  "\r\n \t ",
+  " ",
+  " \t",
+  " \r\n\t\r\n ",
+  "  \r\n\t\t"
+ ],
+ "addr-spec": [
+  "\"\t\"()@!",
+  "\" \"@=",
+  "%()@[]",
+  "()%@#",
+  "V@[ ]",
+  "_.|@\t$",
+  "{@#.*",
+  "}.!@()[ ]"
+ ],
+ "address": [
+  "\"\":();()",
+  "\"\":,;",
+  "\"\":;",
+  "%:\t;",
+  "<@+:\"\"@|>",
+  "<@[]:\"\"@=>",
+  "<D@?>",
+  "R:{@[];"
+ ],
+ "address-list": [
+  " ,,<@%:\"\"@~>",
+  "\"\":;",
+  "$@/,\"\":;",
+  "*:;",
+  ",,*:;",
+  ",<?@#>,,",
+  "^:;,,",
+  "{@[],\"\"@|"
+ ],
+ "angle-addr": [
+  " <@*:\"\"@~>",
+  "()<\"\"@[]>()",
+  "()<\"\"@_>",
+  "()<@[]:`@[]>\t",
+  "<\"\"@!> ",
+  "<@[]:*@&>",
+  "<@[]:/@[]>",
+  "<|@&>()"
+ ],
+ "atext": [
+  "!",
+  "'",
+  "5",
+  "=",
+  "_",
+  "{"
+ ],
+ "atom": [
+  " %!^",
+  "$()",
+  "() +$?t",
+  "() {'()",
+  "+",
+  "^",
+  "^\t",
+  "`()\t"
+ ],
+ "bcc": [
+  "BCc:()\r\n",
+  "BcC:<@#:\"\"@[]>\r\n",
+  "BcC:{:;\r\n",
+  "Bcc:\r\n",
+  "bCC:\r\n",
+  "bCc:\t\r\n",
+  "bCc:\r\n",
+  "bcc:<@!:~@[]>\r\n"
+ ],
+ "body": [
+  "",
+  "\u000b\u0007",
+  "\r\n",
+  "\r\n\u000b\r\n\r\n",
+  "J\f"
+ ],
+ "cc": [
+  "CC:,<\"\"@[]>\r\n",
+  "CC:,X@{\r\n",
+  "Cc:%:;\r\n",
+  "Cc:,*:;\r\n",
+  "cC:\"\":;\r\n",
+  "cC:+:;\r\n",
+  "cc:+@#,\"\"@%,_:;\r\n",
+  "cc:^@{,\"\"@|,\"\":;\r\n"
+ ],
+ "ccontent": [
+  "'",
+  "(\t()\t)",
+  "\\\n",
+  "\\\r",
+  "\\ ",
+  "\\V"
+ ],
+ "comment": [
+  "(\t)",
+  "(\tE )",
+  "( )",
+  "( +\\\u001f\r\n\t)",
+  "(')",
+  "()",
+  "(\\{)"
+ ],
+ "comments": [
+  "COMmeNts:\r\n",
+  "CoMMenTs:\r\r\n",
+  "CoMmeNTS:\t \r\n",
+  "cOMMenTs:\u0000\r\r\n",
+  "cOMmEnTS:  \r\n",
+  "cOMmenTs:\u000b\r\r\n",
+  "cOmMEnTS:\n\r\r\n",
+  "commEntS:\r\n"
+ ],
+ "ctext": [
+  "$",
+  "&",
+  ".",
+  "N",
+  "s",
+  "t",
+  "z",
+  "}"
+ ],
+ "date": [
+  " 96\tdEc\t96\t",
+  " 9nOv67()",
+  "()5\tAPr 6544\t",
+  "()5noV()50()",
+  "1OCt51\t",
+  "2jaN27",
+  "36\toct\t8084 ",
+  "82\tjUn 5223\t"
+ ],
+ "date-time": [
+  "0 deC\t6798 93:65\t+5490 ",
+  "9apr 9524\t41:68:82 +8309",
+  "Tue, 2 jUn 6998\t15:41\t+9892\t",
+  "fri,2OCt\t3954\t22:29 +5056\t",
+  "sun,3juL\t2722\t29:48:51 -8826",
+  "tHu, 2\tDec9175:11\t+3739",
+  "thU, 8 MAY\t7654\t16:62z ",
+  "tue,7 apr8511:67cDT "
+ ],
+ "day": [
+  "\t08 ",
+  "\t7",
+  " 9()",
+  "()50 ",
+  "()83 ",
+  "5\r\n ",
+  "61\r\n ",
+  "8 "
+ ],
+ "day-name": [
+  "FrI",
+  "Fri",
+  "Mon",
+  "Sat",
+  "moN",
+  "sUN",
+  "sUn",
+  "wed"
+ ],
+ "day-of-week": [
+  " SAt",
+  " sun",
+  "()Fri",
+  "()tuE ",
+  "Fri()",
+  "ThU",
+  "frI",
+  "sAt"
+ ],
+ "display-name": [
+  "\"\"",
+  "\"\"\"\"",
+  "\"\".",
+  "'`",
+  "8?",
+  "_}",
+  "|",
+  "|\"\""
+ ],
+ "domain": [
+  "\t#.|\t",
+  "\t-.$()",
+  "\t=\t",
+  " ^./",
+  "()/().#.^",
+  "(){.~",
+  "+",
+  "[ \\0]\t"
+ ],
+ "domain-literal": [
+  " [*] ",
+  "()\t[\\\u0000\r\n ]()",
+  "[\tz\t]() ",
+  "[ \u0001Q^\u0007\r\n\t]",
+  "[ ]() ",
+  "[] ",
+  "[o / 4\t]"
+ ],
+ "dot-atom": [
+  "\t=.~",
+  "'",
+  "()\t*^=",
+  "() G|",
+  "()}!.$",
+  "=$m.1*",
+  "^./()",
+  "`.n.} "
+ ],
+ "dot-atom-text": [
+  "*",
+  "?.#+!",
+  "A+.=",
+  "_",
+  "{",
+  "{.?.~=",
+  "}._=}._.-",
+  "~*V`"
+ ],
+ "dtext": [
+  "\u000b",
+  "/",
+  "C",
+  "\\0",
+  "\\m",
+  "j",
+  "t",
+  "z"
+ ],
+ "field-name": [
+  ")",
+  "2e~+",
+  "3",
+  "45y",
+  "8",
+  "]",
+  "c",
+  "d~"
+ ],
+ "fields": [
+  "",
+  "BCC:()\r\nRePlY-To:-:;\r\n",
+  "REFErEncES:</@[]>\r\nSEnDEr:<?@{>\r\n",
+  "RETurN-PatH:<@?:'@[]>\r\nReCeIvED:;1 MAy 8097 63:64MSt\r\n-:\r\nREsENT-dAte:9 dEc 5752 31:93 -6555\r\nSuBJeCT:\r\n",
+  "REfeReNCes:<|@~>\r\n",
+  "TO:<@$:{@=>\r\n",
+  "reSeNt-cC:m@5\r\n",
+  "sENDer:<*@=>\r\n"
+ ],
+ "from": [
+  "FrOM:*@[],<^@{>,\"\"@|\r\n",
+  "FrOm:,<@{:?@*>,\r\n",
+  "FrOm:<\"\"@{>\r\n",
+  "fROM:,R@?\r\n",
+  "fRom:,$@*,\r\n",
+  "frOM:\"\"@[]\r\n",
+  "frOM:<@%:+@->\r\n",
+  "frOm:=@7\r\n"
+ ],
+ "ftext": [
+  "*",
+  "3",
+  ">",
+  "@",
+  "Q",
+  "`",
+  "c",
+  "x"
+ ],
+ "group": [
+  "!:{@[];",
+  "\"\":\t;",
+  "\"\":();",
+  "\"\":;",
+  "':();()\t",
+  "?:();",
+  "_:<@[]:{@[]>;\t"
+ ],
+ "group-list": [
+  " ",
+  " ,,()",
+  "() ",
+  "(),\t",
+  "(),()",
+  "(),,",
+  "*@/",
+  ",,\t"
+ ],
+ "hour": [
+  " 88",
+  " 92()",
+  "()33()",
+  "()66",
+  "08",
+  "39",
+  "54",
+  "71"
+ ],
+ "id-left": [
+  "\"\"",
+  "/",
+  "8^",
+  "^",
+  "_",
+  "}",
+  "~.}"
+ ],
+ "id-right": [
+  "#~",
+  "&",
+  "/",
+  "=Q.}.`",
+  "?!.`.V",
+  "[]",
+  "[c]"
+ ],
+ "in-reply-to": [
+  "IN-ReplY-TO:<#@=>\t()<-@[]>\r\n",
+  "In-REPly-To:()<!@=>\r\n",
+  "In-REply-to:<$@*>\t\r\n",
+  "In-RePLY-tO:<=@&>\r\n",
+  "In-RepLy-TO:()<D@?>()<~@`>\r\n",
+  "In-RepLy-TO:<&@[]> <E@/>\t\r\n",
+  "In-ReplY-To: <=@[]>\r\n",
+  "iN-REpLy-to:<*@[]> ()<`@[]><=@[]>\r\n"
+ ],
+ "keywords": [
+  "KEYwords:\"\"\"\",\"\",\"\"\r\n",
+  "KEywOrdS:\"\",&,+,\"\",{\r\n",
+  "KeYWorDs:\"\"\"\"\r\n",
+  "KeYWordS:?\"\"\r\n",
+  "KeyWoRDS:- \r\n",
+  "kEyWorDs:/G,_,\"\"\r\n",
+  "kEywordS:\"\"\r\n",
+  "keYwORds:||,{,\"\"\r\n"
+ ],
+ "local-part": [
+  "\t\"\"",
+  "\t*.=",
+  "!()",
+  "\"\t\"()",
+  "\"\t\\\rV \" ",
+  "\" /\t\"\t",
+  "\"\"",
+  "Y.~()"
+ ],
+ "mailbox": [
+  "\"\"<\"\"@'>",
+  "\"\"<@^:\"\"@'>",
+  "\"\"@[]",
+  "<+@!>",
+  "?@X",
+  "^@}",
+  "_<\"\"@[]>"
+ ],
+ "mailbox-list": [
+  " ,,\"\"@{,()",
+  "!@[]",
+  "$@/,#@[],<@{:?@*>,\"\"@=",
+  ",,*@[],^@{,",
+  ",,<?@{>",
+  "<$@}>",
+  "|@[],`@=,\"\"@~,<\"\"@[]>",
+  "}@%,"
+ ],
+ "message": [
+  "",
+  "REceIvEd:;8noV3942:38R\r\n\r\nj",
+  "RefErENces:\r\nsUbJect:\r\n\r\n",
+  "SuBjecT:\r\nRESEnT-mEssAgE-ID:<\"\"@[]>\r\n\r\n\r\n>",
+  "cOmMenTs:\r\nrefereNCES:\r\n",
+  "receiVed:;8\tdec4314:04mSt\r\nsenDeR:<\"\"@[]>\r\nTo:<=@7>\r\n\r\n",
+  "reseNt-Date:6 JUn8455:97 -2071\r\n\r\n"
+ ],
+ "message-id": [
+  "MEsSAgE-Id:<'@?>()\r\n",
+  "MEssaGE-iD:<_@[]> \r\n",
+  "MeSSAGE-iD:()<$@->\r\n",
+  "MeSSagE-iD:()<1@?>()\r\n",
+  "mESSagE-Id:<!@[]>()\r\n",
+  "mEsSAGe-iD:<%@%>\r\n",
+  "mEsSAge-Id:<*@[]>\r\n",
+  "messAGE-iD:()<?@|> \r\n"
+ ],
+ "minute": [
+  " 88",
+  " 92()",
+  "()33()",
+  "()66",
+  "08",
+  "39",
+  "54",
+  "71"
+ ],
+ "month": [
+  "JUn",
+  "OcT",
+  "Sep",
+  "dEC",
+  "dec",
+  "jaN",
+  "mar",
+  "nOv"
+ ],
+ "msg-id": [
+  "\t</.!@[W]>",
+  "\t</@[f]>()\t",
+  "\t<A.*@}>",
+  "()\t<\"\"@^>()\t",
+  "()<%@'>() ",
+  "<\"\"@[]>()",
+  "<\"\"@^> ",
+  "<|.!@[B]>()"
+ ],
+ "name-addr": [
+  "!<$@[]>()",
+  "\"\"<@}:_@[]> ",
+  "&<@{:%@{>()",
+  "*()<\"\"@[]>\t",
+  "<\"\"@9>()",
+  "</@`>",
+  "_\t<@&:\"\"@/>()",
+  "|<\"\"@*>\t"
+ ],
+ "no-fold-literal": [
+  "[\f]",
+  "[\"\fl]",
+  "[2\u0001p\\M]",
+  "[M]",
+  "[\\\n]",
+  "[]",
+  "[_Z]",
+  "[q^]"
+ ],
+ "obs-FWS": [
+  "\t\t\r\n \r\n ",
+  "\t\t\r\n \r\n  \r\n ",
+  "\t\r\n\t\r\n\t\t\r\n\t",
+  "\t\r\n \t ",
+  "\t \r\n \t",
+  " \t",
+  " \t\t\t\r\n  ",
+  " \r\n\t\r\n  \r\n "
+ ],
+ "obs-NO-WS-CTL": [
+  "\u0003",
+  "\u000b",
+  "\f",
+  "\u007f"
+ ],
+ "obs-addr-list": [
+  "\t,,n:\"\"@^;",
+  "\"\":,;(),",
+  "\"\":;",
+  "\"\"@[]",
+  "(),,\"\":<@%:#@%>;",
+  ",\t,,<\"\"@[]>",
+  ",<-@^>,,\"\":;",
+  "<@$:+@P>,"
+ ],
+ "obs-angle-addr": [
+  "\t<@[]:\"\"@&>",
+  " <@*:\"\"@[]>()",
+  "()<,@[]:\"\"@_>()",
+  "<, @[]:/@%>",
+  "<,,@[]:^@[]>()\t",
+  "<@', @[]:\"\"@[]>",
+  "<@/,@[]:_@|>()",
+  "<@{:\"\"@{>"
+ ],
+ "obs-bcc": [
+  "BCC\t\t:(),(),,\r\n",
+  "BCC:<\"\"@|>\r\n",
+  "BcC  :\"\"@[]\r\n",
+  "BcC:+@'\r\n",
+  "BcC:<@#:\"\"@[]>\r\n",
+  "BcC:<|@^>\r\n",
+  "bcC\t:\t\r\n",
+  "bcc\t:,\r\n"
+ ],
+ "obs-body": [
+  "",
+  "\n\n\r\u000b\n\u0000",
+  "\r",
+  "\r\tK\r\n",
+  "\r\n\r\n",
+  "\r\r"
+ ],
+ "obs-cc": [
+  "CC\t\t\t:,\"\":;\r\n",
+  "CC:\"\":;\r\n",
+  "CC:t@$\r\n",
+  "Cc:*@[],<@=:_@[]>,<@[]:`@8>\r\n",
+  "cC\t  :,\"\"@{\r\n",
+  "cC :-@%\r\n",
+  "cc:<-@[]>,':;,m@5\r\n",
+  "cc:<@[]:/@'>\r\n"
+ ],
+ "obs-comments": [
+  "COMMeNts:\r\r\n",
+  "COmments:\r\r\n",
+  "CoMMenTs\t:E \r\n",
+  "cOmMENTs : YV\r\n",
+  "cOmMEnTS\t\t\t: \r\r\n",
+  "cOmmEnts\t :\r\n",
+  "cOmmEnts:\n\r\r\n",
+  "coMMeNtS:  \r\n"
+ ],
+ "obs-ctext": [
+  "\u0003",
+  "\u000b",
+  "\f",
+  "\u007f"
+ ],
+ "obs-day": [
+  " 3()",
+  "() 35() ",
+  "()37()",
+  "01",
+  "36 ",
+  "5",
+  "53()\t",
+  "9\t"
+ ],
+ "obs-day-of-week": [
+  "() Sat() ",
+  "()mon()\t",
+  "WEd",
+  "fRI",
+  "mon",
+  "tHu",
+  "tHu ",
+  "thU"
+ ],
+ "obs-domain": [
+  " ?^()",
+  "! .()?/",
+  "#=|().-'\t. -.}",
+  "*#().5",
+  "/'-\t",
+  "`().`~",
+  "``",
+  "|.-=.'"
+ ],
+ "obs-domain-list": [
+  ",\t@[\\ \t]()",
+  ",\t@|.%,",
+  ",()()()@[h\t]()",
+  ",@',@[],@%",
+  ",@[x] ",
+  "@',()@&",
+  "@?.},()@^,",
+  "@{,"
+ ],
+ "obs-dtext": [
+  "\u0003",
+  "\u000b",
+  "\\\u0000",
+  "\\\t",
+  "\\ ",
+  "\u007f"
+ ],
+ "obs-fields": [
+  "",
+  "RESent-SEnDER:\"\"@[]\r\nBcc:\r\nRecEIveD:\r\nresenT-FROM:\"\"@=\r\n",
+  "ResENt-seNdER:+@[]\r\n",
+  "keyWoRDs:\r\nRESEnT-SenDer:<@[]:\"\"@!>\r\n",
+  "sUbJEct\t:\r\n"
+ ],
+ "obs-from": [
+  "FROm :,<@!:\"\"@5>\r\n",
+  "FRom:<\"\"@$>\r\n",
+  "FrOM :\"\"@!\r\n",
+  "FrOm:<@[]:\"\"@`>\r\n",
+  "FroM :\"\"@[]\r\n",
+  "fRoM:<@=:\"\"@|>,6@',</@{>\r\n",
+  "fRom\t\t\t :\"\"@^,*@`,<@x:_@[]>\r\n",
+  "frOM:<\"\"@[]>\r\n"
+ ],
+ "obs-group-list": [
+  " ,()",
+  "(),\t",
+  "(),()\t",
+  "(),(),",
+  "(),,",
+  ",",
+  ",(),() ",
+  ",,\t"
+ ],
+ "obs-hour": [
+  " 30()",
+  " 49",
+  " 79()",
+  "() 35()",
+  "()36() ",
+  "53",
+  "56 ",
+  "84"
+ ],
+ "obs-id-left": [
+  "\t$",
+  "!",
+  "\"\t\"()",
+  "\"\"",
+  "\"\\\u0000\"",
+  "()%",
+  "_.|",
+  "}"
+ ],
+ "obs-id-right": [
+  "%",
+  "&._",
+  "()[\t]()",
+  "()[p\t]\t",
+  "-",
+  "Y.~",
+  "[\u001f\t]()",
+  "`"
+ ],
+ "obs-in-reply-to": [
+  "IN-REPLy-To\t :<!@[]>()&'\r\n",
+  "IN-REPly-to :\r\n",
+  "IN-RePlY-To :\r\n",
+  "In-RepLy-TO \t:9<*@}>\r\n",
+  "In-Reply-to\t   :\r\n",
+  "In-rEpLY-To:\"\"\"\"\r\n",
+  "iN-REpLy-to:\"\"&\"\"\r\n",
+  "in-REPLy-To:\"\"\"\"<|@[]>\"\"\r\n"
+ ],
+ "obs-keywords": [
+  "KEYwOrdS:,(),+,\r\n",
+  "KEywOrdS :\t, ,,\r\n",
+  "KeYWorDs\t:\"\"\r\n",
+  "KeYworDs:\"\",,,\r\n",
+  "KeywORDs:\r\n",
+  "kEyWOrds \t\t:|,,_,\r\n",
+  "keYwOrdS: \r\n",
+  "keyWORDs:_\r\n"
+ ],
+ "obs-local-part": [
+  "\t5.+",
+  " \"\\\t \"",
+  " 5.'.\"\".!.\"\"",
+  "\"! \".`",
+  "\"\"",
+  "\"\\\t\".}",
+  "\"\\\u007f\"().\"\"",
+  "()\"! \"\t"
+ ],
+ "obs-mbox-list": [
+  "!@[]",
+  "\"\"<@/:\"\"@[]>,",
+  "(),<6@[]>, ,\"\"@|,",
+  "</@[]>",
+  "<@?:E@/>,\t,",
+  "<@[]:$@}>,,<\"\"@|>,",
+  "<`@8>,(),\t",
+  "?<@[]:\"\"@[]>"
+ ],
+ "obs-message-id": [
+  "MESsAgE-id\t\t \t:<|@[]> \r\n",
+  "MEsSAgE-Id:<*@`>()\r\n",
+  "MeSSAGE-Id\t : <$@*>\r\n",
+  "MeSSagE-iD:()<D@?>()\r\n",
+  "mESSAgE-Id   :<6@[]>\t\r\n",
+  "meSsagE-iD  \t:<\"\"@[]>()\r\n",
+  "mesSagE-iD :<-@[]>\r\n",
+  "message-ID:<|@[]>()\r\n"
+ ],
+ "obs-minute": [
+  " 30()",
+  " 49",
+  " 79()",
+  "() 35()",
+  "()36() ",
+  "53",
+  "56 ",
+  "84"
+ ],
+ "obs-optional": [
+  "!=J\t\t\t: \r\r\n",
+  "&\t\t:  \r\n",
+  "5(U \t :~\t \r\n",
+  "9U :\r\r\n",
+  ";:\t\r\n",
+  "c: \r\n",
+  "|\t:\u0007\r\r\n",
+  "| : } \r\n"
+ ],
+ "obs-orig-date": [
+  "DATe :6JUn7891:21:56P\r\n",
+  "DAtE:2\tJUL 6222 91:16:09 +2390\t\r\n",
+  "DaTE :Sat,3 jAn 9549 55:20:42\t+7958\r\n",
+  "DaTe \t:9 fEb\t1997\t45:62:62PsT()\r\n",
+  "DatE:5jUl5188:06:46 +7985\t\r\n",
+  "dATe\t:Fri,8\tmay\t5331 14:76:47Mst \r\n",
+  "daTE :2\tdec0394:03:15mDt \r\n",
+  "datE    :3mAy 7830\t82:73d()\r\n"
+ ],
+ "obs-phrase": [
+  "\t5.~",
+  " \" \" ",
+  " \"\\\t \"",
+  "\" \"...\"\"",
+  "\"! \"_.",
+  "\"%\t\"()",
+  "&\t",
+  "`\t"
+ ],
+ "obs-phrase-list": [
+  "",
+  "\t, ,",
+  "\"\"",
+  "()",
+  "(),{,",
+  ",(),+,7,",
+  ",,,",
+  ",,,_,"
+ ],
+ "obs-qp": [
+  "\\\u0000",
+  "\\\n",
+  "\\\f",
+  "\\\r"
+ ],
+ "obs-qtext": [
+  "\u0003",
+  "\u000b",
+  "\f",
+  "\u007f"
+ ],
+ "obs-received": [
+  "RECEIVEd\t :&@[]\r\n",
+  "ReCEIVEd\t  \t:\r\n",
+  "ReCEIved:\r\n",
+  "ReCEivEd\t:\"\"@[]|[]\r\n",
+  "rECeiVed\t :\"\"\r\n",
+  "rEcEiVED:<\"\"@|>#@}\r\n",
+  "reCeiVed \t\t :\r\n",
+  "reCeived\t\t:\r\n"
+ ],
+ "obs-references": [
+  "ReFEREnCES   \t:\r\n",
+  "ReFEreNceS:\"\"\r\n",
+  "ReFeReNCeS\t:_\r\n",
+  "rEFERENCes:()<\"\"@*>!\"\"-\r\n",
+  "rEFeRenCeS:\r\n",
+  "rEfERences\t\t:|~'\r\n",
+  "rEferENCEs:\r\n",
+  "refEreNceS:\t<R@?>()\r\n"
+ ],
+ "obs-reply-to": [
+  "RePLy-To\t:D@?,<@[]:\"\"@=>,`@8\r\n",
+  "RepLy-To :*:;,\"\"@[]\r\n",
+  "rEplY-tO:,\"\"@?,\r\n",
+  "rEply-tO:,\"\":;,\r\n",
+  "rePlY-TO:,<\"\"@{>\r\n",
+  "repLy-to :}:;\r\n",
+  "replY-TO:\"\":;,<%@[]>\r\n",
+  "reply-tO :\"\"@[]\r\n"
+ ],
+ "obs-resent-bcc": [
+  "REsent-bCc:{@[],\"\"@|\r\n",
+  "ReSEnt-bcC:\"\":;\r\n",
+  "Resent-bCc\t:}:;\r\n",
+  "rESEnt-BCC\t:\r\n",
+  "rEsent-BcC:,()\r\n",
+  "reSENT-BcC :*@#,\"\"@[]\r\n",
+  "reSenT-bCC\t:,\r\n",
+  "resEnT-BcC \t\t :()\r\n"
+ ],
+ "obs-resent-cc": [
+  "REsEnT-CC:+@'\r\n",
+  "REsEnT-cc:L:;,\"\"@{\r\n",
+  "ReSEnt-cc:<@1:?@`>,\"\":;\r\n",
+  "ReSeNt-cC:,|:;,\r\n",
+  "rESENt-cC :<@[]:\"\"@!>\r\n",
+  "rESeNt-Cc:\"\":;,\r\n",
+  "reseNT-Cc:5:;\r\n",
+  "resent-Cc  \t:_@[]\r\n"
+ ],
+ "obs-resent-date": [
+  "REsENt-dAtE:9 AUG9217:67:99mdT()\r\n",
+  "REsent-daTe:9jUn 1213\t07:78 +6304\t\r\n",
+  "ReSEnt-daTE \t:tue,9fEb5358:08\t+3697()\r\n",
+  "ResEnT-datE :SAT,5seP7377:39:28s()\r\n",
+  "ResEnt-daTe:6mAr8108:71:98 +1135()\r\n",
+  "ReseNt-dAtE \t\t :6jUn\t5814 75:98 +2331\t\r\n",
+  "reSENT-dAtE\t  :7\tsEp 1111 72:39G\r\n",
+  "reseNT-DaTE    :sUN,9jUN3039:77\t-2251\t\r\n"
+ ],
+ "obs-resent-from": [
+  "RESenT-fRom:\"\"@#,\"\"@[],<\"\"@%>\r\n",
+  "REsENT-FroM  \t\t:<@^:|@^>\r\n",
+  "ReSEnt-frOM \t:<@[]:{@}>,<@-:{@!>,<{@[]>\r\n",
+  "ReSeNt-fROm:<\"\"@[]>\r\n",
+  "rESEnt-frOm  \t:=@=\r\n",
+  "rEsEnt-fRoM \t:<@?:\"\"@?>,$@[],<@[]:\"\"@[]>\r\n",
+  "rEseNT-FRoM :<\"\"@}>\r\n",
+  "reSenT-fROm:\"\"@[],\"\"@&\r\n"
+ ],
+ "obs-resent-mid": [
+  "RESEnt-Message-id:<}@`> \r\n",
+  "ReSEnT-MeSSAge-Id:<$@[]>()\r\n",
+  "ReSEnt-meSSage-ID :<A@[]>\r\n",
+  "rESENt-MeSSaGe-Id :<#@[]>\t\r\n",
+  "rEsENt-Message-iD:<{@?>\r\n",
+  "rEsEnT-MeSsAge-iD\t \t:()<\"\"@}> \r\n",
+  "rEsenT-mEssage-ID:<!@+>()\r\n",
+  "resENT-meSsAGe-iD : <`@[]>()\r\n"
+ ],
+ "obs-resent-rply": [
+  "RESEnT-ReplY-tO:\"\"@[]\r\n",
+  "RESEnt-rePly-To:\"\":;\r\n",
+  "RESenT-replY-TO:\"\":;,<%@[]>\r\n",
+  "ReSEnt-rePLy-tO:\"\"@~\r\n",
+  "ReSeNt-Reply-to:\"\":;,\"\":;,<P@?>\r\n",
+  "ResEnT-repLy-TO\t :\"\":;,\r\n",
+  "resENt-rEPly-to  :\"\"@^\r\n",
+  "resEnT-RePly-To:\"\"@[],<!@[]>\r\n"
+ ],
+ "obs-resent-send": [
+  "REsENt-sender:^<@*:\"\"@=>\r\n",
+  "ReSENT-SeNdER:<@`:\"\"@[]>\r\n",
+  "ReSEnt-seNDer\t:9<+@=>\r\n",
+  "ReSenT-SEnDeR :\"\"<\"\"@%>\r\n",
+  "rESenT-SeNDEr:-@}\r\n",
+  "rEsEnT-sEnDEr :\"\"<@{:\"\"@/>\r\n",
+  "rEsent-SENdeR\t:\"\"@'\r\n",
+  "resenT-SenDEr\t:<?@!>\r\n"
+ ],
+ "obs-resent-to": [
+  "REsEnT-TO:+@'\r\n",
+  "REsEnT-to:L:;,\"\"@{\r\n",
+  "ReSEnt-to:<@1:?@`>,\"\":;\r\n",
+  "ReSeNt-tO:,|:;,\r\n",
+  "rESENt-tO :<@[]:\"\"@!>\r\n",
+  "rESeNt-To:\"\":;,\r\n",
+  "reseNT-To:5:;\r\n",
+  "resent-To  \t:_@[]\r\n"
+ ],
+ "obs-return": [
+  "RETURN-paTh\t :<@[]:\"\"@?>\r\n",
+  "RETuRN-path \t\t\t:\t<\t>()\r\n",
+  "RETurn-path  \t: <()> \r\n",
+  "ReTUrn-paTH \t:<\"\"@~>\r\n",
+  "Return-pAth:<\"\"@[]>\r\n",
+  "rEturn-PATH\t:< >()\r\n",
+  "retURn-PaTh:<()>\r\n",
+  "retURn-pATh\t   :<@|:`@[]>\r\n"
+ ],
+ "obs-route": [
+  ",(),@[]:",
+  ",,\t@[],@^,:",
+  ",@!,()@_,:",
+  ",@#:",
+  "@#:",
+  "@%, ,:",
+  "@1,:",
+  "@?,():"
+ ],
+ "obs-second": [
+  " 30()",
+  " 49",
+  " 79()",
+  "() 35()",
+  "()36() ",
+  "53",
+  "56 ",
+  "84"
+ ],
+ "obs-sender": [
+  "SENDer:7<@%:\"\"@~>\r\n",
+  "SEndeR    :\"\"@~\r\n",
+  "SeNDer:<@!:{@[]>\r\n",
+  "SeNdER:\"\"<@-:\"\"@?>\r\n",
+  "SeNder\t:\"\"<@[]:#@*>\r\n",
+  "SendER:<#@=>\r\n",
+  "Sender:%@[]\r\n",
+  "sEnDEr:<=@~>\r\n"
+ ],
+ "obs-subject": [
+  "SUBjecT    :\r\n",
+  "SUbject\t\t:[, \t\r\n",
+  "SuBJecT :\t&r\r\n",
+  "SuBject:\t\r\n",
+  "SubjeCt\t :\n\r\r\n",
+  "sUbJECT :N\r\n",
+  "sUbjECT:\n\r\r\n",
+  "sUbject\t\t:\r\r\n"
+ ],
+ "obs-to": [
+  "TO\t\t\t:,\"\":;\r\n",
+  "TO:\"\":;\r\n",
+  "TO:t@$\r\n",
+  "To:*@[],<@=:_@[]>,<@[]:`@8>\r\n",
+  "tO\t  :,\"\"@{\r\n",
+  "tO :-@%\r\n",
+  "to:<-@[]>,':;,m@5\r\n",
+  "to:<@[]:/@'>\r\n"
+ ],
+ "obs-unstruct": [
+  "",
+  "\n\n\n\n",
+  "\r",
+  "\r\t \n\u0000\n\r",
+  "\r\r",
+  "\r\r\u000b \r\r\r",
+  "(E\r\r"
+ ],
+ "obs-utext": [
+  "\u0000",
+  "\u0007",
+  "\u000b",
+  "\f",
+  "\u000e"
+ ],
+ "obs-year": [
+  "\t2539()",
+  "()\t40",
+  "()5358",
+  "()68 ",
+  "()93()\t",
+  "07",
+  "53()\t",
+  "924"
+ ],
+ "obs-zone": [
+  "B",
+  "GmT",
+  "V",
+  "eSt",
+  "edt",
+  "mST",
+  "mdt"
+ ],
+ "optional-field": [
+  "&:\n\r\n",
+  "($/:\t \r\n",
+  ")47:\r\n",
+  "3:\t\r\n",
+  "83:\r\r\n",
+  "8:N\r\n",
+  "Jz:\r\n",
+  "c:u?\r\n"
+ ],
+ "orig-date": [
+  "DATe:5 JAn0893:10:14Mst\r\n",
+  "DATe:Mon,0AuG 7200 21:25:88v\r\n",
+  "DAtE:Sun,6\tMaY 6167 99:52cst()\r\n",
+  "DaTE:fRI,8 Feb 6199\t05:58:80\t+3697()\r\n",
+  "DatE:THu,4NoV 3371\t98:85:35\t-4680 \r\n",
+  "dATe:tHu,2\tjuL\t7985\t29:45:59CST\t\r\n",
+  "dAtE:fRI,7\tNOV9309:33:64\t+2139\r\n",
+  "dAte:1 jUN1983:90\t+7239\t\r\n"
+ ],
+ "path": [
+  "\t<()>\t",
+  " <> ",
+  "()<|@^>",
+  "<\t> ",
+  "<\"\"@'>",
+  "<> ",
+  "<@1:?@`>",
+  "<@[]:\"\"@!>"
+ ],
+ "phrase": [
+  "\"\"",
+  "\"\"?",
+  "$\"\"\"\"",
+  "'().",
+  "G{",
+  "_}~",
+  "{\t."
+ ],
+ "qcontent": [
+  "!",
+  ")",
+  "6",
+  "\\\t",
+  "\\ ",
+  "^"
+ ],
+ "qtext": [
+  "!",
+  "(",
+  "8",
+  "L",
+  "t",
+  "z",
+  "}"
+ ],
+ "quoted-pair": [
+  "\\\u0000",
+  "\\\t",
+  "\\\n",
+  "\\\r",
+  "\\ ",
+  "\\<",
+  "\\B",
+  "\\w"
+ ],
+ "quoted-string": [
+  "\t\" \u0005\"",
+  "\t\"\"",
+  "\" \"\t",
+  "\"\\\u0000\r\n \"()\t",
+  "\"\\  $\\<\\\u000b\"",
+  "\"\\ \\0\"()",
+  "\"\\t \\e\tf\\\t\r\n\t\"",
+  "()\t\"\\< ! \"()"
+ ],
+ "received": [
+  "REcEived:};tHU,3apr\t9804 79:59O()\r\n",
+  "ReCEivEd:;FrI,7 jAn\t9053 82:08w\r\n",
+  "RecEIveD:/@%-;fRi,0oCt\t3219 57:17Ut\r\n",
+  "ReceiVeD:[];8Dec2192:00:91 +1115\t\r\n",
+  "rEcEIved:<\"\"@~>;1 MAy 8097 63:64m()\r\n",
+  "rEcEiVED:%@/P\"\"\"\"@^;WeD,0aug6056:68\t+8561 \r\n",
+  "reCeiveD:-<@[]:\"\"@[]>/@`</@[]>;mon,5juN 0931 34:68Mdt()\r\n",
+  "recEIVeD:;tHu,6OcT 9289\t66:52\t+0319\r\n"
+ ],
+ "received-token": [
+  "1",
+  "<\"\"@&>",
+  "<\"\"@->",
+  "<\"\"@|>\t",
+  "<@5:\"\"@[]>",
+  "<@[]:$@}>",
+  "^",
+  "}"
+ ],
+ "references": [
+  "REfErenCEs:\t<\"\"@[]>()\t<$@[]>\r\n",
+  "REfeReNCeS:<+@-><\"\"@=>()<~@`><$@_>\r\n",
+  "REfeRenCes:<\"\"@*> <E@/>\t\r\n",
+  "ReFEREnceS:()<#@?>\r\n",
+  "ReFERences:\t<6@[]>\t\r\n",
+  "ReFEreNceS:()<1@?>()<~@`>\r\n",
+  "rEfErENCeS:<-@{>()\r\n",
+  "reFerENcEs:<\"\"@+>\r\n"
+ ],
+ "reply-to": [
+  "REPly-to:#@[],\"\"@`,<@[]:\"\"@/>\r\n",
+  "RePLy-To:\"\":;\r\n",
+  "RePLy-To:<D@?>,\r\n",
+  "Reply-tO:}:;\r\n",
+  "rEPly-tO:\"\":;,\r\n",
+  "rEplY-tO:\"\":;\r\n",
+  "rEply-TO:,<@[]:`@8>,\r\n",
+  "repLy-tO:,m@5\r\n"
+ ],
+ "resent-bcc": [
+  "ReSEnt-bcC:\"\":;\r\n",
+  "ReSeNT-Bcc:\"\":;\r\n",
+  "ResENT-bCc:<\"\"@[]>\r\n",
+  "rESent-bcC:\r\n",
+  "rEsENT-bcc:<7@/>\r\n",
+  "reSEnT-BCc:\r\n",
+  "resEnt-bcc:()\r\n",
+  "resenT-BCc:\r\n"
+ ],
+ "resent-cc": [
+  "RESenT-cC:+:;\r\n",
+  "ReSENT-cc:<#@?>\r\n",
+  "ReSEnt-cc:,D@?,\r\n",
+  "ReSeNt-cC:\"\":;,^:;\r\n",
+  "ReseNT-cC:$:;\r\n",
+  "rEsENt-Cc:\"\":;\r\n",
+  "rEsenT-CC:`:;\r\n",
+  "reseNT-Cc:!:;,\r\n"
+ ],
+ "resent-date": [
+  "REsENT-DatE:THu,4NoV 3371\t98:85:35\t-4680 \r\n",
+  "REsENt-dAtE:8Sep2292:76 +9947\t\r\n",
+  "REseNt-DaTe:8\tAUG 6268 44:37\t-8136\r\n",
+  "ReSENT-daTe:MON,1jan\t9008 73:96:35f\r\n",
+  "ReSEnt-daTE:tHU,9 Mar 0535 20:84\t+7958\r\n",
+  "ResenT-Date:9Jun\t0067\t79:70\t+9758\r\n",
+  "rESeNt-dATE:Thu,6Feb 1529\t58:59 -8486()\r\n",
+  "rEseNT-DatE:0sEp5701:47:39 -2218\r\n"
+ ],
+ "resent-from": [
+  "REsEnT-FROM:<@[]:\"\"@^>\r\n",
+  "ReSEnt-frOM:<@1:?@`>,\"\"@|,\"\"@[]\r\n",
+  "ReseNt-fRoM:<@+:\"\"@|>,t@$\r\n",
+  "ReseNt-from:<@[]:`@?>,\"\"@[]\r\n",
+  "rEsEnt-fRoM:<@|:\"\"@[]>,-@%\r\n",
+  "reSENT-fRoM:</@'>\r\n",
+  "reSent-FRom:\"\"@[],<@}:\"\"@'>,<@^:`@#>\r\n",
+  "reSent-From:\"\"@[]\r\n"
+ ],
+ "resent-msg-id": [
+  "RESENT-meSsaGe-ID:<&@[]>\r\n",
+  "REsENT-messagE-Id:\t<\"\"@%>\r\n",
+  "ReSEnt-meSSage-ID:\t<A@[]>\r\n",
+  "rEsENt-Message-iD: <_@[]>()\r\n",
+  "rEseNt-mesSaGe-ID: <`@[]>\t\r\n",
+  "reSENT-mEsSaGe-id:</@_>\t\r\n",
+  "reSenT-mESSaGe-ID:()<X@{>\r\n",
+  "resEnt-MeSsaGe-ID:<'@|>\r\n"
+ ],
+ "resent-sender": [
+  "RESenT-sendEr:}@'\r\n",
+  "REsENt-seNdER:\"\"@=\r\n",
+  "ReSEnt-SenDEr:`<@[]:\"\"@{>\r\n",
+  "ReSEnt-seNDer:D@?\r\n",
+  "rESEnt-SeNdEr:\"\"<+@5>\r\n",
+  "reSENT-sEnDeR:\"\"<@+:_@~>\r\n",
+  "resEnT-sENdEr:<@':^@[]>\r\n",
+  "reseNT-SeNDer:?<\"\"@=>\r\n"
+ ],
+ "resent-to": [
+  "RESenT-tO:+:;\r\n",
+  "ReSENT-to:<#@?>\r\n",
+  "ReSEnt-to:,D@?,\r\n",
+  "ReSeNt-tO:\"\":;,^:;\r\n",
+  "ReseNT-tO:$:;\r\n",
+  "rEsENt-To:\"\":;\r\n",
+  "rEsenT-TO:`:;\r\n",
+  "reseNT-To:!:;,\r\n"
+ ],
+ "return": [
+  "REtURN-PatH:<$@%>\r\n",
+  "REtURn-pATh:\t<>\r\n",
+  "REtuRn-Path:<\"\"@|>\r\n",
+  "ReTUrn-paTH:<D@?>\r\n",
+  "ReTurN-PAtH:()<()>\r\n",
+  "rETURN-PatH:<@%:#@%>\r\n",
+  "rETUrN-PATH:<X@{>\r\n",
+  "reTuRN-PAtH:\t<()>\t\r\n"
+ ],
+ "second": [
+  " 88",
+  " 92()",
+  "()33()",
+  "()66",
+  "08",
+  "39",
+  "54",
+  "71"
+ ],
+ "sender": [
+  "SEndeR:<@|:\"\"@[]>\r\n",
+  "SeNDer:\"\"<\"\"@1>\r\n",
+  "SendeR:<\"\"@[]>\r\n",
+  "sENDEr:\"\"@V\r\n",
+  "sEnDeR:\"\"<@^:\"\"@'>\r\n",
+  "sEnDeR:-@[]\r\n",
+  "senDeR:%@#\r\n",
+  "senDer:#<=@*>\r\n"
+ ],
+ "specials": [
+  "\"",
+  "(",
+  ")",
+  ",",
+  ".",
+  "<",
+  ">"
+ ],
+ "subject": [
+  "SUbJeCt:\r\n",
+  "SuBJecT:\r\n",
+  "sUBjeCt:\tS\r\n",
+  "sUbJect:\r\r\n",
+  "sUbjeCT:\r\r\n",
+  "suBJECt: \r\n",
+  "suBJEct:\r\n",
+  "subjeCt:\f\r\r\n"
+ ],
+ "text": [
+  "\u0003",
+  "\t",
+  "\u000b",
+  "\f",
+  "t"
+ ],
+ "time": [
+  "24:74 +9682",
+  "53:92:05\t-6839",
+  "55:97:05h",
+  "57:30:82 -0969",
+  "67:87\t+5266",
+  "76:40eSt",
+  "90:47:39est",
+  "95:05 +0808"
+ ],
+ "time-of-day": [
+  " 88:08",
+  " 92():71",
+  "04:()21\t:67",
+  "09:()39:22",
+  "12:\t10:76",
+  "53:79:52",
+  "56 :95",
+  "83:67()"
+ ],
+ "to": [
+  "TO:,<\"\"@[]>\r\n",
+  "TO:,X@{\r\n",
+  "To:%:;\r\n",
+  "To:,*:;\r\n",
+  "tO:\"\":;\r\n",
+  "tO:+:;\r\n",
+  "to:+@#,\"\"@%,_:;\r\n",
+  "to:^@{,\"\"@|,\"\":;\r\n"
+ ],
+ "trace": [
+  "RETUrn-PATH:<\"\"@#>\r\nrECeIVed:;9JuN 4571 15:56 -5271 \r\nrecEIVeD:;5MAY5177:15est\r\nrEceIved:;6 jUN2206:74mdt\r\n",
+  "REcEIveD:[];3 JUL1717:79UT()\r\nrECeIVeD:<@~:#@[]>;3\tmAr 1559\t32:92\t+7093\r\n",
+  "REturn-patH:<?@[]>\r\nreCeiVed:;5jUl5188:06\t-8295\r\nreceIvEd:;8\tapr\t3150\t19:58 -3311\r\nRECeived:;7AuG9808:11G\r\nrEceIVeD:;9APR 3579\t34:72ut\r\n",
+  "ReTurn-PAth:<>\r\nReCeIvEd:[];sAt,7 AuG7848:76gmT\t\r\n",
+  "rECeiVed:;tHU,9 Mar 0535 20:84w\r\n",
+  "rEcEIVEd:;6 seP 9763\t44:44pDT\r\nReceiVeD:;0Nov8836:82\t+7520\r\nRECEIvEd:;7noV 0591 05:94EST\r\nRECEiVed:;7\taPR 1936\t95:66 -8117\r\n",
+  "rEcEIVEd:;Sat,2jUn 5223\t14:76 +8986()\r\n",
+  "retUrN-PaTH:<>\r\nREceIVED:[]^;6FEB\t9107 61:03CST\t\r\n"
+ ],
+ "unstructured": [
+  "\n\r\r",
+  "\r",
+  "\r\r",
+  " #Sp\t",
+  " B \t ",
+  " t\t",
+  "(\tE "
+ ],
+ "word": [
+  "\t\" \u0005\"",
+  "\t\" \"",
+  " \"\u007f\"()",
+  "\"\t\"()",
+  "\"\\:\\\u0000\"\t",
+  "()\" \\\u0000D\"\t",
+  "()P_\t",
+  "()|{()"
+ ],
+ "year": [
+  "\t0683\t",
+  "\t5536\r\n ",
+  "\r\n 7393 ",
+  " 2071 ",
+  " 4101\r\n\t",
+  " 5882 ",
+  " 6199 ",
+  " 92()"
+ ],
+ "zone": [
+  "\r\n\t+1995",
+  "\r\n -2071",
+  " +4404",
+  " -4101",
+  " -5536",
+  " -5882",
+  "B",
+  "uT"
+ ]
+}
