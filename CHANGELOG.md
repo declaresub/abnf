@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+* `abnf.grammars.rfc3986` and `abnf.grammars.rfc3987` accept URIs and IRIs they
+  used to reject.  `host` set `first_match_alternation`, citing RFC 3986
+  section 3.2.2 -- but that section is about attributing a match of the *whole*
+  host, while first match commits to `IPv4address` on a **prefix**.  Given
+  `http://1.2.3.4.5/`, `IPv4address` matched `1.2.3.4`, `reg-name` was never
+  tried, and the URI was rejected; so was any host of the shape
+  `1.2.3.4.in-addr.arpa`, which is an ordinary reverse-DNS name.  `rfc3987`
+  applied the same setting to every rule in the module, in a loop.
+
+  Nothing is lost by removing it: longest-match alternation already attributes
+  a full IPv4 host to `IPv4address` rather than `reg-name`, because the two tie
+  and the tie is broken by declaration order -- which is exactly what section
+  3.2.2 asks for.  Across a 48-case corpus the only changes are five
+  rejections becoming acceptances; no input that already parsed changes its
+  value or its parse tree (https://github.com/declaresub/abnf/issues/232).
+
 * `Node`, `LiteralNode` and `Match` can be subclassed under the Rust backend,
   as they always could under the pure-Python one.  The pyclasses were final,
   so `class MyNode(Node)` raised `TypeError` -- against a how-to that says

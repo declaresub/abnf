@@ -89,6 +89,9 @@ iprivate       = %xE000-F8FF / %xF0000-FFFFD / %x100000-10FFFD
     """
 
 
-# ßee https://www.rfc-editor.org/rfc/rfc3987#section-2.2
-for rule in Rule.rules():
-    rule.first_match_alternation = True
+# Every rule here used to be set to `first_match_alternation`, citing
+# RFC 3987 section 2.2.  It had the same effect as the equivalent setting in
+# `rfc3986`, one rule at a time: `ihost` committed to IPv4address on a prefix,
+# so `https://1.2.3.4.in-addr.arpa/` was rejected.  Longest-match alternation
+# attributes a full IPv4 host to IPv4address anyway, by declaration order.
+# See https://github.com/declaresub/abnf/issues/232 .
