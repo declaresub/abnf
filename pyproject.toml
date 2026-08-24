@@ -47,15 +47,15 @@ Issues = "https://github.com/declaresub/abnf/issues"
 [project.optional-dependencies]
 dev = [
 'check-manifest==0.51',
-'pre-commit==4.6.1',
+'pre-commit==4.6.2',
 'pyright[nodejs]==1.1.411',
 'pytest==9.1.1',
 'pytest-cov==7.1.0',
 'pytest-benchmark==5.2.3',
-'hypothesis==6.165.2',
+'hypothesis==6.165.3',
 'ruff==0.16.2',
 'setuptools==84.0.0',
-'tox==4.58.0',
+'tox==4.59.0',
 'setuptools_scm==10.2.1',
 ]
 # `pip install abnf[rust]` pulls in the companion `abnf-rust`
