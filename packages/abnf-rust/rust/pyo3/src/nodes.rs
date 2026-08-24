@@ -33,7 +33,7 @@ use crate::source::{from_code_points, substring, CodePoints};
 // LiteralNode
 // ----------------------------------------------------------------
 
-#[pyclass(name = "LiteralNode", module = "abnf_rust._ext", from_py_object)]
+#[pyclass(name = "LiteralNode", module = "abnf_rust._ext", from_py_object, subclass)]
 #[derive(Debug)]
 pub struct PyLiteralNode {
     /// The matched text, as a Python `str` sliced out of the source.
@@ -125,7 +125,7 @@ impl PyLiteralNode {
 // Node
 // ----------------------------------------------------------------
 
-#[pyclass(name = "Node", module = "abnf_rust._ext")]
+#[pyclass(name = "Node", module = "abnf_rust._ext", subclass)]
 #[derive(Debug)]
 pub struct PyNode {
     #[pyo3(get)]
@@ -327,7 +327,7 @@ fn node_kind_to_py(
 // Match
 // ----------------------------------------------------------------
 
-#[pyclass(name = "Match", module = "abnf_rust._ext")]
+#[pyclass(name = "Match", module = "abnf_rust._ext", subclass)]
 #[derive(Debug)]
 pub struct PyMatch {
     /// Match nodes as Python objects.

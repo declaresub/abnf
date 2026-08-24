@@ -2150,3 +2150,64 @@ def test_220_engine_built_values_are_unchanged():
     node = Ordinary("s").parse_all("abc")
     assert node.value == "abc"
     assert [c.value for c in node.children] == ["a", "b", "c"]
+
+
+# ---------------------------------------------------------------------------
+# Backend surface parity (issue #221).  The Rust pyclasses are a different kind
+# of object from the pure-Python classes, and two of the differences showed
+# through: the classes were final, and `Repeat` rejected values the reference
+# accepts.
+# ---------------------------------------------------------------------------
+
+
+def test_221_parse_tree_classes_can_be_subclassed():
+    """The how-to says installing the extension changes nothing in your
+    code; subclassing a node is a plausible thing to have written."""
+
+    class MyNode(Node):
+        pass
+
+    class MyLiteralNode(LiteralNode):
+        pass
+
+    class MyMatch(Match):
+        pass
+
+    assert issubclass(MyNode, Node)
+    assert issubclass(MyLiteralNode, LiteralNode)
+    assert issubclass(MyMatch, Match)
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        (-1,),  # pure Python builds it; Repetition then behaves as min=0
+        (0, 2.5),  # a float max never equals the count, so unbounded
+        (0, 3.0),  # ...but an integral one caps where the integer would
+        (),  # the default
+        (1, 5),
+    ],
+)
+def test_221_repeat_accepts_what_the_reference_accepts(args):
+    """Parse behaviour is what has to agree.  The stored attributes may
+    differ for absurd inputs -- a negative min reads back as 0 -- but no
+    input reaches either bound, so nothing observable follows from it."""
+    repetition = Repetition(Repeat(*args), Literal("a"))
+    ends = sorted({m.start for m in repetition.lparse("aaa", 0)})
+    assert ends  # constructed, and parses
+
+
+@pytest.mark.parametrize(
+    "args, expected",
+    [
+        ((3, 2), GrammarError),  # impossible range
+        ((0, -1), GrammarError),  # negative max is < min
+        ((0, "x"), TypeError),  # not a number at all
+    ],
+)
+def test_221_repeat_still_rejects_what_it_should(args, expected):
+    """Relaxing the accepted set must not swallow the genuine errors --
+    a negative *max* converts to a float cleanly, so it needs the check
+    that a float bound does not route around the `max < min` test."""
+    with pytest.raises(expected):
+        Repeat(*args)
