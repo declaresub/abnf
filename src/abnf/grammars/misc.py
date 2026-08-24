@@ -1,8 +1,48 @@
 """Miscellaneous functions."""
 
-from abnf.parser import ABNFGrammarNodeVisitor, ABNFGrammarRule, Rule
+import warnings
+
+from abnf.parser import (
+    ABNFGrammarNodeVisitor,
+    ABNFGrammarRule,
+    GrammarWarning,
+    Prose,
+    Rule,
+)
 
 __all__ = ["load_grammar_rulelist", "load_grammar_rules"]
+
+
+def _apply_imports(cls: type[Rule], imported_rules: list[tuple[str, Rule]]) -> None:
+    """Apply an import list to ``cls``, warning about accidental overwrites.
+
+    Imports are applied after the grammar text, so an imported rule replaces a
+    definition of the same name.  That is the intended mechanism: a module
+    writes a rule it does not own as prose --
+    ``token = <token, see [HTTP], Section 5.6.2>`` -- and lets the import
+    supply the real one.  Replacing anything *other* than prose is an accident,
+    and a silent one: it swaps a working definition for a different grammar's
+    without a word.  See https://github.com/declaresub/abnf/issues/246 .
+
+    Only the top-level definition is examined, because the rust backend's
+    combinators expose no children to walk.  Every import collision in the
+    bundled grammars is prose exactly at the top level, so that is enough.
+    """
+
+    for name, source in imported_rules:
+        existing = cls._obj_map.get((cls, name.casefold()))
+        definition = getattr(existing, "_definition", None)
+        if definition is not None and not isinstance(definition, Prose):
+            origin = type(source).__module__.rsplit(".", 1)[-1]
+            msg = (
+                f'importing "{name}" from {origin} overwrites the definition '
+                f"{cls.__module__.rsplit('.', 1)[-1]} declares for it.  An "
+                "import is meant to fill in a rule written as prose; this one "
+                "replaces real grammar, which is how issue #234 was "
+                "introduced."
+            )
+            warnings.warn(msg, GrammarWarning, stacklevel=3)
+        cls(name, source.definition)
 
 
 def load_grammar_rules(imported_rules: list[tuple[str, Rule]] | None = None):
@@ -22,8 +62,7 @@ def load_grammar_rules(imported_rules: list[tuple[str, Rule]] | None = None):
         for src in cls.grammar:
             cls.create(src)
         if imported_rules:
-            for rule_def in imported_rules:
-                cls(rule_def[0], rule_def[1].definition)
+            _apply_imports(cls, imported_rules)
         return cls
 
     return rule_decorator
@@ -45,8 +84,7 @@ def load_grammar_rulelist(imported_rules: list[tuple[str, Rule]] | None = None):
         visitor.visit(node)
 
         if imported_rules:
-            for rule_def in imported_rules:
-                cls(rule_def[0], rule_def[1].definition)
+            _apply_imports(cls, imported_rules)
         return cls
 
     return rule_decorator
