@@ -27,7 +27,13 @@ class LocalRule(_Rule):
     grammar = """
 subdomain = label 0*("." label)
 ;subdomain = label / subdomain "." label
-label = letter [ [ ldh-str ] let-dig ]
+; RFC 6265 section 4.1.1 defines domain-value as <subdomain> "as enhanced by
+; [RFC1123], Section 2.1", and that section relaxes "the restriction on the
+; first character ... to allow either a letter or a digit".  This read
+; `label = letter [ ... ]`, plain RFC 1034, so a domain whose first label
+; begins with a digit -- 365online.com -- was rejected.  See
+; https://github.com/declaresub/abnf/issues/235 .
+label = let-dig [ [ ldh-str ] let-dig ]
 ldh-str = let-dig-hyp / let-dig-hyp ldh-str
 let-dig-hyp = let-dig / "-"
 letter = ALPHA
@@ -35,8 +41,12 @@ let-dig = letter / DIGIT
 
 domain-value = subdomain / IPv4address / IPv6address
 
-path-value = 1*(%x20-3A / %x3C-7E)
-extension-av = 1*( %x20-3A / %x3C-7E)
+; Erratum 3444 (Verified) corrects both of these to `*`, and suggests the
+; av-octet spelling used here.  With `1*` an empty Path= value fell through
+; to extension-av instead of path-av.
+av-octet = %x20-3A / %x3C-7E
+path-value = *av-octet
+extension-av = *av-octet
 """
 
 

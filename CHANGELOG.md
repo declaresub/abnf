@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+* `abnf.grammars.rfc6265` accepts a cookie `Domain` whose first label starts
+  with a digit.  RFC 6265 section 4.1.1 defines `domain-value` as `<subdomain>`
+  "as enhanced by [RFC1123], Section 2.1", and that section relaxes "the
+  restriction on the first character ... to allow either a letter or a digit";
+  the module's own docstring claimed the enhanced definition but transcribed
+  plain RFC 1034.  `365online.com` was rejected.
+
+  At header level this did not fail, it mislabelled: `id=a; Domain=365online.com`
+  parsed, but the attribute landed in `extension-av` rather than `domain-av`, so
+  anything walking the tree for the Domain simply did not find it.
+
+  `path-value` and `extension-av` are corrected to `*` from `1*`, per erratum
+  3444 (Verified), which the module's docstring says it incorporates.  An empty
+  `Path=` was mislabelled the same way (https://github.com/declaresub/abnf/issues/235).
+
 * `abnf.grammars.rfc9051` no longer parses IMAP atoms with RFC 5322's rule.
   The module imported `("atom", rfc5322.Rule("atom"))` while also defining
   `atom = 1*ATOM-CHAR` itself; imports are applied after the grammar list, so
