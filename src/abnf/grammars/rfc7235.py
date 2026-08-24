@@ -29,9 +29,17 @@ class Rule(_Rule):
         "Authorization = credentials",
         # BWS = <BWS, see [RFC7230], Section 3.2.3>',
         # OWS = <OWS, see [RFC7230], Section 3.2.3>',
-        # See discussion below for WWW-Authenticate.
-        #'Proxy-Authenticate = *( "," OWS ) challenge *( OWS "," [ OWS challenge ] )',
-        'Proxy-Authenticate = *( "," OWS ) challenge *( OWS ("," / challenge) )',
+        # Both of these carried a workaround for the ambiguity in RFC 7235's
+        # own expansion: `challenge` can consume a trailing comma, so
+        # `Basic realm="foo", Pascal realm="bar"` used to parse only as far as
+        # the comma.  9c4ab8f (2022) found the parser had grown enough
+        # backtracking to handle the rule as written and reverted
+        # WWW-Authenticate to it -- but left Proxy-Authenticate on the
+        # workaround, so two rules the RFC defines identically accepted
+        # different languages, and the comma-less
+        # `Basic realm="a" Newauth realm="b"` was accepted here.
+        # See https://github.com/declaresub/abnf/issues/237 .
+        'Proxy-Authenticate = *( "," OWS ) challenge *( OWS "," [ OWS challenge ] )',
         "Proxy-Authorization = credentials",
         'WWW-Authenticate = *( "," OWS ) challenge *( OWS "," [ OWS challenge ] )',
         'auth-param = token BWS "=" BWS ( token / quoted-string )',
