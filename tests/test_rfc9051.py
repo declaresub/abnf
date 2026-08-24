@@ -874,3 +874,78 @@ class TestRFC9051:
         """Test esearch-response with search correlator."""
         response = 'ESEARCH (TAG "A001") UID ALL 1:5,10:15'
         rfc9051.Rule("esearch-response").parse_all(response)
+
+
+# Issue #234: the module imported RFC 5322's `atom`, which overwrote the IMAP
+# `atom` it defines itself -- imports are applied after the grammar list.  The
+# character-class rules had also lost characters the RFC allows, and
+# `flag-perm` had lost its backslash.
+@pytest.mark.parametrize(
+    'src',
+    [
+        'abc',
+        'a.b',   # '.' is an ATOM-CHAR; RFC 5322's atom rejects it
+        'a:b',   # ':' is not an atom-special
+        'a}b',   # nor is '}'
+        'a~b',   # nor is '~'
+    ],
+)
+def test_234_imap_atom_accepts(src: str):
+    assert rfc9051.Rule('atom').parse_all(src).value == src
+
+
+@pytest.mark.parametrize(
+    'src',
+    [
+        ' abc ',         # RFC 5322's atom allows surrounding CFWS; IMAP's does not
+        '(comment)abc',  # ...including comments
+        'a*b',           # list-wildcards
+        'a%b',
+        'a(b',
+        'a"b',           # quoted-specials
+        'a]b',           # resp-specials
+        'a{b',
+    ],
+)
+def test_234_imap_atom_rejects(src: str):
+    with pytest.raises(ParseError):
+        rfc9051.Rule('atom').parse_all(src)
+
+
+@pytest.mark.parametrize('src', ['A001', 'a:1', 'a.1'])
+def test_234_tag_accepts(src: str):
+    """tag = 1*<any ASTRING-CHAR except "+">."""
+    assert rfc9051.Rule('tag').parse_all(src).value == src
+
+
+def test_234_tag_rejects_plus():
+    with pytest.raises(ParseError):
+        rfc9051.Rule('tag').parse_all('a+1')
+
+
+@pytest.mark.parametrize('src', ['\\*', '\\Seen', 'keyword'])
+def test_234_flag_perm_accepts(src: str):
+    assert rfc9051.Rule('flag-perm').parse_all(src).value == src
+
+
+def test_234_flag_perm_rejects_bare_star():
+    """RFC 9051: flag-perm = flag / "\\*".  A bare "*" is not a flag."""
+    with pytest.raises(ParseError):
+        rfc9051.Rule('flag-perm').parse_all('*')
+
+
+def test_234_text_is_seven_bit_plus_utf8_sequences():
+    """TEXT-CHAR is <any CHAR except CR and LF>, and CHAR is %x01-7F.
+    Non-ASCII reaches `text` through UTF8-2/3/4, which are octet rules --
+    so IMAP data is parsed decoded as latin-1, one code point per octet."""
+    assert rfc9051.Rule('text').parse_all('hello').value == 'hello'
+
+    octets = b'h\xc3\xa9llo'.decode('latin-1')
+    assert rfc9051.Rule('text').parse_all(octets).value == octets
+
+    with pytest.raises(ParseError):
+        rfc9051.Rule('text').parse_all('\xff')   # a lone invalid UTF-8 byte
+
+
+def test_234_mbox_list_extended_keeps_the_rfc_name():
+    assert rfc9051.Rule('mbox-list-extended').definition is not None

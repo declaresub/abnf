@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+* `abnf.grammars.rfc9051` no longer parses IMAP atoms with RFC 5322's rule.
+  The module imported `("atom", rfc5322.Rule("atom"))` while also defining
+  `atom = 1*ATOM-CHAR` itself; imports are applied after the grammar list, so
+  the email rule won.  IMAP then accepted `' abc '` and `'(comment)abc'` --
+  leading whitespace and an RFC 5322 comment -- and rejected `'a.b'`, though
+  `.` is a perfectly good ATOM-CHAR.  `atom` feeds `auth-type`, `charset`,
+  `flag-extension` and others (https://github.com/declaresub/abnf/issues/234).
+
+  Four transcription errors in the same module go with it, since they
+  interact.  `ATOM-CHAR` and `TAG-CHAR` excluded `:`, `}` and `~`, none of
+  which are atom-specials.  `flag-perm` had lost the backslash from `"\*"`,
+  so a bare `*` was accepted -- and `\*` parsed only by way of the `atom`
+  import, so fixing either alone would have broken `PERMANENTFLAGS`
+  responses.  `TEXT-CHAR` and `QUOTED-CHAR` ran to `%xFF`, admitting lone
+  invalid UTF-8 bytes, where the RFC defines them over 7-bit `CHAR` and
+  reaches non-ASCII through `UTF8-2/3/4`.  And `mbx-list-extended` was a
+  half-rename of the RFC's `mbox-list-extended`, so that rule could not be
+  looked up by its own name.
+
+  Note the `TEXT-CHAR` correction has a usage consequence: `UTF8-2/3/4` are
+  octet rules, so IMAP data containing non-ASCII must be decoded as latin-1
+  (one code point per octet), which is what
+  {doc}`explanation/what-abnf-parses` prescribes for byte protocols.
+
 * `abnf.grammars.rfc7489` accepts the DMARC records RFC 7489 defines, including
   the one printed in the RFC's own section B.1.1.  `dmarc-record` required the
   `p` tag and a trailing `";"`, both of which section 6.4 brackets as optional,
