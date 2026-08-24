@@ -5,11 +5,14 @@ from abnf.parser import ParseError
 
 
 # Issue #244: this module exists to extend RFC 5234's char-val with the
-# case-sensitive (%s) and case-insensitive (%i) forms.  Its import list was
-# built by comprehension over every rfc5234 rule, which included `char-val`,
-# and imports are applied after the grammar list -- so the extended rule was
-# replaced by the plain one and the module could not do the one thing it is
-# for.  It had no test file, which is how that survived.
+# case-sensitive (%s) and case-insensitive (%i) forms, and it had no test
+# file at all -- nothing checked that it could.  It always could; #244 was
+# reported on a misreading of the import comprehension, which looks like it
+# would shadow `char-val` but is evaluated before `rfc5234` holds that name.
+#
+# The tests remain worth having.  They pin the extension at every level, so a
+# change anywhere in the chain from `rulelist` down to `char-val` -- including
+# an import list that really does shadow it -- fails here.
 
 
 def test_244_char_val_is_the_modules_own_rule():
