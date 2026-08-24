@@ -1,6 +1,36 @@
 # Changelog
 
-## Unreleased
+## 2.8.3
+
+* A reference to a rule that was never defined now raises `GrammarError` on the
+  Rust backend, as it already did on the pure-Python one.  It was an ordinary
+  `ParseError`, which is indistinguishable from "this alternative did not
+  match", so an enclosing `Alternation` or `Repetition` swallowed it as
+  backtracking: given `a = b / "x"` with `b` undefined, the Rust engine matched
+  `"x"` and silently dropped the `b` branch, while pure Python raised.  A typo'd
+  rule name quietly narrowed the grammar rather than reporting a problem.
+
+  The identical defect was fixed for exclusions in 2.8.1; the plain definition
+  lookup one screen below it in `rule.rs` was missed
+  (https://github.com/declaresub/abnf/issues/201).
+
+* A custom parser that re-enters the engine on a *different* source no longer
+  corrupts the enclosing parse.  Memoisation is scoped by epoch and keyed by
+  position alone, so an epoch may only ever see one source; nested entries
+  shared the enclosing parse's epoch, on the reasoning that a callback
+  re-entering the engine is part of the same parse.  The `Parser` protocol is
+  public, though, and a parser you write may parse anything while it runs --
+  after which entries made against the inner source answered lookups against
+  the outer one, and the outer parse returned a wrong result.  The pure-Python
+  backend was never affected: its memo carries the source and checks identity
+  before use.
+
+  The FFI boundary now compares the `str` object's identity, as the
+  pure-Python memo does, and gives a genuinely different source its own epoch.
+  Same-source re-entry keeps sharing, which matters because an epoch change
+  resets the caches it touches -- claiming one unconditionally would wipe the
+  enclosing parse's memo on every callback
+  (https://github.com/declaresub/abnf/issues/202).
 
 * A custom parser reporting a match that ends past the end of the source no
   longer panics when the enclosing rule has an exclusion.  The exclusion check
@@ -12,27 +42,6 @@
   a nonsensical span is now treated as "not excluded"; the bad offset then
   fails naturally further up, exactly as it does on the pure-Python backend
   (https://github.com/declaresub/abnf/issues/218).
-
-* Four small divergences between the backends, each resolved toward the
-  pure-Python implementation (https://github.com/declaresub/abnf/issues/204):
-
-  * A repeat bound too large for a machine word saturates rather than raising
-    `OverflowError`.  Python's ints are unbounded, so `2*99999999999999999999`
-    is odd but valid ABNF the pure-Python backend parses happily -- the bound
-    is never reached -- and `OverflowError` is neither `GrammarError` nor
-    `ParseError`, so it escaped the documented exception contract too.  Such a
-    bound reads back from `Repeat.max` as the machine maximum under the Rust
-    backend; no input can reach either value, so matching is unaffected.
-  * `Literal(('a', 'z')).case_sensitive` reads `False` rather than `True`.  A
-    range compares by code point either way, so this was the attribute alone.
-  * `Node` equality is structural -- name and children, compared recursively
-    -- rather than a comparison of concatenated values, which called two
-    different parse trees equal whenever they spanned the same text.  It
-    silently changed what a user's assertions meant depending on which backend
-    was installed.
-  * `LiteralNode` is unhashable, as it is in pure Python, where defining
-    `__eq__` without `__hash__` makes it so.  `Node` was already unhashable on
-    both, so no parse-tree node is hashable anywhere.
 
 * A duck-typed parser that happens to have a `name` attribute is no longer
   mistaken for a `Rule` by the Rust backend.  Parsers were identified by
@@ -54,35 +63,26 @@
   callback path, which holds a reference to the object, so it cannot dangle
   (https://github.com/declaresub/abnf/issues/203).
 
-* A custom parser that re-enters the engine on a *different* source no longer
-  corrupts the enclosing parse.  Memoisation is scoped by epoch and keyed by
-  position alone, so an epoch may only ever see one source; nested entries
-  shared the enclosing parse's epoch, on the reasoning that a callback
-  re-entering the engine is part of the same parse.  The `Parser` protocol is
-  public, though, and a parser you write may parse anything while it runs --
-  after which entries made against the inner source answered lookups against
-  the outer one, and the outer parse returned a wrong result.  The pure-Python
-  backend was never affected: its memo carries the source and checks identity
-  before use.
+* Four small divergences between the backends, each resolved toward the
+  pure-Python implementation (https://github.com/declaresub/abnf/issues/204):
 
-  The FFI boundary now compares the `str` object's identity, as the
-  pure-Python memo does, and gives a genuinely different source its own epoch.
-  Same-source re-entry keeps sharing, which matters because an epoch change
-  resets the caches it touches -- claiming one unconditionally would wipe the
-  enclosing parse's memo on every callback
-  (https://github.com/declaresub/abnf/issues/202).
-
-* A reference to a rule that was never defined now raises `GrammarError` on the
-  Rust backend, as it already did on the pure-Python one.  It was an ordinary
-  `ParseError`, which is indistinguishable from "this alternative did not
-  match", so an enclosing `Alternation` or `Repetition` swallowed it as
-  backtracking: given `a = b / "x"` with `b` undefined, the Rust engine matched
-  `"x"` and silently dropped the `b` branch, while pure Python raised.  A typo'd
-  rule name quietly narrowed the grammar rather than reporting a problem.
-
-  The identical defect was fixed for exclusions in 2.8.1; the plain definition
-  lookup one screen below it in `rule.rs` was missed
-  (https://github.com/declaresub/abnf/issues/201).
+  * A repeat bound too large for a machine word saturates rather than raising
+    `OverflowError`.  Python's ints are unbounded, so `2*99999999999999999999`
+    is odd but valid ABNF the pure-Python backend parses happily -- the bound
+    is never reached -- and `OverflowError` is neither `GrammarError` nor
+    `ParseError`, so it escaped the documented exception contract too.  Such a
+    bound reads back from `Repeat.max` as the machine maximum under the Rust
+    backend; no input can reach either value, so matching is unaffected.
+  * `Literal(('a', 'z')).case_sensitive` reads `False` rather than `True`.  A
+    range compares by code point either way, so this was the attribute alone.
+  * `Node` equality is structural -- name and children, compared recursively
+    -- rather than a comparison of concatenated values, which called two
+    different parse trees equal whenever they spanned the same text.  It
+    silently changed what a user's assertions meant depending on which backend
+    was installed.
+  * `LiteralNode` is unhashable, as it is in pure Python, where defining
+    `__eq__` without `__hash__` makes it so.  `Node` was already unhashable on
+    both, so no parse-tree node is hashable anywhere.
 
 ## 2.8.2
 
