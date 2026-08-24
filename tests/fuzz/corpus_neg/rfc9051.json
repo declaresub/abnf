@@ -55,6 +55,20 @@
   "H\u0000",
   "Q\u0000"
  ],
+ "RESP-TEXT-CODE-CHAR": [
+  "\u0001\u0000",
+  "\u0002\u0000",
+  "\u0003\u0000",
+  "\u0004\u0000",
+  "\u0005\u0000",
+  "\u0006\u0000",
+  "\u0007\u0000",
+  "\b\u0000",
+  "\t\u0000",
+  "\u000b\u0000",
+  "\f\u0000",
+  "\u000e\u0000"
+ ],
  "TAG-CHAR": [
   "!\u0000",
   "#\u0000",
@@ -699,6 +713,20 @@
   "ExP\u0000UNGE",
   "ExPUNGE\u0000"
  ],
+ "continue-req": [
+  "+ \u0000\u0001\r\n",
+  "+ \u0001\u0000\u0001\r\n",
+  "+ \u0001\u0001\r\n\u0000",
+  "+ \u0001\r\n\u0000",
+  "+ \u0001\u00ed\u0000\u009d\u008b\r\n",
+  "+ \u0001\u00ed\u0000\u009d\u009d\r\n",
+  "+ \u0001\u00ed\u009d\u008b\r\n\u0000",
+  "+ \u0001\u00ed\u009d\u009d\r\n\u0000",
+  "+ \u0001\u00ef\u0000\u0080\u0080\r\n",
+  "+ \u0001\u00ef\u0080\u0080\r\n\u0000",
+  "+ \u0007\u0000\u000b\r\n",
+  "+ \u0007\u000b\r\n\u0000"
+ ],
  "copy": [
   "COPY\u0000 $ #",
   "COPY\u0000 $ #!",
@@ -1185,6 +1213,20 @@
   "$J\u0000UNk",
   "$JUNk\u0000",
   "$MDNSeNT\u0000"
+ ],
+ "greeting": [
+  "* BY\u0000E \u000b\r\n",
+  "* BY\u0000E \r\n",
+  "* BYE \u0000[!] \u000b\r\n",
+  "* BYE \u0000[!] \r\n",
+  "* BYE \u0000[#] \r\n",
+  "* BYE \u000b\r\n\u0000",
+  "* BYE \r\n\u0000",
+  "* BYE [!] \u000b\r\n\u0000",
+  "* BYE [!] \r\n\u0000",
+  "* BYE [#] \r\n\u0000",
+  "* BYE [i\u0000&] \u00e4\u00ac\u008a\r\n",
+  "* BYE [i&] \u00e4\u00ac\u008a\r\n\u0000"
  ],
  "header-fld-name": [
   "!\u0000",
@@ -1880,8 +1922,120 @@
   "COPyUId 4 27:7 1,18,2,37,8\u0000",
   "COPyUId 4 27:7 1,27:7\u0000"
  ],
+ "resp-cond-auth": [
+  "O\u0000K ",
+  "OK \u0000",
+  "OK \u0000\u00e0\u00a0\u0080",
+  "OK \u0000\u00e0\u00a0\u00a0",
+  "OK \u0000\u00e0\u00bb\u00ae",
+  "OK \u00e0\u00a0\u0080\u0000",
+  "OK \u00e0\u00a0\u00a0\u0000",
+  "OK \u00e0\u00ad\u0000\u00a1\u00f0\u0094\u0080\u0087",
+  "OK \u00e0\u00ad\u0000\u00a1\u00f0\u0094\u00a0\u0087",
+  "OK \u00e0\u00ad\u00a1\u00f0\u0094\u0080\u0087\u0000",
+  "OK \u00e0\u00ad\u00a1\u00f0\u0094\u00a0\u0087\u0000",
+  "OK \u00e0\u00bb\u00ae\u0000"
+ ],
+ "resp-cond-bye": [
+  "BY\u0000E ",
+  "BY\u0000E \u0001",
+  "BY\u0000E \u000b",
+  "BY\u0000e ",
+  "BYE \u0000",
+  "BYE \u0001\u0000",
+  "BYE \u000b\u0000",
+  "BYE [nO\u0000TSAveD] ",
+  "BYE [nOTSAveD] \u0000",
+  "BYe \u0000",
+  "BYe [UIDnoT\u0000sTIckY] \u00f1\u00a2\u00a5\u00a5",
+  "BYe [UIDnoTsTIckY] \u00f1\u00a2\u00a5\u00a5\u0000"
+ ],
+ "resp-cond-state": [
+  "BA\u0000d ",
+  "BAd \u0000",
+  "BAd \u0000\u00f1\u00a1\u00a1\u0080",
+  "BAd \u0000\u00f1\u00a1\u00a1\u009d",
+  "BAd \u0000\u00f1\u00a1\u00a1\u00a1",
+  "BAd \u0000\u00f2\u00a1\u00a1\u009d",
+  "BAd \u0000\u00f2\u00a1\u00ae\u009d",
+  "BAd \u00f1\u00a1\u00a1\u0080\u0000",
+  "BAd \u00f1\u00a1\u00a1\u009d\u0000",
+  "BAd \u00f1\u00a1\u00a1\u00a1\u0000",
+  "BAd \u00f2\u00a1\u00a1\u009d\u0000",
+  "BAd \u00f2\u00a1\u00ae\u009d\u0000"
+ ],
  "resp-specials": [
   "]\u0000"
+ ],
+ "resp-text": [
+  "\u0000",
+  "\u0005\u0000\u0001",
+  "\u0005\u0001\u0000",
+  "\u0005\u00ef\u0000\u00b3\u008a",
+  "\u0005\u00ef\u00b3\u008a\u0000",
+  "\u000b\u0000",
+  "\f\u0000",
+  "\u000e\u0000",
+  "[ALe\u0000rT] ",
+  "[ALerT] \u0000",
+  "[AlE\u0000rt] ",
+  "[AlErt] \u0000"
+ ],
+ "resp-text-code": [
+  "&\u0000",
+  "&\u0000 o",
+  "& o\u0000",
+  "AUTHEnTiCA\u0000tIONFAiLed",
+  "AUTHEnTiCAtIONFAiLed\u0000",
+  "AUTHEnTiCa\u0000tIONFAiLed",
+  "AUTHEnTiCatIONFAiLed\u0000",
+  "AUtHEnTiCA\u0000tIONFAiLed",
+  "AUtHEnTiCAtIONFAiLed\u0000",
+  "AUtHenTiCA\u0000tIONFAiLed",
+  "AUtHenTiCA\u0000tIOnFAiLed",
+  "AUtHenTiCAtIONFAiLed\u0000"
+ ],
+ "response-done": [
+  "! n\u0000O \r\n",
+  "! nO\u0000 \u0001\r\n",
+  "! nO \u0001\r\n\u0000",
+  "! nO \r\n\u0000",
+  "! o\u0000K \r\n",
+  "! o\u0000k \r\n",
+  "! oK \r\n\u0000",
+  "! ok \r\n\u0000",
+  "!! bAD [uidvA\u0000LIDiTY 25] \u0003\r\n",
+  "!! bAD [uidvALI\u0000DiTY 25] \u00d3\u0096\u00c2\u008f\r\n",
+  "!! bAD [uidvALIDiTY 25] \u0003\r\n\u0000",
+  "!! bAD [uidvALIDiTY 25] \u00d3\u0096\u00c2\u008f\r\n\u0000"
+ ],
+ "response-fatal": [
+  "* BY\u0000E \b\r\n",
+  "* BY\u0000E \r\n",
+  "* BYE\u0000 \u000b\u000b\r\n",
+  "* BYE\u0000 \u000bR\r\n",
+  "* BYE \b\r\n\u0000",
+  "* BYE \u000b\u000b\r\n\u0000",
+  "* BYE \u000bR\r\n\u0000",
+  "* BYE \r\n\u0000",
+  "* BYE [CLi\u0000eNtBug] \r\n",
+  "* BYE [CLieNtBug] \r\n\u0000",
+  "* BYE [hASc\u0000hiLDREn] \u0001\r\n",
+  "* BYE [hASchiLDREn] \u0001\r\n\u0000"
+ ],
+ "response-tagged": [
+  "! nO\u0000 \u0001\r\n",
+  "! nO \u0001\r\n\u0000",
+  "! no [A\u0000lert] \r\n",
+  "! no [Alert] \r\n\u0000",
+  "! o\u0000K \r\n",
+  "! o\u0000k \r\n",
+  "! oK\u0000 \u0001\r\n",
+  "! oK \u0001\r\n\u0000",
+  "! oK \r\n\u0000",
+  "! ok\u0000 \u0001\r\n",
+  "! ok \u0001\r\n\u0000",
+  "! ok \r\n\u0000"
  ],
  "search": [
   "SEARcH REtUrN (m\u0000IN) charseT ! All",

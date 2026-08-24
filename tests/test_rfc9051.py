@@ -949,3 +949,55 @@ def test_234_text_is_seven_bit_plus_utf8_sequences():
 
 def test_234_mbox_list_extended_keeps_the_rfc_name():
     assert rfc9051.Rule('mbox-list-extended').definition is not None
+
+
+# Issue #245: resp-text-code's last alternative is `atom [SP 1*<any TEXT-CHAR
+# except "]">]`, and the prose was left as a Prose parser, which always
+# raises.  The optional group could therefore only take its empty branch, so
+# the `atom SP text` form never matched.  Nothing rejected the input --
+# resp-text falls through to [text], which admits any TEXT-CHAR -- so the code
+# simply vanished from the parse tree.
+def _find(node, name):
+    if getattr(node, 'name', None) == name:
+        return node
+    for child in getattr(node, 'children', None) or ():
+        found = _find(child, name)
+        if found is not None:
+            return found
+    return None
+
+
+@pytest.mark.parametrize(
+    'src, code',
+    [
+        ('[MYCODE some text] hello', 'MYCODE some text'),
+        ('[MYCODE] hi', 'MYCODE'),
+        ('[ALERT] hi', 'ALERT'),
+        ('[BADCHARSET (utf-8)] x', 'BADCHARSET (utf-8)'),
+        ('[UNKNOWN-CTE] y', 'UNKNOWN-CTE'),
+        # The exclusion is what stops the text at the closing bracket: under
+        # longest match, a rule admitting "]" would swallow it and the rest.
+        ('[MYCODE a] b] c', 'MYCODE a'),
+    ],
+)
+def test_245_resp_text_code_is_in_the_tree(src: str, code: str):
+    node = rfc9051.Rule('resp-text').parse_all(src)
+    found = _find(node, 'resp-text-code')
+    assert found is not None, 'resp-text-code absorbed by [text]'
+    assert found.value == code
+
+
+@pytest.mark.parametrize('src', ['MYCODE some text', 'MYCODE', 'x y z'])
+def test_245_resp_text_code_parses_standalone(src: str):
+    assert rfc9051.Rule('resp-text-code').parse_all(src).value == src
+
+
+@pytest.mark.parametrize('char', ['\x01', '\x09', '\x0b', '\x0c', '\x0e', '\x5c', '\x5e', '\x7f'])
+def test_245_resp_text_code_char_admits_text_char(char: str):
+    assert rfc9051.Rule('RESP-TEXT-CODE-CHAR').parse_all(char).value == char
+
+
+@pytest.mark.parametrize('char', [']', '\x00', '\x0a', '\x0d'])
+def test_245_resp_text_code_char_excludes(char: str):
+    with pytest.raises(ParseError):
+        rfc9051.Rule('RESP-TEXT-CODE-CHAR').parse_all(char)
