@@ -164,3 +164,90 @@ jobs:
       run: |
         uv export --no-dev --extra rust --no-hashes --no-emit-project \
           --format requirements-txt -o "$RUNNER_TEMP/requirements.txt"
+
+  # ----------------------------------------------------------------
+  # Changelog entry
+  # ----------------------------------------------------------------
+  #
+  # A change to the library that ships without a changelog entry is
+  # invisible to users, and the way entries go missing is rarely a
+  # decision: `## Unreleased` exists only *between* releases, so an
+  # edit anchored on that heading silently does nothing in the window
+  # right after one is cut.  Checking here catches the omission
+  # whatever caused it.
+  #
+  # Scoped to the library itself.  CI, docs and tooling changes do not
+  # need an entry, and requiring one for them is how a check like this
+  # becomes noise that people learn to route around.
+
+  changelog:
+    name: Changelog entry
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      with:
+        persist-credentials: false
+        # Needed to diff against the merge base.
+        fetch-depth: 0
+
+    - name: A library change carries a changelog entry
+      env:
+        BASE_REF: ${{ github.base_ref }}
+      run: |
+        python3 - <<'PY'
+        import os, pathlib, subprocess, sys
+
+        WATCHED = ("src/", "packages/abnf-rust/rust/")
+        CHANGELOG = "CHANGELOG.md"
+
+        def git(*args):
+            return subprocess.run(
+                ["git", *args], capture_output=True, text=True, check=True
+            ).stdout
+
+        base = f"origin/{os.environ['BASE_REF']}"
+        merge_base = git("merge-base", base, "HEAD").strip()
+        changed = git("diff", "--name-only", merge_base, "HEAD").split()
+
+        code = [p for p in changed if p.startswith(WATCHED)]
+        if not code:
+            print("No library change; a changelog entry is not required.")
+            sys.exit(0)
+
+        # The entry has to land in the Unreleased section, not in an
+        # already-released one.
+        text = pathlib.Path(CHANGELOG).read_text(encoding="utf-8").splitlines()
+        try:
+            start = text.index("## Unreleased")
+        except ValueError:
+            print(
+                f"::error::{len(code)} library file(s) changed, but {CHANGELOG} has "
+                "no '## Unreleased' section.  Add one above the most recent release."
+            )
+            sys.exit(1)
+        end = next(
+            (i for i, l in enumerate(text[start + 1 :], start + 1) if l.startswith("## ")),
+            len(text),
+        )
+        unreleased = set(text[start + 1 : end])
+
+        added = [
+            l[1:]
+            for l in git("diff", "-U0", merge_base, "HEAD", "--", CHANGELOG).splitlines()
+            if l.startswith("+") and not l.startswith("+++")
+        ]
+        if not any(l in unreleased for l in added):
+            print(
+                f"::error::{len(code)} library file(s) changed, but this branch adds "
+                f"nothing to the '## Unreleased' section of {CHANGELOG}.  "
+                "Note that heading only exists between releases -- if a release was "
+                "just cut, add the section back rather than editing a released one."
+            )
+            for p in code[:10]:
+                print(f"  changed: {p}")
+            sys.exit(1)
+
+        print(f"{len(code)} library file(s) changed, and Unreleased gained an entry.")
+        PY
