@@ -1,7 +1,7 @@
 import pytest
 
 from abnf.grammars import rfc7489
-from abnf.parser import Source
+from abnf.parser import ParseError, Source
 
 
 def test_valid_dmarc_version():
@@ -147,4 +147,42 @@ def test_valid_dmarc_record(src: Source):
     assert record.parse_all(src)
 
 
+# Issue #233: `dmarc-record` required the `p` tag and a trailing separator,
+# both of which RFC 7489 section 6.4 brackets as optional.  The first record
+# below is the one printed in the RFC's own section B.1.1.
+@pytest.mark.parametrize(
+    'src',
+    [
+        'v=DMARC1; p=none; rua=mailto:dmarc-feedback@example.com',
+        'v=DMARC1; p=none; rua=mailto:dmarc-feedback@example.com; '
+        'ruf=mailto:auth-reports@example.com',
+        'v=DMARC1; rua=mailto:d@example.com',        # no p tag at all
+        'v=DMARC1; p=none;',                          # trailing separator still allowed
+        'v=DMARC1;',                                  # nothing but the version
+        'v=DMARC1; p=quarantine; pct=50; adkim=s; aspf=r',
+        'v=DMARC1; sp=reject; fo=1:d; rf=afrf; ri=86400',
+    ],
+)
+def test_233_valid_dmarc_records(src: Source):
+    assert rfc7489.Rule('dmarc-record').parse_all(src).value == src
 
+
+@pytest.mark.parametrize(
+    'src',
+    [
+        'v=DMARC1',            # the separator after the version is required
+        'p=none; v=DMARC1;',   # the version must come first
+        'v=DMARC2; p=none;',   # wrong version
+        '',
+    ],
+)
+def test_233_invalid_dmarc_records(src: Source):
+    with pytest.raises(ParseError):
+        rfc7489.Rule('dmarc-record').parse_all(src)
+
+
+@pytest.mark.parametrize('src', ['mailto:d@example.com', 'MAILTO:d@example.com'])
+def test_233_uri_scheme_is_case_insensitive(src: Source):
+    """RFC 3986 section 3.1: the scheme is case-insensitive.  The rule was
+    written with %x literals, which are not."""
+    assert rfc7489.Rule('URI').parse_all(src).value == src

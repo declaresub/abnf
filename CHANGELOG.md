@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+* `abnf.grammars.rfc7489` accepts the DMARC records RFC 7489 defines, including
+  the one printed in the RFC's own section B.1.1.  `dmarc-record` required the
+  `p` tag and a trailing `";"`, both of which section 6.4 brackets as optional,
+  so `v=DMARC1; p=none; rua=mailto:dmarc-feedback@example.com` was rejected --
+  as is most of what is published, since records rarely end in a separator.
+  The rule keeps reading the RFC's fixed sequence as a repetition, which is
+  what its own note about components appearing "in any order" calls for
+  (https://github.com/declaresub/abnf/issues/233).
+
+  The `URI` rule, which this module deliberately narrows to the mailto scheme
+  (section 6.2 supports no other), is now written as a char-val rather than as
+  `%x` literals, so it is case-insensitive as RFC 3986 section 3.1 requires of
+  a scheme.  `MAILTO:` used to be rejected.
+
 * `abnf.grammars.rfc3986` and `abnf.grammars.rfc3987` accept URIs and IRIs they
   used to reject.  `host` set `first_match_alternation`, citing RFC 3986
   section 3.2.2 -- but that section is about attributing a match of the *whole*
