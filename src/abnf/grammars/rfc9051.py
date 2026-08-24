@@ -3,14 +3,16 @@ from typing import ClassVar
 from abnf.grammars import rfc3629
 from abnf.parser import Rule as _Rule
 
-from . import rfc5322
 from .misc import load_grammar_rules
 
 
 @load_grammar_rules(
     [
-        # Email-related rules from RFC 5322
-        ("atom", rfc5322.Rule("atom")),
+        # RFC 9051 defines `atom` itself (`1*ATOM-CHAR`, below), and IMAP's
+        # atom is not RFC 5322's: importing the email one replaced it --
+        # imports are applied after the grammar list -- so ` abc ` and
+        # `(comment)abc` parsed while `a.b` did not.  See
+        # https://github.com/declaresub/abnf/issues/234 .
         # Rules from RFC 3629 for UTF-8 encoding
         ("UTF8-char", rfc3629.Rule("UTF8-char")),
         ("UTF8-2", rfc3629.Rule("UTF8-2")),
@@ -32,7 +34,12 @@ class Rule(_Rule):
         "astring = 1*ASTRING-CHAR / string",
         "ASTRING-CHAR = ATOM-CHAR / resp-specials",
         "atom = 1*ATOM-CHAR",
-        "ATOM-CHAR = %x21 / %x23-24 / %x26-27 / %x2B-39 / %x3B-5B / %x5E-7A / %x7C",
+        # <any CHAR except atom-specials>, where atom-specials is
+        # "(" / ")" / "{" / SP / CTL / list-wildcards / quoted-specials /
+        # resp-specials -- that is ( ) { SP CTL % * DQUOTE \\ ] .  The ranges
+        # used to stop at %x39 and %x7A, excluding ":" "}" "~", which are
+        # none of those.
+        "ATOM-CHAR = %x21 / %x23-24 / %x26-27 / %x2B-5B / %x5E-7A / %x7C-7E",
         'atom-specials = "(" / ")" / "{" / SP / CTL / list-wildcards / '
         "quoted-specials / resp-specials",
         'authenticate = "AUTHENTICATE" SP auth-type [SP initial-resp] *(CRLF base64)',
@@ -132,7 +139,10 @@ class Rule(_Rule):
         'flag-keyword = "$MDNSent" / "$Forwarded" / "$Junk" / "$NotJunk" / '
         '"$Phishing" / atom',
         'flag-list = "(" [flag *(SP flag)] ")"',
-        'flag-perm = flag / "*"',
+        # RFC 9051: flag-perm = flag / "\\*".  Without the backslash a bare
+        # "*" was accepted, and `\\*` parsed only by way of the `atom` import
+        # above -- so this and that fix have to travel together.
+        'flag-perm = flag / "\\*"',
         'greeting = "*" SP (resp-cond-auth / resp-cond-bye) CRLF',
         "header-fld-name = astring",
         'header-list = "(" header-fld-name *(SP header-fld-name) ")"',
@@ -165,8 +175,8 @@ class Rule(_Rule):
         '")" / number SP "EXISTS" / namespace-response / '
         "obsolete-search-response / obsolete-recent-response",
         'mailbox-list = "(" [mbx-list-flags] ")" SP (DQUOTE QUOTED-CHAR '
-        "DQUOTE / nil) SP mailbox [SP mbx-list-extended]",
-        'mbx-list-extended = "(" [mbox-list-extended-item '
+        "DQUOTE / nil) SP mailbox [SP mbox-list-extended]",
+        'mbox-list-extended = "(" [mbox-list-extended-item '
         '*(SP mbox-list-extended-item)] ")"',
         "mbox-list-extended-item = mbox-list-extended-item-tag SP tagged-ext-val",
         "mbox-list-extended-item-tag = astring",
@@ -224,7 +234,7 @@ class Rule(_Rule):
         "password = astring",
         'patterns = "(" list-mailbox ")"',
         "quoted = DQUOTE *QUOTED-CHAR DQUOTE",
-        "QUOTED-CHAR = %x01-09 / %x0B-0C / %x0E-21 / %x23-5B / %x5D-FF / "
+        "QUOTED-CHAR = %x01-09 / %x0B-0C / %x0E-21 / %x23-5B / %x5D-7F / "
         '"\\" quoted-specials / UTF8-2 / UTF8-3 / UTF8-4',
         'quoted-specials = DQUOTE / "\\"',
         'rename = "RENAME" SP mailbox SP mailbox',
@@ -304,8 +314,10 @@ class Rule(_Rule):
         "string = quoted / literal",
         'subscribe = "SUBSCRIBE" SP mailbox',
         "tag = 1*TAG-CHAR",
-        "TAG-CHAR = %x21 / %x23-24 / %x26-27 / %x2C-39 / %x3B-5B / "
-        "%x5D / %x5E-7A / %x7C",
+        # tag = 1*<any ASTRING-CHAR except "+">, and ASTRING-CHAR is
+        # ATOM-CHAR / resp-specials -- so the same set as ATOM-CHAR, plus
+        # "]", minus "+".
+        "TAG-CHAR = %x21 / %x23-24 / %x26-27 / %x2C-5B / %x5D-7A / %x7C-7E",
         "tag-string = astring",
         "tagged-ext-label = tagged-label-fchar *tagged-label-char",
         'tagged-label-fchar = ALPHA / "-" / "_" / "."',
@@ -315,7 +327,10 @@ class Rule(_Rule):
         "tagged-ext-simple = sequence-set / number / number64",
         'tagged-ext-val = tagged-ext-simple / "(" [tagged-ext-comp] ")"',
         "text = 1*(TEXT-CHAR / UTF8-2 / UTF8-3 / UTF8-4)",
-        "TEXT-CHAR = %x01-09 / %x0B-0C / %x0E-FF",
+        # <any CHAR except CR and LF>, and CHAR is %x01-7F.  Extending to
+        # %xFF let a lone invalid UTF-8 byte through; `text` already admits
+        # non-ASCII by way of UTF8-2 / UTF8-3 / UTF8-4.
+        "TEXT-CHAR = %x01-09 / %x0B-0C / %x0E-7F",
         'time = 2DIGIT ":" 2DIGIT ":" 2DIGIT',
         'uid = "UID" SP (copy / move / fetch / search / store / uid-expunge)',
         'uid-expunge = "EXPUNGE" SP sequence-set',
