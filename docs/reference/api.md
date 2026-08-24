@@ -71,3 +71,17 @@ mind that this checks only for the presence of `lparse`, not its signature.
 
 .. autoexception:: abnf.GrammarWarning
 ```
+
+`ParseError.start` is the code-point offset where the parse failed, and is
+identical on both backends.
+
+`ParseError.parser` describes what failed, but *how* it describes it depends on
+the backend: the pure-Python implementation stores the parser object itself,
+while the Rust backend stores a description string such as `"Concatenation"` or
+`"Literal('a')"`. The engine builds an error on every failed alternative, so it
+carries a description prepared once at construction rather than a reference to
+the parser — which is what keeps backtracking cheap.
+
+Treat `parser` as diagnostic output: `str(exc)` and logging work on both
+backends, and `exc.start` is the attribute to branch on. Code that reaches into
+it, such as `exc.parser.name`, works only under the pure-Python backend.
