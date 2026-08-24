@@ -306,9 +306,26 @@ impl NamedRule {
             if let Some(ref excluded) = excluded {
                 // `m.start` is the end of the match; the span is what
                 // the Python side rebuilds by joining node values.
-                if Self::is_excluded(excluded, &source[start..m.start]) {
-                    seen.remove(&m.start);
-                    continue;
+                //
+                // It is not necessarily a real span.  When this rule's
+                // definition is a `PyCallbackParser`, the offset comes
+                // from a Python parser and can be anything -- past the
+                // end of the source, or before `start`.  Slicing on it
+                // panicked, and a panic crosses the FFI as
+                // `PanicException`, a `BaseException` that `except
+                // ParseError` (or even `except Exception`) does not
+                // catch (issue #218).
+                //
+                // Text that is not in the source cannot be text the
+                // excluded rule matches, so a nonsensical span means
+                // "not excluded".  The bad offset then fails naturally
+                // further up, which is what the pure-Python backend
+                // does with the same input.
+                if let Some(span) = source.get(start..m.start) {
+                    if Self::is_excluded(excluded, span) {
+                        seen.remove(&m.start);
+                        continue;
+                    }
                 }
             }
             let node = Node::new(self.name.clone(), m.nodes.into_vec());

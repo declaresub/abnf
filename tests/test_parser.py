@@ -1993,3 +1993,75 @@ def test_204_parse_tree_nodes_are_unhashable():
         hash(LiteralNode("a", 0, 1))
     with pytest.raises(TypeError):
         hash(Node("x"))
+
+
+# ---------------------------------------------------------------------------
+# Offsets from a custom parser (issue #218).  A rule's definition may be a
+# Python parser, and the end offset it reports is not validated -- it can be
+# past the end of the source, or before where the match began.  The exclusion
+# check sliced the source with it, so a bad offset panicked, and a panic
+# crosses the FFI as `PanicException`: a `BaseException`, which `except
+# ParseError` -- or even `except Exception` -- does not catch.
+#
+# Text that is not in the source cannot be text the excluded rule matches, so
+# a nonsensical span means "not excluded"; the offset then fails naturally
+# further up, as it does on the pure-Python backend.
+# ---------------------------------------------------------------------------
+
+
+class _OffsetPast:
+    """Reports a match ending far beyond the source."""
+
+    def lparse(self, source, start):
+        yield Match([cast(Node, LiteralNode("a", start, 1))], 1000)
+
+
+class _OffsetBefore:
+    """Reports a match ending before it began."""
+
+    def lparse(self, source, start):
+        yield Match([cast(Node, LiteralNode("a", start, 1))], 0)
+
+
+@pytest.mark.parametrize("parser_cls", [_OffsetPast, _OffsetBefore])
+def test_218_bad_offset_under_an_exclusion_raises_parse_error(parser_cls):
+    class BadOffset(Rule):
+        pass
+
+    BadOffset.create('kw = "zzz"')
+    BadOffset("bad", cast(Parser, parser_cls()))
+    BadOffset("bad").exclude_rule(BadOffset("kw"))
+
+    # The contract is that parsing raises ParseError -- not that it raises
+    # something.  `PanicException` derives from BaseException, so a bare
+    # `except ParseError` would not have caught the old behaviour.
+    with pytest.raises(ParseError):
+        Concatenation(BadOffset("bad"), Literal("b")).lparse("ab", 0)
+        next(iter(Concatenation(BadOffset("bad"), Literal("b")).lparse("ab", 0)))
+
+
+def test_218_bad_offset_without_an_exclusion_is_unchanged():
+    """Only the exclusion path sliced unchecked; this shape always
+    degraded gracefully and must continue to."""
+
+    class NoExclusion(Rule):
+        pass
+
+    NoExclusion("bad", cast(Parser, _OffsetPast()))
+    with pytest.raises(ParseError):
+        next(iter(Concatenation(NoExclusion("bad"), Literal("b")).lparse("ab", 0)))
+
+
+def test_218_a_valid_exclusion_still_excludes():
+    """The guard must not turn every exclusion into a no-op."""
+
+    class StillExcludes(Rule):
+        pass
+
+    StillExcludes.create("word = 1*%x61-7A")
+    StillExcludes.create('kw = "stop"')
+    StillExcludes("word").exclude_rule(StillExcludes("kw"))
+
+    assert StillExcludes("word").parse_all("go").value == "go"
+    with pytest.raises(ParseError):
+        StillExcludes("word").parse_all("stop")

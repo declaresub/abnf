@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+* A custom parser reporting a match that ends past the end of the source no
+  longer panics when the enclosing rule has an exclusion.  The exclusion check
+  sliced the source with that offset, and the offset comes from Python, so it
+  was never validated.  A panic crosses the FFI as `PanicException`, which
+  derives from `BaseException` -- so `except ParseError`, and even `except
+  Exception`, failed to catch it, and a Rust panic banner went to stderr.
+  Text that is not in the source cannot be text the excluded rule matches, so
+  a nonsensical span is now treated as "not excluded"; the bad offset then
+  fails naturally further up, exactly as it does on the pure-Python backend
+  (https://github.com/declaresub/abnf/issues/218).
+
 * Four small divergences between the backends, each resolved toward the
   pure-Python implementation (https://github.com/declaresub/abnf/issues/204):
 
