@@ -39,5 +39,10 @@ month        = "Jan" / "Feb" / "Mar" / "Apr"
             / "May" / "Jun" / "Jul" / "Aug"
             / "Sep" / "Oct" / "Nov" / "Dec"
 
-token = 1*( %x21 / %x23-27 / %x2A-2B / %x2D-2E / %x30-39 / %x41-5A / %x5E-7A / %x7C )
+; <any CHAR except CTLs or separators>, where separators (section 2.2) are
+; ( ) < > @ , ; : \ " / [ ] ? = { } SP HT.  "~" (%x7E) is not one of them and
+; was missing here, so tokens containing a tilde were rejected -- including
+; cookie names, since rfc6265 imports this rule.  RFC 7230's tchar, the same
+; character set, has it.  See https://github.com/declaresub/abnf/issues/236 .
+token = 1*( %x21 / %x23-27 / %x2A-2B / %x2D-2E / %x30-39 / %x41-5A / %x5E-7A / %x7C / %x7E )
 """
