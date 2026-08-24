@@ -25,9 +25,9 @@ use pyo3::prelude::*;
 use pyo3::types::PyString;
 use pyo3::types::PyList;
 
-use abnf_core::{LiteralNode, Match, Node, NodeKind};
+use abnf_core::{ForeignNode, LiteralNode, Match, Node, NodeKind};
 
-use crate::source::substring;
+use crate::source::{from_code_points, substring, CodePoints};
 
 // ----------------------------------------------------------------
 // LiteralNode
@@ -206,18 +206,55 @@ impl PyNode {
     /// rather than a concatenation of the children's values: a node
     /// covers a contiguous run of the source, so the two are the same
     /// text.
-    pub fn from_rust(py: Python<'_>, n: &Node, source: &Bound<'_, PyString>) -> PyResult<Self> {
+    pub fn from_rust(
+        py: Python<'_>,
+        n: &Node,
+        source: &Bound<'_, PyString>,
+    ) -> PyResult<(Self, bool)> {
         let mut children: Vec<Py<PyAny>> = Vec::with_capacity(n.children.len());
+        let mut foreign = false;
         for child in n.children.iter() {
-            children.push(node_kind_to_py(py, child, source)?);
+            let (obj, child_foreign) = node_kind_to_py(py, child, source)?;
+            foreign |= child_foreign;
+            children.push(obj);
         }
-        let value = span_value(py, n.children.iter(), source)?;
-        Ok(Self {
-            name: n.name.as_ref().to_string(),
-            value: value.unbind(),
-            children,
-        })
+        // One slice of the source covers this node -- unless something
+        // below it carries its own text, in which case join the parts,
+        // which the children have already computed (issue #220).
+        let value = if foreign {
+            join_child_values(py, &children)?
+        } else {
+            span_value(py, n.children.iter(), source)?
+        };
+        Ok((
+            Self {
+                name: n.name.as_ref().to_string(),
+                value: value.unbind(),
+                children,
+            },
+            foreign,
+        ))
     }
+}
+
+/// Concatenate the `value` of each already-converted child.  Used only
+/// for a node with a foreign descendant, where slicing the source
+/// would not reproduce the text.
+fn join_child_values<'py>(
+    py: Python<'py>,
+    children: &[Py<PyAny>],
+) -> PyResult<Bound<'py, PyString>> {
+    let mut joined = PyString::new(py, "").unbind();
+    for child in children {
+        let part = child.bind(py).getattr("value")?;
+        joined = joined
+            .bind(py)
+            .as_any()
+            .add(part)?
+            .cast_into::<PyString>()?
+            .unbind();
+    }
+    Ok(joined.into_bound(py))
 }
 
 /// The text spanned by `nodes`: from the first descendant literal to
@@ -244,15 +281,44 @@ where
     }
 }
 
-/// Convert a `NodeKind` to a Python object.
+/// Convert a `NodeKind` to a Python object, reporting whether the
+/// subtree contains a node whose text is not a span of the source.
+///
+/// The flag is accumulated on the way up rather than recomputed by
+/// walking each subtree, which would make building a tree quadratic --
+/// measured at 13-17% on the parse benchmarks when this fix was first
+/// written that way.
 fn node_kind_to_py(
     py: Python<'_>,
     kind: &NodeKind,
     source: &Bound<'_, PyString>,
-) -> PyResult<Py<PyAny>> {
+) -> PyResult<(Py<PyAny>, bool)> {
     Ok(match kind {
-        NodeKind::Internal(n) => Py::new(py, PyNode::from_rust(py, n, source)?)?.into_any(),
-        NodeKind::Literal(l) => Py::new(py, PyLiteralNode::from_rust(l, source)?)?.into_any(),
+        NodeKind::Internal(n) => {
+            let (node, foreign) = PyNode::from_rust(py, n, source)?;
+            (Py::new(py, node)?.into_any(), foreign)
+        }
+        NodeKind::Literal(l) => (
+            Py::new(py, PyLiteralNode::from_rust(l, source)?)?.into_any(),
+            false,
+        ),
+        // Carries its own text, so it is handed back verbatim rather
+        // than re-sliced from the source (issue #220).
+        NodeKind::Foreign(f) => {
+            let value = from_code_points(py, &f.value)?;
+            (
+                Py::new(
+                    py,
+                    PyLiteralNode {
+                        value: value.unbind(),
+                        offset: f.offset,
+                        length: f.length,
+                    },
+                )?
+                .into_any(),
+                true,
+            )
+        }
     })
 }
 
@@ -320,10 +386,17 @@ impl PyMatch {
 impl PyMatch {
     pub fn from_rust(py: Python<'_>, m: &Match, source: &Bound<'_, PyString>) -> PyResult<Self> {
         let mut nodes = Vec::with_capacity(m.nodes.len());
+        let mut foreign = false;
         for nk in &m.nodes {
-            nodes.push(node_kind_to_py(py, nk, source)?);
+            let (obj, node_foreign) = node_kind_to_py(py, nk, source)?;
+            foreign |= node_foreign;
+            nodes.push(obj);
         }
-        let cached_value = span_value(py, m.nodes.iter(), source)?;
+        let cached_value = if foreign {
+            join_child_values(py, &nodes)?
+        } else {
+            span_value(py, m.nodes.iter(), source)?
+        };
         Ok(Self {
             nodes,
             start: m.start,
@@ -358,11 +431,23 @@ fn py_to_node_kind(obj: &Bound<'_, PyAny>) -> PyResult<NodeKind> {
     //
     // A terminal contributes only its span; the text itself is read
     // back out of the source when the tree is rebuilt for Python.
+    // Terminals coming *in* from Python keep their own text.  The
+    // engine's own terminals are spans of the source, which is what
+    // lets their values be produced by slicing -- but a custom parser
+    // may return a normalised or synthesised value, and discarding it
+    // silently replaced it with unrelated source text (issue #220).
     if let Ok(lit) = obj.cast::<PyLiteralNode>() {
         let lit = lit.borrow();
-        return Ok(NodeKind::Literal(LiteralNode::new(lit.offset, lit.length)));
+        let value = CodePoints::new(lit.value.bind(obj.py()))?;
+        return Ok(NodeKind::Foreign(Arc::new(ForeignNode::new(
+            value.as_slice().into(),
+            lit.offset,
+            lit.length,
+        ))));
     }
-    if let (Ok(offset_obj), Ok(length_obj)) = (obj.getattr("offset"), obj.getattr("length")) {
+    if let (Ok(value_obj), Ok(offset_obj), Ok(length_obj)) =
+        (obj.getattr("value"), obj.getattr("offset"), obj.getattr("length"))
+    {
         if let (Ok(offset), Ok(length)) = (
             offset_obj.extract::<usize>(),
             length_obj.extract::<usize>(),
@@ -372,7 +457,13 @@ fn py_to_node_kind(obj: &Bound<'_, PyAny>) -> PyResult<NodeKind> {
                 .and_then(|n| n.extract())
                 .unwrap_or_else(|_| "literal".to_string());
             if name == "literal" {
-                return Ok(NodeKind::Literal(LiteralNode::new(offset, length)));
+                let value_str = value_obj.cast::<PyString>()?;
+                let value = CodePoints::new(value_str)?;
+                return Ok(NodeKind::Foreign(Arc::new(ForeignNode::new(
+                    value.as_slice().into(),
+                    offset,
+                    length,
+                ))));
             }
         }
     }

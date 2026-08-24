@@ -153,6 +153,9 @@ fn visit_repeat(node: &Node, src: Src<'_>) -> Repeat {
                     saw_star = true;
                 }
             }
+            // The meta-grammar builds its own trees, so no node here
+            // came from an embedded Python parser.
+            NodeKind::Foreign(_) => {}
         }
     }
     let min = if min_src.is_empty() {
