@@ -100,3 +100,9 @@ def test_235_domain_value_still_rejects(src: str):
     """Relaxing the first character must not relax the rest."""
     with pytest.raises(ParseError):
         rfc6265.Rule('domain-value').parse_all(src)
+
+
+@pytest.mark.parametrize('src', ['~x=1', 'a=1', 'a~b=1'])
+def test_236_cookie_name_may_contain_a_tilde(src: str):
+    """cookie-name is rfc2616's token, which was missing "~" (#236)."""
+    assert rfc6265.Rule('cookie-pair').parse_all(src).value == src

@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+* `abnf.grammars.rfc2616`'s `token` accepts `~`, which it had been missing.
+  RFC 2616 defines `token` as `1*<any CHAR except CTLs or separators>`, and
+  `~` is not among the separators listed in section 2.2 -- the module
+  transcribes that prose into explicit ranges, and the conversion dropped
+  `%x7E`.  `rfc6265` imports this rule for `cookie-name`, so `~x=1` was not a
+  parseable cookie either.  RFC 7230's `tchar`, the same character set
+  transcribed separately, always had it; the two rules now accept exactly the
+  same characters, which a test checks across the printable range
+  (https://github.com/declaresub/abnf/issues/236).
+
 * `abnf.grammars.rfc6265` accepts a cookie `Domain` whose first label starts
   with a digit.  RFC 6265 section 4.1.1 defines `domain-value` as `<subdomain>`
   "as enhanced by [RFC1123], Section 2.1", and that section relaxes "the
