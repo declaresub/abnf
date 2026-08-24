@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+* The grammar loader warns when an import overwrites a rule the module
+  defines itself.  Imports are applied after the grammar text, so an imported
+  rule replaces a definition of the same name -- which is the intended
+  mechanism, since a module writes a rule it does not own as prose
+  (`token = <token, see [HTTP], Section 5.6.2>`) and lets the import supply
+  the real one.  Nothing distinguished that from an import replacing real
+  grammar by accident, which is how #234 got in and stayed in.  A
+  `GrammarWarning` now marks the difference
+  (https://github.com/declaresub/abnf/issues/246).
+
+  All 21 import collisions across the bundled grammars are the prose pattern,
+  so this is silent today; reintroducing #234's `("atom", rfc5322.Rule("atom"))`
+  makes it fire.  A test asserts no bundled grammar emits it, because a
+  warning nobody looks at would not have caught either bug.
+
 * `abnf.grammars.rfc9051`'s `resp-text-code` accepts its `atom SP text` form.
   The trailing `1*<any TEXT-CHAR except "]">` was left as prose, and a Prose
   parser always raises -- so the optional group could only ever take its empty
