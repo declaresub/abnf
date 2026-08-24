@@ -262,7 +262,15 @@ class Rule(_Rule):
         '"EXPUNGEISSUED" / "CORRUPTION" / "SERVERBUG" / "CLIENTBUG" / '
         '"CANNOT" / "LIMIT" / "OVERQUOTA" / "ALREADYEXISTS" / '
         '"NONEXISTENT" / "NOTSAVED" / "HASCHILDREN" / "CLOSED" / '
-        '"UNKNOWN-CTE" / atom [SP 1*<any TEXT-CHAR except "]">]',
+        '"UNKNOWN-CTE" / atom [SP 1*RESP-TEXT-CODE-CHAR]',
+        # <any TEXT-CHAR except "]">.  A Prose parser always raises, so the
+        # optional group could only ever take its empty branch: the
+        # `atom SP text` form of resp-text-code never matched.  That did not
+        # show up as a rejection -- resp-text falls through to [text], which
+        # admits any TEXT-CHAR -- so `[MYCODE some text] hello` parsed with no
+        # resp-text-code in the tree at all.  TEXT-CHAR is
+        # %x01-09 / %x0B-0C / %x0E-7F; "]" is %x5D.
+        "RESP-TEXT-CODE-CHAR = %x01-09 / %x0B-0C / %x0E-5C / %x5E-7F",
         'return-option = "SUBSCRIBED" / "CHILDREN" / status-option / option-extension',
         'search = "SEARCH" [search-return-opts] SP search-program',
         'search-correlator = SP "(" "TAG" SP tag-string ")"',

@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+* `abnf.grammars.rfc9051`'s `resp-text-code` accepts its `atom SP text` form.
+  The trailing `1*<any TEXT-CHAR except "]">` was left as prose, and a Prose
+  parser always raises -- so the optional group could only ever take its empty
+  branch and that alternative never matched.  Nothing rejected the input:
+  `resp-text` falls through to `[text]`, which admits any TEXT-CHAR, so
+  `[MYCODE some text] hello` parsed with no `resp-text-code` in the tree at
+  all.  Now spelled out as `RESP-TEXT-CODE-CHAR`, TEXT-CHAR minus `%x5D`
+  (https://github.com/declaresub/abnf/issues/245).
+
+  Twelve rules reached that prose, `response` -- the top-level server response
+  -- among them, so the generated corpus had been skipping all of them; it
+  covers 223 rules now rather than 210.  `tests/test_grammars.py` asserts that
+  no loaded grammar reaches a Prose parser, which is a defect wherever it
+  appears.
+
 * `abnf.grammars.rfc7405` gains a test file.  The module had none, so nothing
   checked that it could parse the `%s` and `%i` char-vals it exists to define.
   It always could; the tests now pin it at every level -- `char-val`,
