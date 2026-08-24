@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+* `abnf.grammars.rfc7405` can parse `%s` and `%i` char-vals, which is the one
+  thing the module exists for.  Its import list is built by comprehension over
+  every `rfc5234` rule, and that set included `char-val`; imports are applied
+  after the grammar list, so RFC 5234's plain rule replaced the extended one
+  and `%s"abc"` did not parse at all
+  (https://github.com/declaresub/abnf/issues/244).
+
+  Excluding `char-val` from the import is not sufficient: an imported rule
+  refers to the *other* module's rule objects, so `element` -- and everything
+  above it, through the mutual recursion between `element`, `group`, `option`
+  and `alternation` -- would still reach RFC 5234's `char-val`.  Those ten
+  rules are now defined locally, copied from RFC 5234 unchanged, and the rest
+  are still imported.
+
+  The module had no test file, which is how this went unnoticed; it has one
+  now.
+
 * Three smaller grammar transcription errors, each verified against the RFC
   text (https://github.com/declaresub/abnf/issues/237):
 

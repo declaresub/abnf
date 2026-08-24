@@ -12,12 +12,39 @@ from abnf.parser import Rule as _Rule
 from . import rfc5234
 from .misc import load_grammar_rules
 
+#: Rules whose definitions reach `char-val`, directly or through the
+#: mutual recursion between `element`, `group`, `option` and
+#: `alternation`.  RFC 7405 exists to redefine `char-val`, and a rule
+#: imported from `rfc5234` refers to *that* module's rule objects -- so
+#: importing any of these would reach RFC 5234's plain `char-val` and
+#: the extension would apply to nothing above it.  They are defined
+#: below instead, copied from RFC 5234 unchanged.
+#:
+#: `char-val` itself was in the imported set, which silently replaced
+#: the extended rule with the plain one: `%s"abc"` did not parse at
+#: all.  See https://github.com/declaresub/abnf/issues/244 .
+_REDEFINED = frozenset(
+    {
+        "char-val",
+        "element",
+        "repetition",
+        "concatenation",
+        "alternation",
+        "elements",
+        "group",
+        "option",
+        "rule",
+        "rulelist",
+    }
+)
+
 
 @load_grammar_rules(
     [
         (rule.name, rule)
         for rule in rfc5234.Rule.rules()
         if rule.name not in {core_rule.name for core_rule in _Rule.rules()}
+        and rule.name not in _REDEFINED
     ]
 )
 class Rule(_Rule):
@@ -33,4 +60,15 @@ class Rule(_Rule):
         "quoted-string  =  DQUOTE *(%x20-21 / %x23-7E) DQUOTE\
                                 ; quoted string of SP and VCHAR\
                                 ;  without DQUOTE",
+        # Copied unchanged from RFC 5234, section 4, so that they resolve
+        # `char-val` to the extended rule above rather than to RFC 5234's.
+        "element = rulename / group / option / char-val / num-val / prose-val",
+        "repetition = [repeat] element",
+        "concatenation = repetition *(1*c-wsp repetition)",
+        'alternation = concatenation *(*c-wsp "/" *c-wsp concatenation)',
+        "elements = alternation *c-wsp",
+        'group = "(" *c-wsp alternation *c-wsp ")"',
+        'option = "[" *c-wsp alternation *c-wsp "]"',
+        "rule = rulename defined-as elements c-nl",
+        "rulelist = 1*( rule / (*c-wsp c-nl) )",
     ]
