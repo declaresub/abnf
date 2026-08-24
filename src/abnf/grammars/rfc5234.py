@@ -35,8 +35,11 @@ class Rule(_Rule):
         "concatenation = repetition *(1*c-wsp repetition)",
         "repetition = [repeat] element",
         'repeat = 1*DIGIT / (*DIGIT "*" *DIGIT)',
+        # RFC 5234 section 4 has "/ num-val / prose-val"; the last
+        # alternative was dropped here.  See
+        # https://github.com/declaresub/abnf/issues/237 .
         "element = rulename / group / option /\
-                                   char-val / num-val",
+                                   char-val / num-val / prose-val",
         'group = "(" *c-wsp alternation *c-wsp ")"',
         'option = "[" *c-wsp alternation *c-wsp "]"',
         "char-val = DQUOTE *(%x20-21 / %x23-7E) DQUOTE\

@@ -29,7 +29,7 @@ from .misc import load_grammar_rules
     ]
 )
 class Rule(_Rule):
-    """Rules from RFC 5987."""
+    """Rules from RFC 9116."""
 
     grammar: ClassVar[list[str] | str] = [
         "body =  signed / unsigned",
@@ -86,7 +86,14 @@ class Rule(_Rule):
         #           "/" / "[" / "]" / "?" / "="
         #          ; Must be in quoted-string,
         #          ; to use within parameter values
-        "token-char = %x21-27 / %x2A-2B / %x30-39 / %x41-5A / %x5E-7E",
+        # <any (US-ASCII) CHAR except SPACE, CTLs, or tspecials>, with
+        # tspecials as quoted above.  The ranges used to start at %x21-27,
+        # which swept in DQUOTE (a tspecial), and to omit %x2D-2E, though
+        # "-" and "." are not tspecials -- so "SHA-256" and "v1.0" were
+        # rejected while 'a"b' was accepted.  See
+        # https://github.com/declaresub/abnf/issues/237 .
+        "token-char = %x21 / %x23-27 / %x2A-2B / %x2D-2E / %x30-39 / "
+        "%x41-5A / %x5E-7E",
         "token = 1*token-char",
         # core rules included in this grammar are omitted.
     ]

@@ -2,6 +2,35 @@
 
 ## Unreleased
 
+* Three smaller grammar transcription errors, each verified against the RFC
+  text (https://github.com/declaresub/abnf/issues/237):
+
+  * `rfc7240`'s `Preference-Applied` was built from `preference`, which permits
+    parameters.  RFC 7240 section 3 defines the header over `applied-pref` and
+    says its syntax "differs from that of the Prefer header in that parameters
+    are not included"; `Preference-Applied: respond-async; wait=10` was
+    accepted.  `Prefer` keeps its parameters.
+  * `rfc9116`'s `token-char` ran from `%x21-27`, which swept in DQUOTE -- a
+    tspecial -- and omitted `%x2D-2E`, though `-` and `.` are not tspecials.
+    So `SHA-256` and `v1.0` were rejected while `a"b` was accepted, which
+    reached `hash-alg`, the value of a PGP `Hash:` header.
+  * `rfc5234`'s `element` dropped the `prose-val` alternative that section 4
+    gives it, so `<some prose>` did not parse.
+
+  The class docstring in `rfc9116` said "Rules from RFC 5987"; it now says
+  9116.
+
+* `rfc7235`'s `Proxy-Authenticate` uses the rule RFC 7235 gives it, as
+  `WWW-Authenticate` already did.  Both once carried a workaround for the
+  ambiguity in the RFC's own expansion -- `challenge` can consume a trailing
+  comma, so `Basic realm="foo", Pascal realm="bar"` parsed only as far as the
+  comma.  In 2022 the parser was found to handle the rule as written and
+  `WWW-Authenticate` was reverted to it; `Proxy-Authenticate` was left behind,
+  so two rules the RFC defines identically accepted different languages, and
+  the comma-less `Basic realm="a" Newauth realm="b"` was accepted.  Tests now
+  run the same cases against both headers
+  (https://github.com/declaresub/abnf/issues/237).
+
 * `abnf.grammars.rfc2616`'s `token` accepts `~`, which it had been missing.
   RFC 2616 defines `token` as `1*<any CHAR except CTLs or separators>`, and
   `~` is not among the separators listed in section 2.2 -- the module
