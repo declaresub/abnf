@@ -2211,3 +2211,20 @@ def test_221_repeat_still_rejects_what_it_should(args, expected):
     that a float bound does not route around the `max < min` test."""
     with pytest.raises(expected):
         Repeat(*args)
+
+
+def test_221_mutating_a_parse_tree_container_is_documented_not_supported():
+    """Neither backend errors, and they do different things -- pure
+    Python mutates, Rust rebuilds the container per access so the change
+    is dropped.  Making the Rust getters return tuples would raise, but
+    a tuple stops comparing equal to a list, which breaks reading code
+    to fix writing code that should not exist.  So the API reference
+    records it, and this pins that the note stays put."""
+    reference = pathlib.Path("docs/reference/api.md").read_text(encoding="utf-8")
+    assert "Parse trees are results, not workspaces" in reference
+    assert "silently does nothing" in reference
+
+    # Whatever the backend does, reading the tree is unaffected.
+    node = Node("x", cast(Node, LiteralNode("a", 0, 1)))
+    assert len(node.children) == 1
+    assert node.children[0].value == "a"
