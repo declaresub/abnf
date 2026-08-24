@@ -1235,7 +1235,21 @@ class NodeVisitor:
 
 
 class ParseError(Exception):
-    """Raised in response to errors during parsing."""
+    """Raised in response to errors during parsing.
+
+    ``start`` is the code-point offset at which the parse failed, and
+    means the same thing on both backends.
+
+    ``parser`` describes what failed, and is the one attribute whose
+    *type* depends on the backend: here it is the parser object, while
+    the Rust backend supplies a description string (``"Concatenation"``,
+    ``"Literal('a')"``).  An error is constructed on every failed
+    alternative, so that backend carries a description prepared once at
+    construction rather than a reference to the parser -- which is what
+    keeps backtracking cheap.  Treat it as diagnostic output rather than
+    something to reach into; ``str(exc)`` and ``exc.start`` behave
+    identically either way.
+    """
 
     def __init__(self, parser: Parser, start: int, *args: typing.Any):
         # it turns out that calling super().__init__(*args) is quite slow.  Because

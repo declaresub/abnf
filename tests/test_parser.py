@@ -2065,3 +2065,31 @@ def test_218_a_valid_exclusion_still_excludes():
     assert StillExcludes("word").parse_all("go").value == "go"
     with pytest.raises(ParseError):
         StillExcludes("word").parse_all("stop")
+
+
+# ---------------------------------------------------------------------------
+# ParseError attributes (issue #219).  `start` means the same thing on both
+# backends.  `parser` does not: pure Python stores the parser object, the Rust
+# engine a description string prepared once at construction, because an error
+# is built on every failed alternative.  Documented rather than reconciled --
+# carrying the object would put an allocation back on the backtracking path
+# for an attribute only diagnostics read.
+# ---------------------------------------------------------------------------
+
+
+def test_219_parse_error_start_is_the_documented_contract():
+    from abnf.grammars import rfc3986
+
+    with pytest.raises(ParseError) as excinfo:
+        rfc3986.Rule("URI").parse_all("not a uri")
+    assert excinfo.value.start == 0
+    # `str()` works on both backends, whatever `parser` holds.
+    assert str(excinfo.value).endswith(": 0")
+
+
+def test_219_parse_error_parser_is_documented_as_backend_dependent():
+    """Pin the documentation, not the type: the docstring must keep
+    warning that reaching into `parser` is not portable."""
+    doc = ParseError.__doc__ or ""
+    assert "description string" in doc
+    assert "start" in doc

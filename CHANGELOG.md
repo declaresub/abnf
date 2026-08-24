@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+* Document that `ParseError.parser` holds the parser object under the
+  pure-Python backend and a description string under the Rust one.  `start`
+  means the same thing either way, and is the attribute to branch on; `parser`
+  is diagnostic output, and reaching into it (`exc.parser.name`) is portable
+  only to pure Python.  The engine builds an error on every failed
+  alternative, so it carries a description prepared once at construction
+  rather than a reference to the parser, which is what keeps backtracking
+  cheap (https://github.com/declaresub/abnf/issues/219).
+
 ## 2.8.3
 
 * A reference to a rule that was never defined now raises `GrammarError` on the
