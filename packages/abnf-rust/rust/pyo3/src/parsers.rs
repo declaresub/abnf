@@ -9,7 +9,7 @@ use std::sync::Arc;
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use pyo3::sync::PyOnceLock;
-use pyo3::types::{PyInt, PyString, PyTuple, PyType};
+use pyo3::types::{PyFloat, PyInt, PyString, PyTuple, PyType};
 
 use abnf_core::{
     arc, Alternation, ArcParser, Concatenation, Literal, LiteralKind, OptionParser, Parser, Prose,
@@ -38,8 +38,30 @@ pub struct PyRepeat {
 #[pymethods]
 impl PyRepeat {
     #[new]
-    #[pyo3(signature = (min=0, max=None))]
-    fn new(py: Python<'_>, min: usize, max: Option<&Bound<'_, PyAny>>) -> PyResult<Self> {
+    #[pyo3(signature = (min=None, max=None))]
+    fn new(
+        py: Python<'_>,
+        min: Option<&Bound<'_, PyAny>>,
+        max: Option<&Bound<'_, PyAny>>,
+    ) -> PyResult<Self> {
+        // A negative `min` is not an error.  The pure-Python `Repeat`
+        // accepts one, and `Repetition` then builds no mandatory
+        // prefix at all -- so it behaves as zero, which is what this
+        // clamps to (issue #221).  Rejecting it made the backends
+        // disagree over a value neither treats as meaningful.
+        let min: usize = match min {
+            None => 0,
+            Some(obj) => match obj.extract::<usize>() {
+                Ok(value) => value,
+                Err(err) => {
+                    if obj.cast::<PyInt>().is_ok() && obj.lt(0i64)? {
+                        0
+                    } else {
+                        return Err(err);
+                    }
+                }
+            },
+        };
         // A bound too large for `usize` saturates rather than raising.
         // Python's ints are unbounded, so `2*99999999999999999999"x"`
         // is odd but valid ABNF that the pure-Python backend parses
@@ -54,6 +76,22 @@ impl PyRepeat {
             Some(obj) if obj.is_none() => None,
             Some(obj) => match obj.extract::<usize>() {
                 Ok(value) => Some(value),
+                // A float bound is not an error either.  Pure Python
+                // compares `max` against the repetition count, so a
+                // non-integral float never equals it and the
+                // repetition is unbounded; an integral one caps where
+                // the integer would.  Mirror both.
+                // Test for a *float* specifically: an int converts to
+                // f64 too, and routing negative ints through here would
+                // swallow the `max < min` check below.
+                Err(_) if obj.is_instance_of::<PyFloat>() => {
+                    let value = obj.extract::<f64>()?;
+                    if value.is_finite() && value.fract() == 0.0 && value >= 0.0 {
+                        Some(value as usize)
+                    } else {
+                        None
+                    }
+                }
                 // Not an integer at all: report that, not a bound problem.
                 Err(err) if obj.cast::<PyInt>().is_err() => return Err(err),
                 // An integer outside `usize`.  Negative falls through to

@@ -32,6 +32,27 @@ protocol they satisfy, exported for type hints rather than for instantiation.
    :members:
 ```
 
+### Parse trees are results, not workspaces
+
+A parse tree is meant to be read. Nothing in the library mutates one after
+building it, and neither should you.
+
+The two backends disagree about what happens if you try. Under the pure-Python
+backend `node.children` and `match.nodes` are live lists, so appending to one
+changes the node. Under the Rust backend they are rebuilt on each access, so
+appending succeeds and changes nothing — the engine shares subtrees between
+matches behind reference counts, and a mutation has nowhere to go.
+
+```python
+match.nodes.append(node)   # pure Python: mutates.  Rust: silently does nothing.
+```
+
+Neither raises. Making the Rust getters return tuples would, but a tuple stops
+comparing equal to a list, which breaks reading code to fix writing code that
+should not exist — so the difference is recorded here instead. Build a new node
+rather than editing one, and this never comes up
+([issue #221](https://github.com/declaresub/abnf/issues/221)).
+
 ## NodeVisitor
 
 ```{eval-rst}

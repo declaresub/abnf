@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+* `Node`, `LiteralNode` and `Match` can be subclassed under the Rust backend,
+  as they always could under the pure-Python one.  The pyclasses were final,
+  so `class MyNode(Node)` raised `TypeError` -- against a how-to that says
+  installing the extension changes nothing in your code
+  (https://github.com/declaresub/abnf/issues/221).
+
+* `Repeat` accepts the values the pure-Python constructor accepts.  A negative
+  `min` is not an error there -- the repetition simply builds no mandatory
+  prefix, so it behaves as zero -- and a float `max` is compared against the
+  repetition count, so a non-integral one never caps and an integral one caps
+  where the integer would.  Both now behave the same on either backend.  The
+  stored attributes can still differ for such inputs (a negative `min` reads
+  back as `0`), but no input reaches either bound, so nothing observable
+  follows from it.  The genuine errors are unchanged: `3*2` and a negative
+  `max` raise `GrammarError`, a non-number raises `TypeError`.
+
+* Document that mutating `node.children` or `match.nodes` is not supported, and
+  what each backend does if you try: the pure-Python containers are live lists,
+  while the Rust ones are rebuilt per access, so the change is dropped.  Making
+  the Rust getters return tuples would raise instead of vanishing, but a tuple
+  stops comparing equal to a list -- breaking reading code to fix writing code
+  that should not exist.  A parse tree is meant to be read
+  (https://github.com/declaresub/abnf/issues/221).
+
 * A value returned by a custom parser is no longer replaced by source text.
   Since 2.8.1 the engine's terminals are spans of the source and their values
   are produced by slicing it, which is sound for nodes the engine builds --
