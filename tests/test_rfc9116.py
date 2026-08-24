@@ -1,6 +1,7 @@
 import pytest
 
 from abnf.grammars import rfc9116
+from abnf.parser import ParseError
 
 
 @pytest.mark.parametrize("src", [
@@ -8,3 +9,21 @@ from abnf.grammars import rfc9116
 ])
 def test_securitytxt_contact(src: str):
     assert rfc9116.Rule('body').parse_all(src)
+
+
+# Issue #237: token-char was transcribed as %x21-27 / ... , which swept in
+# DQUOTE (a tspecial) and omitted "-" and "." (which are not).
+@pytest.mark.parametrize('src', ['SHA-256', 'v1.0', 'token', 'a{b', 'a~b'])
+def test_237_token_accepts(src: str):
+    assert rfc9116.Rule('token').parse_all(src).value == src
+
+
+@pytest.mark.parametrize('src', ['a"b', 'a b', 'a,b', 'a@b', 'a/b', 'a[b'])
+def test_237_token_rejects_tspecials(src: str):
+    with pytest.raises(ParseError):
+        rfc9116.Rule('token').parse_all(src)
+
+
+def test_237_hash_alg_takes_the_usual_value():
+    """`SHA-256` is what a PGP Hash: header actually carries."""
+    assert rfc9116.Rule('hash-alg').parse_all('SHA-256').value == 'SHA-256'

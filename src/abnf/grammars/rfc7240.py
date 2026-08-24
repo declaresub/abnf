@@ -28,7 +28,15 @@ class Rule(_Rule):
         'preference = token [ BWS "=" BWS word ] *( OWS ";" [ OWS parameter ] )',
         'parameter = token [ BWS "=" BWS word ]',
         "word = token / quoted-string",
-        'Preference-Applied = "Preference-Applied" ":" OWS preference *( OWS "," OWS preference )',
+        # RFC 7240 section 3 defines this over `applied-pref`, not
+        # `preference`: "The syntax of the Preference-Applied header differs
+        # from that of the Prefer header in that parameters are not
+        # included."  Building it from `preference` accepted
+        # `Preference-Applied: respond-async; wait=10`, which the RFC does
+        # not.  1#applied-pref expanded as above.  See
+        # https://github.com/declaresub/abnf/issues/237 .
+        'Preference-Applied = "Preference-Applied" ":" OWS applied-pref *( OWS "," OWS applied-pref )',
+        'applied-pref = token [ BWS "=" BWS word ]',
         # OWS           = <OWS, see [RFC7230], Section 3.2.3>
         # BWS           = <BWS, see [RFC7230], Section 3.2.3>
         # token         = <token, see [RFC7230], Section 3.2.6>
