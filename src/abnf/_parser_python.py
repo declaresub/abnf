@@ -1202,8 +1202,17 @@ class NodeVisitor:
         cached = cls.__dict__.get("_visit_attr_names_cache")
         if cached is not None and cached[0] == signature:
             return cached[1]
+        # Casefold the key: `visit` looks up the node name casefolded, so a
+        # method named for the rule as the grammar spells it -- `visit_URI`,
+        # `visit_IPv4address`, `visit_ATOM_CHAR` -- would otherwise be filed
+        # under a key nothing ever asks for, and never run.  Nothing reported
+        # it because the miss returns `_skip_visit`, so the node is quietly
+        # skipped.  See https://github.com/declaresub/abnf/issues/259 .
+        #
+        # `dir()` is sorted, so where both spellings exist the lowercase one
+        # is assigned last and keeps winning, as it did before.
         table = {
-            attr[_VISIT_NAME_START:]: attr
+            attr[_VISIT_NAME_START:].casefold(): attr
             for attr in dir(cls)
             if attr.startswith(_VISIT_PREFIX)
         }
@@ -1220,9 +1229,9 @@ class NodeVisitor:
         # picks them up.  `dir(self)` used to cover that; scanning the
         # instance dict covers it for a fraction of the cost, since the
         # dict holds a handful of entries rather than the full MRO.
-        for attr in vars(self):
+        for attr in sorted(vars(self)):
             if attr.startswith(_VISIT_PREFIX):
-                cache[attr[_VISIT_NAME_START:]] = getattr(self, attr)
+                cache[attr[_VISIT_NAME_START:].casefold()] = getattr(self, attr)
         self._node_method_cache = cache
 
     def __call__(self, node: Node):

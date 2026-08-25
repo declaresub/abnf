@@ -34,10 +34,21 @@ find_value(node, "addr-spec")   # 'jdoe@example.com'
 ## NodeVisitor
 
 For anything beyond a single lookup, subclass `NodeVisitor`. Define a
-`visit_<rule_name>` method for each rule you care about (hyphens in rule names
-become underscores); dispatch is reflective, and `visit(node)` routes to the right
-method as you walk. This example pulls the scheme and token out of an HTTP
-`Authorization` header:
+`visit_<rule_name>` method for each rule you care about, replacing hyphens in
+the rule name with underscores; dispatch is reflective, and `visit(node)` routes
+to the right method as you walk. This example pulls the scheme and token out of
+an HTTP `Authorization` header:
+
+```{note}
+Case does not matter. ABNF rule names are case-insensitive, so a rule spelled
+`URI`, `IPv4address` or `ATOM-CHAR` is reached by `visit_URI`, `visit_uri`,
+`visit_IPv4address` or `visit_atom_char` alike — write whichever matches the
+grammar you are reading.
+
+Before 2.9.0 only the all-lowercase spelling worked, and the others were
+skipped silently, with no error
+([issue #259](https://github.com/declaresub/abnf/issues/259)).
+```
 
 ```python
 from abnf import NodeVisitor

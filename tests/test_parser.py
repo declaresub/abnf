@@ -2228,3 +2228,64 @@ def test_221_mutating_a_parse_tree_container_is_documented_not_supported():
     node = Node("x", cast(Node, LiteralNode("a", 0, 1)))
     assert len(node.children) == 1
     assert node.children[0].value == "a"
+
+
+# Issue #259: `visit` looks the node name up casefolded, but the dispatch
+# table was keyed on the method-name suffix verbatim -- so `visit_URI`, the
+# spelling the rule's own name suggests, was filed under a key nothing asks
+# for.  The miss returns `_skip_visit`, so the node was silently skipped with
+# no error and no warning.
+@pytest.mark.parametrize(
+    ('rule_module', 'rule_name', 'src', 'method'),
+    [
+        ('rfc3986', 'URI', 'http://example.com/', 'visit_URI'),
+        ('rfc3986', 'URI', 'http://example.com/', 'visit_uri'),
+        ('rfc3986', 'IPv4address', '1.2.3.4', 'visit_IPv4address'),
+        ('rfc9051', 'ATOM-CHAR', 'a', 'visit_ATOM_CHAR'),
+        ('rfc9051', 'ATOM-CHAR', 'a', 'visit_atom_char'),
+    ],
+)
+def test_259_visitor_dispatch_is_case_insensitive(
+    rule_module: str, rule_name: str, src: str, method: str
+):
+    from importlib import import_module
+
+    module = import_module(f'abnf.grammars.{rule_module}')
+    node = module.Rule(rule_name).parse_all(src)
+
+    called = []
+    visitor = NodeVisitor()
+    setattr(visitor, method, lambda n: called.append(n.name))
+    # Re-run __init__ so the instance-attribute scan sees the method we just
+    # attached, as it would for one defined on a subclass.
+    NodeVisitor.__init__(visitor)
+    visitor.visit(node)
+    assert called == [rule_name], f'{method} was not called for node {rule_name!r}'
+
+
+def test_259_lowercase_spelling_still_wins_when_both_are_defined():
+    """Rule names are case-insensitive, so both spellings name one rule.
+    Whichever won before must keep winning."""
+    from abnf.grammars import rfc3986
+
+    class V(NodeVisitor):
+        def visit_URI(self, node):
+            return 'upper'
+
+        def visit_uri(self, node):
+            return 'lower'
+
+    node = rfc3986.Rule('URI').parse_all('http://example.com/')
+    assert V().visit(node) == 'lower'
+
+
+def test_259_an_unrelated_node_is_still_skipped():
+    """The fix must not make dispatch match more than the node's own name."""
+    from abnf.grammars import rfc3986
+
+    class V(NodeVisitor):
+        def visit_scheme(self, node):
+            return 'scheme'
+
+    node = rfc3986.Rule('URI').parse_all('http://example.com/')
+    assert V().visit(node) is None
