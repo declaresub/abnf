@@ -47,8 +47,11 @@ import abnf.grammars
 SAMPLES_PER_RULE = 8
 
 #: Recursion depth.  abnfgen defaults to unbounded, which on a self-embedding
-#: rule produces megabyte strings that say nothing extra.
-MAX_DEPTH = 5
+#: rule produces megabyte strings that say nothing extra.  Nine rather than a
+#: smaller bound because the deeper alternatives are where the interesting
+#: samples live: the only surrogate-bearing case in the whole corpus needs
+#: this depth to appear at all.
+MAX_DEPTH = 9
 
 #: Fixed, so regenerating an unchanged grammar produces an unchanged file.
 SEED = 20250824
@@ -98,11 +101,17 @@ def generate(
     samples: list[str] = []
     for path in sorted(out.iterdir()):
         raw = path.read_bytes()
+        # abnfgen writes UTF-8, so %xC2 arrives as the *character* U+00C2
+        # rather than as a bare byte -- which is what abnf parses, since a str
+        # holds code points.
+        #
+        # surrogatepass, because a grammar may admit surrogates and several
+        # do: rfc9116's `comment` is `"#" *(WSP / VCHAR / %x80-FFFFF)`, and
+        # that range spans D800-DFFF.  abnfgen duly emits them, strict UTF-8
+        # duly refuses them, and dropping those samples would silently leave
+        # untested the exact code-point range issue #173 was about.
         try:
-            # abnfgen writes UTF-8, so %xC2 arrives as the *character* U+00C2
-            # rather than as a bare byte -- which is what abnf parses, since a
-            # str holds code points.
-            text = raw.decode("utf-8")
+            text = raw.decode("utf-8", "surrogatepass")
         except UnicodeDecodeError:
             continue
         if len(text) <= MAX_INPUT_LEN:

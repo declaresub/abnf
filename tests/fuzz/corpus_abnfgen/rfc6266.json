@@ -7,90 +7,89 @@
   "  \t\t"
  ],
  "content-disposition": [
-  "COnTENt-DisPositioN:INlINE",
   "CoNTenT-dISposITIon:\tinliNe",
-  "CoNtENT-diSposITION:INLInE;\t FilEnaME=%\t;$=\"\";+=\"\"",
-  "ConteNt-disPOSitION:iNlIne\t; +*=iSo-8859-1'';fILenaME=\"\";FilEnAME='",
-  "coNTEnt-DISPosItIOn:\t AttAcHMENT; .*=uTf-8''",
-  "coNteNt-DIsPOsItIoN:iNlInE; filENamE*=iso-8859-1''; %=\"\"",
-  "coNtent-DiSPOSiTIOn:  \t*",
-  "conTenT-diSpOsItion:E"
+  "ConTeNT-DIsPosiTION:inlINe",
+  "cOnTeNT-DiSPoSitIoN:ATTacHmeNt  ;FIlENAMe*=uTF-8'cEL-gAULIsH'%BC;\t  '=\"\"\t;\t \t _*=uTF-8''",
+  "cOntEnt-dIspOsItIon:%9 \t;`*=Iso-8859-1'HMWB'%DD;-*=isO-8859-1'X-R'\t\t;  \t$*=UTF-8''",
+  "cOntEnt-diSpOsiTIon:InliNe;  %*=#'X-3'; \t \t.=\"\"",
+  "conTEnt-dIsPOSiTiOn: '-$;\t\tfIlEnamE=~",
+  "conTenT-diSpOsItion:E;FILenAme*=$''%AF",
+  "conTent-dispoSITIoN:    inliNE;\t\t\t_#=|"
  ],
  "disp-ext-parm": [
-  "!_=\"\"",
-  "#.=^",
-  "*=\"\"",
-  "-*=utf-8'no-nyN'%BD",
-  "-=\"\"",
-  "W*=iso-8859-1'sGn-Ch-De'%EA",
-  "^*=IsO-8859-1'gy'!",
-  "e^=\"\""
+  "&&*=!~'LzuH-aeLN-219-y-4T'!",
+  "&*=-'X-4'%e7",
+  "'-$*=IsO-8859-1'art-loJbAN'",
+  "-**=isO-8859-1''",
+  "W*=iso-8859-1'x-P'",
+  "^=+_&#",
+  "_=%$^",
+  "`~+`.=\"A\""
  ],
  "disp-ext-type": [
+  "!",
   "!$",
   "'",
-  "-#$",
-  "2",
+  "+",
   "_!^",
   "_|.",
-  "~"
+  "~",
+  "~~"
  ],
  "disposition-parm": [
-  "'=\"\"",
-  "4=`",
-  "8=#",
-  "FILeNaME=\"\"",
-  "Filename=#",
-  "fIlEnAmE=&",
-  "fiLEnAMe='",
-  "|=Z"
+  "!_=`*",
+  "%|*=e'Xx'%fF%EB%CB",
+  "1=\"\\\u0091 \"",
+  "8=\"\"",
+  "FIlename*=&'x-1'%AC%cC%ff",
+  "fIlEnAmE=&-",
+  "fiLename*=^''",
+  "filEnAMe=^"
  ],
  "disposition-type": [
   "$",
-  "-",
   "ATtaChmENt",
-  "AtTacHMENt",
-  "G",
-  "iNlIne",
-  "iNliNe",
-  "|"
+  "AtTaCHMEnt",
+  "AtTachmENt",
+  "InlIne",
+  "iNLINE",
+  "iNlINe"
  ],
  "ext-token": [
-  "!*",
-  "&`#*",
-  "&~*",
+  "%*",
   "*$#*",
   "**",
-  "A*",
+  ".!_*",
+  "0*",
+  "E*",
   "_!^*",
-  "~~*"
+  "d#_$*"
  ],
  "ext-value": [
-  "ISo-8859-1'X-z'",
-  "UTF-8''",
-  "Utf-8''",
-  "iSO-8859-1''%AF",
-  "iSo-8859-1''",
-  "uTf-8'lg'",
-  "utf-8''%Cb##",
-  "utf-8''%FB"
+  "-&+!9'X-g'%5D",
+  "I''+",
+  "ISo-8859-1'X-z'%5f%bE",
+  "IsO-8859-1'x-1-l'`$",
+  "Iso-8859-1'x-6-19'%CA",
+  "utf-8''",
+  "}%^'X-2GW-O'"
  ],
  "filename-parm": [
-  "FILEnaMe*=UTf-8''",
-  "FIlenAmE*=&''%Bd",
-  "FiLeNAME=+",
-  "FiLeNAme*=utf-8''",
+  "FiLEnAmE=.C",
+  "FiLEnamE=~e^#",
+  "FiLenamE=\"\"",
+  "FilEnaMe*=ISo-8859-1'FDWGB-LrGN-EzmE5-ELYH3-X-1'l%0f",
+  "FilenAmE=%*",
   "fILenAme*=uTF-8''",
-  "fIleName*=Utf-8'X-2'%6c",
-  "filenAmE=`",
-  "filename*=utf-8''+"
+  "fiLenamE*=iSO-8859-1'SYPO-X-X'%aE$",
+  "filenAmE=`&|+"
  ],
  "quoted-string": [
   "\"\"",
+  "\"\\\t\"",
   "\"\\ \"",
-  "\"\\w\\ ]\\\t\"",
   "\"e\"",
-  "\"\u00c49\\\t!\""
+  "\"\u00c49\\\t!|\\ ]\\\t\""
  ],
  "token": [
   "!",
@@ -103,13 +102,13 @@
   "~~"
  ],
  "value": [
+  "\" \t\"",
   "\"\"",
+  "\"\\\u00ed\"",
   "\"\\\u00f3\\\t\"",
-  "#",
-  "#A",
-  "#_",
-  "+",
-  "01",
-  "_"
+  "#._#~",
+  "'$*#",
+  "-",
+  "`&|+.%"
  ]
 }

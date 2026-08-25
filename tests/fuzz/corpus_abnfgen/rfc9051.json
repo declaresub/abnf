@@ -103,56 +103,65 @@
   "\u00f4\u0089\u00b7\u0098"
  ],
  "addr-adl": [
-  "\"\"",
-  "NIl",
+  "\"\f\u00eb\u00b9\u008d\"",
+  "NiL",
+  "Nil",
   "nIL",
-  "{5}\r\n",
-  "{9}\r\n"
+  "niL",
+  "{99+}\r\nA",
+  "{9}\r\n\u00ba"
  ],
  "addr-host": [
-  "\"\"",
-  "NIl",
+  "\"\f\u00eb\u00b9\u008d\"",
+  "NiL",
+  "Nil",
   "nIL",
-  "{5}\r\n",
-  "{9}\r\n"
+  "niL",
+  "{99+}\r\nA",
+  "{9}\r\n\u00ba"
  ],
  "addr-mailbox": [
-  "\"\"",
-  "NIl",
+  "\"\f\u00eb\u00b9\u008d\"",
+  "NiL",
+  "Nil",
   "nIL",
-  "{5}\r\n",
-  "{9}\r\n"
+  "niL",
+  "{99+}\r\nA",
+  "{9}\r\n\u00ba"
  ],
  "addr-name": [
-  "\"\"",
-  "NIl",
+  "\"\f\u00eb\u00b9\u008d\"",
+  "NiL",
+  "Nil",
   "nIL",
-  "{5}\r\n",
-  "{9}\r\n"
+  "niL",
+  "{99+}\r\nA",
+  "{9}\r\n\u00ba"
  ],
  "address": [
-  "(\"\" {9}\r\n \"\" NIl)",
-  "(NIl \"\" nil \"\")",
-  "(NiL nIl nIL Nil)",
-  "(Nil \"\" \"\" nIL)",
-  "(niL \"\" {0}\r\n nil)",
-  "({0}\r\n nIl {2}\r\n {1}\r\n)",
-  "({4}\r\n \"\" nil \"\")",
-  "({5}\r\n niL nil NIl)"
+  "(\"\" niL \"\" \"\u00f3\u008a\u009c\u00a5\f\")",
+  "(\"\u00de\u0095\u00ee\u0088\u0098\" NIl {7}\r\n6 {5}\r\n)",
+  "(NiL {2}\r\n\u00d5 \"\u0004\" {5+}\r\n\u00ef\u00e6)",
+  "(Nil nil \"l\u00c3\u00ad\" \"\")",
+  "(nIl {2}\r\n {6}\r\n\u00e7\u0007 \"\")",
+  "(nil nIl nIl \"\")",
+  "({3}\r\n NIL \"\" \"H\")",
+  "({5+}\r\nU \"6\u0004\" \"\u007f\" {5+}\r\n)"
  ],
  "append": [
-  "APPeNd INBOx \"76-JUn-6142 27:82:56 +8695\" {4}\r\n",
-  "ApPEnd & {8+}\r\n\u00c6\u00d1\u00c2",
-  "AppeNd ! \" 0-jaN-5927 58:98:86 +8233\" {5}\r\n",
-  "aPPeND InBoX {94+}\r\n",
-  "aPPend $ \"55-jun-5805 20:12:49 -4101\" {9+}\r\n",
-  "aPpEnD InBOx \"29-JUL-6807 21:87:87 -9178\" {9}\r\n",
-  "apPend iNbOX {3}\r\n\u00c9\u008e\u00d1",
-  "append iNbox ($ForwARDeD) {4+}\r\n\u00cc"
+  "APpENd ] {8064}\r\n",
+  "APpEnD INBox () \"41-OCt-2518 29:04:99 -1925\" {68+}\r\n\u00a3",
+  "ApPEnd & \" 3-Feb-2661 99:49:53 +8820\" {04+}\r\n\u00f1\u00e8\u00e2",
+  "AppEND ] () \" 9-NOV-7682 65:89:69 +4327\" {15898+}\r\n\u00c1V",
+  "AppEnD {6}\r\n\u00a7 {10370+}\r\n\u00c4J",
+  "aPpEnD \"\" (\\y \\dRaFt $PhiSHinG \\~) \"91-nov-3445 97:26:06 -4493\" {00}\r\n!",
+  "apPENd iNBOX () {77+}\r\n",
+  "apPenD inboX (\\deLeteD \\ANSWeRED) \" 0-JAN-6765 98:70:48 -0833\" {14+}\r\n"
  ],
  "append-uid": [
   "18",
   "3",
+  "4",
   "53",
   "57",
   "787",
@@ -160,18 +169,18 @@
  ],
  "astring": [
   "\"\"",
-  "$]]",
   "]",
-  "{7}\r\n",
-  "{8}\r\n",
-  "{9}\r\n"
+  "]e",
+  "]~",
+  "k",
+  "{424}\r\n",
+  "}=]!]~E"
  ],
  "atom": [
   "!",
-  "!e",
+  "!,&y",
   "#",
   "#&$k",
-  "&y",
   "N",
   "y",
   "}"
@@ -186,32 +195,32 @@
  ],
  "auth-type": [
   "!",
-  "!,&",
+  "!,&y",
   "#",
-  "#&$",
+  "#&$k",
   "N",
-  "k",
-  "y"
+  "y",
+  "}"
  ],
  "authenticate": [
-  "AUtHeNtiCate '}",
-  "AuTHENtiCate ~ ",
-  "AuTHenTicATe }$ \r\n3q+n/+==\r\nA/==\r\n",
-  "AuthEnticate 6' \r\n5b/7",
-  "aUTHENtiCate :\r\n",
-  "aUThEnTiCATe ~ =\r\n/r+8+///4W==",
-  "auTHEnTICATE $ ",
-  "authenTiCaTe ;$ =\r\n+i0/L/++k+Y="
+  "AUTHEntIcate & =",
+  "AuTHENticAte !'\r\nQ+I/7///",
+  "AuTHenTicATe }$!\r\n+5/8+/To\r\n\r\n/0m=",
+  "AuThEntiCAtE #!",
+  "AutHenTicATe e' =",
+  "AuthEnTicaTE /!n$'!",
+  "aUthENTIcAtE W$",
+  "authenTiCaTe ;$| 4/+LC+R="
  ],
  "base64": [
   "",
-  "/++P+1YxI/+////32/==",
+  "/++P+1YxI/+////3++//x/==",
   "/2YA+91+k/==",
   "/zH=",
   "2n/=",
   "3V+55/==",
-  "9x/=",
-  "l/+="
+  "680P///=",
+  "9j=="
  ],
  "base64-char": [
   "+",
@@ -232,91 +241,97 @@
   "F/+="
  ],
  "body": [
-  "(\"\" {8}\r\n nIl nil NiL {2}\r\n 4 niL)",
-  "(\"image\" {4}\r\n (\"\" \"\") {1}\r\n NiL \"8bIt\" 8 {5}\r\n)",
-  "(\"teXt\" \"\" Nil {0}\r\n {3}\r\n \"7BiT\" 3 5 {6}\r\n)",
-  "((\"MeSSAGe\" \"GlObaL\" ({3}\r\n {0}\r\n) niL \"\" \"7BiT\" 4 ({1}\r\n \"\" nil NIl ((NIl nil {3}\r\n nIL)) ((\"\" \"\" nIl {8}\r\n)) NiL ((\"\" \"\" NiL NIL)) \"\" {6}\r\n) (\"teXT\" \"\" (\"\" \"\") niL nIL \"8bIT\" 6 2) 6) {7}\r\n)",
-  "((\"imAge\" {7}\r\n (\"\" {6}\r\n) {2}\r\n nIL \"QuoTED-priNTABLE\" 7) {9}\r\n)",
-  "(((\"mEssaGe\" \"GloBAL\" nil NIL \"\" \"biNaRy\" 5 ({6}\r\n Nil NiL (({8}\r\n niL NIL {4}\r\n)) niL ((nIl niL niL {5}\r\n)) (({1}\r\n nil \"\" {3}\r\n)) NIl NIL {1}\r\n) (((\"texT\" {1}\r\n nIl {9}\r\n {8}\r\n \"7Bit\" 8 4) \"\") {2}\r\n) 2) \"\") \"\" nIL)",
-  "(((\"mEssagE\" \"rFc822\" (\"\" {0}\r\n) nIl niL \"7biT\" 5 (nIL \"\" NIl Nil nil (({0}\r\n nIL \"\" {6}\r\n)) ((NIL niL {7}\r\n nil)) nIl nil Nil) (\"TeXT\" \"\" NiL nIL NIL \"bINARy\" 9 1) 5) \"\") {6}\r\n)"
+  "(\"\" {3}\r\n (\"\" {8}\r\n {5}\r\n {9}\r\n) \"\" nIL \"bInARY\" 1 {6}\r\n)",
+  "(\"MessaGe\" \"RFC822\" nIl \"\" {8}\r\n \"\" 9 (NIL {4}\r\n NIl ((nIl nIl {5}\r\n nIl)) ((niL {2}\r\n \"\" \"\")) NiL ((nIL NiL {5}\r\n NIL)) nil NiL {4}\r\n) (\"iMagE\" \"\" ({9}\r\n {2}\r\n) NiL niL \"BASe64\" 7) 88 \"\")",
+  "(\"foNt\" {0}\r\n NiL \"\" Nil {0}\r\n 7 NIL)",
+  "(\"teXt\" \"\" Nil {0}\r\n {3}\r\n \"7BiT\" 3 55)",
+  "(((\"TExT\" \"\" niL \"\" \"\" \"\" 9 4)((\"MESSage\" \"global\" (\"\" {3}\r\n) Nil \"\" \"7bit\" 7 (NiL nIl nIL nil NIl NIL NIl (({6}\r\n nIL {2}\r\n NIl)) nIl nIl) (((\"\" \"\" niL \"\" \"\" \"8BIt\" 8) {9}\r\n) \"\") 1) \"\") \"\" (\"\" {3}\r\n)) {1+}\r\n\u00d9\u00ce nIL)",
+  "(({7}\r\n \"\" NiL \"\" NiL \"8BiT\" 3) \"\" niL)"
  ],
  "body-ext-1part": [
-  "\"\"",
-  "NiL niL \"\"",
-  "nIL (\"\" ({9}\r\n {0}\r\n)) (\"\") \"\" 3",
-  "nIl ({8}\r\n ({5}\r\n \"\")) {2}\r\n NiL 1",
-  "niL ({0}\r\n nIl)",
-  "{1}\r\n",
-  "{5}\r\n",
-  "{9}\r\n"
+  "\"\" ({0}\r\n)\u00ae NIL)",
+  "\"\" nIl {8}\r\n Nil",
+  "\"\u00c9\u00aa\" nIL",
+  "nIL (\"\u00f0\u00a2\u00bf\u0094\" (\"\" \"\" \"\" {3}\r\n \"\" \"\"))",
+  "nIl",
+  "niL (\"\" ({5}\r\n {9}\r\n {2}\r\n \"\" \"\" {5}\r\n \"\" \"\")) ({7}\r\n\u008b \"\" \"\" \"\") \"\" (2 1) 3 (9)",
+  "nil",
+  "{6}\r\n8 nIl"
  ],
  "body-ext-mpart": [
-  "(\"\" \"\")",
-  "(\"\" {5}\r\n \"\" \"\" \"\" \"\")",
-  "({6}\r\n \"\" \"\" {0}\r\n) ({8}\r\n ({5}\r\n \"\")) {2}\r\n NiL 1",
-  "NiL niL \"\"",
-  "nIL",
-  "nIL (\"\" (\"\" \"\")) \"\" NiL",
-  "nIL (\"\" ({9}\r\n {0}\r\n)) (\"\") \"\" 3",
-  "niL ({0}\r\n nIl)"
+  "(\"\u0002 #\" \"\")",
+  "(\"\u0007\u00de\u0095\u00ee\u0088\u0098\" {36}\r\n\u000e\u00a2)",
+  "(\"\" \"\") ({1+}\r\n (\"\" {0}\r\n \"\" {6}\r\n))",
+  "(\"\u00dc\u008a\" \"\f\u0001\")",
+  "({03+}\r\n6 \"\" {5+}\r\n\u00c3\u0093 \"\" {7}\r\no \"\" {0}\r\n \"\" {6}\r\n {0}\r\n)",
+  "({12+}\r\n)\u00c6\u00f7 {9+}\r\n)",
+  "NIL ({5+}\r\n\u009a\u0092 NIL)",
+  "nIL (\"\u00f0\u00a2\u00bf\u0094\" (\"\" \"\" \"\" {3}\r\n \"\" \"\"))"
  ],
  "body-extension": [
-  "\"\"",
+  "((33) {3}\r\n \"\")",
+  "(064)",
+  "(4 \"\" (1))",
   "09",
-  "3",
-  "78",
-  "8",
+  "216",
+  "6",
   "nIl",
-  "nil",
-  "{8}\r\n"
+  "niL"
  ],
  "body-fields": [
-  "(\"\" {3}\r\n {5}\r\n \"\" \"\" \"\") {8}\r\n \"\" \"QuOtEd-PRintABLe\" 1",
-  "({0}\r\n {5}\r\n {8}\r\n \"\") \"\" nil \"BAsE64\" 42",
-  "({1}\r\n {1}\r\n {7}\r\n \"\") {5}\r\n NiL \"basE64\" 69",
-  "NIL \"\" niL \"BInArY\" 9",
-  "NIL \"\" nil {4}\r\n 6",
-  "nIL \"\" niL \"\" 91",
-  "niL {6}\r\n \"\" \"BinaRy\" 6",
-  "nil nIl nIl \"quoTEd-PriNtable\" 12"
+  "(\"\\\"\u00ec\u0084\u0087\f\" {22}\r\nI`\u00a7 \"\" \"\" \"\u000f\" {4+}\r\n \"\" \"\" {0}\r\n \"\") niL \"\" \")\" 19",
+  "({3+}\r\n\u008b\u00e3\u00ef \"\u000b\u0010\" \"\\\\\\\"\" {5}\r\n {4+}\r\n \"\" {1}\r\n \"\" {0}\r\n \"\" {6}\r\n {5}\r\n \"\" \"\") {2+}\r\n \"\" \"\f\u0001\" 4",
+  "({6+}\r\n \"\" {5+}\r\n \"\" {5+}\r\n\u00c3 \"\\\\\") NIL \"\" \"7BIt\" 16",
+  "({88+}\r\n {13}\r\n\u00a5\u00af\u00ec {0+}\r\n \"\" {7}\r\n {8+}\r\n\u00cf) nil NIL \"BinaRy\" 7",
+  "NiL {6}\r\n\u00e7\u0007 \"\" \"bInARY\" 262588",
+  "NiL {7+}\r\n\u0002\u00b4 {9+}\r\n {96}\r\n\u000fB 4",
+  "nIL \"\" \"\" \"h\" 69833",
+  "nIl NIL {6}\r\n#' {9}\r\n\u00cb 70796"
  ],
  "body-fld-desc": [
-  "\"\"",
-  "NIl",
+  "\"\f\u00eb\u00b9\u008d\"",
+  "NiL",
+  "Nil",
   "nIL",
-  "{5}\r\n",
-  "{9}\r\n"
+  "niL",
+  "{99+}\r\nA",
+  "{9}\r\n\u00ba"
  ],
  "body-fld-dsp": [
-  "(\"\" (\"\" {8}\r\n {5}\r\n {9}\r\n))",
-  "(\"\" ({9}\r\n {0}\r\n {3}\r\n \"\"))",
-  "({3}\r\n (\"\" {6}\r\n \"\" \"\"))",
-  "NiL",
+  "(\"w\u00d0\u00b1\\\\\u001a\" ({3}\r\n {5+}\r\n\u00a1@ \"\u00f4\u008f\u0095\u00b0\" {0+}\r\n))",
+  "(\"\u00ee\u009c\u00b5sk\\\"\" nIl)",
+  "(\"\u00f0\u00a2\u00bf\u0094\" (\"\u0005\" \"\u00eb\u00b9\u008d\" {4}\r\nY \"\u00f4\u0083\u00aa\u009b\" {4}\r\n {8}\r\n))",
+  "NIL",
   "nIL",
   "niL"
  ],
  "body-fld-enc": [
+  "\"\f\f\u00eb\u00b9\u008d\"",
   "\"\"",
-  "\"BinaRy\"",
-  "{7}\r\n",
-  "{8}\r\n",
-  "{9}\r\n"
+  "\"7bit\"",
+  "\"BInarY\"",
+  "\"QuOtEd-PRIntAble\"",
+  "\"bAse64\"",
+  "{116}\r\n"
  ],
  "body-fld-id": [
-  "\"\"",
-  "NIl",
+  "\"\f\u00eb\u00b9\u008d\"",
+  "NiL",
+  "Nil",
   "nIL",
-  "{5}\r\n",
-  "{9}\r\n"
+  "niL",
+  "{99+}\r\nA",
+  "{9}\r\n\u00ba"
  ],
  "body-fld-lang": [
-  "\"\"",
-  "(\"\" \"\")",
-  "({5}\r\n)",
+  "({529}\r\n\u00f9*)",
+  "({698+}\r\n)",
   "nIL",
-  "{0}\r\n",
-  "{3}\r\n",
-  "{6}\r\n"
+  "nIl",
+  "niL",
+  "nil",
+  "{0+}\r\n\u00d86",
+  "{2}\r\n"
  ],
  "body-fld-lines": [
   "08",
@@ -327,18 +342,22 @@
   "9"
  ],
  "body-fld-loc": [
-  "\"\"",
-  "NIl",
+  "\"\f\u00eb\u00b9\u008d\"",
+  "NiL",
+  "Nil",
   "nIL",
-  "{5}\r\n",
-  "{9}\r\n"
+  "niL",
+  "{99+}\r\nA",
+  "{9}\r\n\u00ba"
  ],
  "body-fld-md5": [
-  "\"\"",
-  "NIl",
+  "\"\f\u00eb\u00b9\u008d\"",
+  "NiL",
+  "Nil",
   "nIL",
-  "{5}\r\n",
-  "{9}\r\n"
+  "niL",
+  "{99+}\r\nA",
+  "{9}\r\n\u00ba"
  ],
  "body-fld-octets": [
   "08",
@@ -349,94 +368,86 @@
   "9"
  ],
  "body-fld-param": [
-  "(\"\" \"\" \"\" {8}\r\n {5}\r\n {9}\r\n \"\" \"\")",
-  "(\"\" \"\")",
-  "(\"\" {4}\r\n)",
-  "({0}\r\n \"\")",
-  "({3}\r\n \"\" \"\" {6}\r\n \"\" \"\")",
-  "NiL",
+  "(\"\u00f0\u00a2\u00bf\u0094\" \"\u0005\\\"\" {58}\r\n\u0003y \"\u00f4\u0080\u00b1\u008b\" {2+}\r\n {9}\r\n\u0083)",
+  "({9+}\r\n {625+}\r\n\u009a\u0092)",
+  "NIL",
   "nIL",
+  "nIl",
+  "niL",
   "nil"
  ],
  "body-type-1part": [
-  "\"ApPlIcAtIOn\" {4}\r\n (\"\" {5}\r\n) Nil {3}\r\n \"BinaRy\" 7",
-  "\"MEssAge\" \"GlobAL\" niL {6}\r\n \"\" \"BinaRy\" 6 (\"\" {0}\r\n nil (({4}\r\n \"\" nil \"\")) (({6}\r\n {4}\r\n Nil nil)) NIl niL NIl nIl {7}\r\n) (\"vIDEO\" \"\" ({5}\r\n \"\") \"\" \"\" {2}\r\n 4) 5 \"\" (\"\" nil) NiL",
-  "\"TeXt\" {0}\r\n (\"\" {0}\r\n) NIl {7}\r\n \"\" 8 3 nil NIL nIL",
-  "\"tExT\" \"\" NIl \"\" nIl \"\" 1 6 {0}\r\n ({8}\r\n ({9}\r\n \"\")) (\"\")",
-  "\"tExT\" {9}\r\n ({5}\r\n {3}\r\n) niL \"\" \"\" 6 2",
-  "\"teXt\" {0}\r\n nIl \"\" NIL \"8bIT\" 7 3",
-  "{5}\r\n \"\" nIL nIl nil \"baSE64\" 9",
-  "{9}\r\n \"\" ({8}\r\n \"\") \"\" {3}\r\n \"QuoTed-prInTABLe\" 3"
+  "\"MESSAGe\" \"RFc822\" (\"\" {3}\r\n \"\" {0}\r\n) {6}\r\n nIL \"bINaRy\" 29 (niL \"\" (({9}\r\n nil nIl \"\")) ((\"\" {5}\r\n {6}\r\n \"\")) niL (({0}\r\n nIL \"\" NiL)(NIL {7}\r\n nIl {9}\r\n)({5}\r\n NIL niL {4}\r\n)) ((\"\" {4}\r\n niL {4}\r\n)(\"\" nIL \"\" NiL)) ((\"\" Nil nIl \"\")(NIL Nil NIl \"\")) \"\" \"\") (((\"TexT\" \"\" nIl \"\" \"\" \"bAsE64\" 7 2) \"\") {2}\r\n) 3",
+  "\"MESSAgE\" {7+}\r\n\b (\"\" {2}\r\n) niL {7}\r\n \"\" 67",
+  "\"MEssAge\" \"GlobAL\" niL {6}\r\n \"\" \"BinaRy\" 6 (\"\" nIl nil (({4}\r\n \"\" nil \"\")) NiL nIl nIL Nil nil NIL) ((\"TExT\" \"\" niL \"\" \"\" \"\" 9 4)((\"MESSage\" \"global\" (\"\" {3}\r\n) Nil \"\" \"7bit\" 7 (NiL nIl nIL nil NIl NIL NIl (({6}\r\n nIL {2}\r\n NIl)) nIl nIl) (((\"\" \"\" niL \"\" \"\" \"8BIt\" 8) {9}\r\n) \"\") 1) \"\")({1}\r\n {4}\r\n niL \"\" \"\" \"8BiT\" 1) \"\" (\"\" \"\")) 0410 NiL Nil (\"\" {3}\r\n \"\")",
+  "\"tEXt\" {0}\r\n8 NiL nIL \"\" {9}\r\n 88 584 NiL nIl ({1}\r\n) \"\" 5",
+  "{4+}\r\n\u00af \"\u00f1\u00a6\u00b9\u009a\" nIl NIL NiL \"basE64\" 48 NIL"
  ],
  "body-type-basic": [
-  "\"\" {5}\r\n (\"\" \"\") \"\" nIl \"\" 5",
-  "\"\" {5}\r\n niL nil NIl \"8bit\" 8",
-  "\"FoNt\" \"\" nil {9}\r\n \"\" {9}\r\n 6",
-  "\"MesSage\" \"\" ({2}\r\n \"\") {2}\r\n NIL \"bINARY\" 6",
-  "\"applICaTIoN\" \"\" nIL nil NIl {3}\r\n 4",
-  "\"mESsaGe\" \"\" nil \"\" nIl \"8Bit\" 2",
-  "\"mODeL\" {1}\r\n nIL nil nIl \"\" 1",
-  "{7}\r\n \"\" nil \"\" \"\" \"BiNAry\" 6"
+  "\"\u001a\u0019\b\" \"\u00ea\u0097\u0088\" (\"\" {5}\r\n) Nil niL \"BInArY\" 9",
+  "\"\" {9+}\r\n (\"\" {6+}\r\n) \"\u0005\" niL \"7bIt\" 58",
+  "\"ApPlIcAtIoN\" {14}\r\n\u00f3 (\"\" {5+}\r\n) \"\" {7+}\r\n\u00c4 {1+}\r\n\u001d 0",
+  "\"Audio\" \"l\u00c3\u00ad\u00db\u00ab\" NIL {1+}\r\n\u00c6 \"\" \"7BIt\" 01",
+  "\"MOdEl\" {70}\r\n nil Nil nIl {8}\r\n 96406",
+  "\"sk\\\"\" {27}\r\n\u00df niL \"\f\" NIL \"QuoTed-prInTABLe\" 3",
+  "{31}\r\n\u009e \"\" (\"\" {9+}\r\n) \"k\" {0+}\r\n \"\" 346",
+  "{94}\r\n {41+}\r\n\u009a4 niL Nil niL \")\" 19"
  ],
  "body-type-mpart": [
-  "(\"MEsSaGe\" \"rFC822\" (\"\" {9}\r\n) {2}\r\n nIl \"\" 6 ({0}\r\n \"\" NIl ((NIl nIl nil {0}\r\n)) Nil niL niL ((\"\" {1}\r\n \"\" nIL)) {7}\r\n {0}\r\n) (({4}\r\n \"\" ({8}\r\n \"\") NIl nIl {3}\r\n 1) \"\") 7) \"\"",
-  "(\"font\" \"\" (\"\" {7}\r\n) \"\" {1}\r\n {2}\r\n 4)(\"mESSAGE\" \"\" (\"\" \"\") \"\" {3}\r\n \"BinaRY\" 3)(\"text\" {1}\r\n (\"\" {6}\r\n) niL nIl \"bASe64\" 4 3) \"\"",
-  "(\"teXt\" \"\" Nil {0}\r\n {3}\r\n \"7BiT\" 3 5)(\"texT\" \"\" nIl \"\" {8}\r\n \"Binary\" 8 0) {1}\r\n nIl",
-  "((\"TEXT\" {1}\r\n nil Nil \"\" {4}\r\n 8 0) \"\")({0}\r\n {2}\r\n nIl {0}\r\n {1}\r\n \"BasE64\" 9) {4}\r\n",
-  "((\"meSSAGE\" \"Rfc822\" nIl niL \"\" \"BinARY\" 9 ({2}\r\n \"\" ((\"\" \"\" \"\" \"\")) NiL nil ((\"\" nil \"\" {9}\r\n)) nIl NIl \"\" NIl) ((((\"mEssAGe\" \"GlObAl\" NIl \"\" nIl \"\" 1 (\"\" nIl ((niL \"\" nil \"\")) niL niL niL ((niL \"\" \"\" {3}\r\n)) NIL \"\" nil) ((((\"Text\" \"\" (\"\" {0}\r\n) {0}\r\n NiL \"bInarY\" 1 3) \"\") {3}\r\n) \"\") 7) {8}\r\n) \"\") {9}\r\n) 8) \"\") {1}\r\n",
-  "(((\"tExT\" \"\" nIl {5}\r\n nIl \"7biT\" 7 1) {5}\r\n) \"\") {5}\r\n NIl",
-  "((((\"mEssage\" \"RFC822\" nIL Nil nil {6}\r\n 8 (NIl nil ((NIl NIL {6}\r\n \"\")) niL ((nIL {7}\r\n \"\" \"\")) ((NIl nil nil \"\")) niL niL \"\" {9}\r\n) ((\"mESsAGe\" \"gloBAl\" ({2}\r\n {0}\r\n) niL \"\" \"BiNaRy\" 9 (nIL {1}\r\n niL ((Nil {2}\r\n {7}\r\n NIl)) ((\"\" \"\" NiL NIL)) nil niL ((NIL NIl {3}\r\n \"\")) \"\" {6}\r\n) ({6}\r\n {9}\r\n nIL {5}\r\n nIL {2}\r\n 3) 8) \"\") 3) {9}\r\n) \"\") \"\") {6}\r\n",
-  "(((({5}\r\n {7}\r\n NiL {4}\r\n {9}\r\n \"binAry\" 4) \"\") {9}\r\n) \"\")((\"teXt\" {2}\r\n NIl \"\" {8}\r\n \"quOted-prIntablE\" 7 2) {0}\r\n) \"\" Nil"
+  "(\"MEssagE\" \"rFc822\" nIl nIL NiL \"\" 4 ({1}\r\n NiL Nil niL ((\"\" {4}\r\n NIl NIL)) nil NIl ((NIl nil {3}\r\n nIL)) {6}\r\n \"\") ((\"mESsAGe\" \"glObal\" ({1}\r\n {1}\r\n) \"\" {6}\r\n \"quOTed-priNtaBLe\" 0 ({9}\r\n nIL ((\"\" Nil {2}\r\n NIL)) ((\"\" \"\" niL {2}\r\n)) nIL ((nIl {9}\r\n Nil {2}\r\n)) niL NiL niL \"\") ((\"TEXt\" {6}\r\n (\"\" \"\") {3}\r\n NIL \"\" 6 1) {7}\r\n) 8) \"\") 4) \"\" ({6+}\r\n\u00f3 {5}\r\n\u0004)",
+  "(\"tEXT\" {6}\r\n (\"\" {2}\r\n) nIl \"\" {3}\r\n 7 7 Nil) \"\"",
+  "(\"teXt\" \"\" Nil {0}\r\n {3}\r\n \"7BiT\" 3 5 {6}\r\n ({0}\r\n nil))(\"teXt\" \"\" (\"\" \"\") {7}\r\n nIl \"\" 4 1)(({1}\r\n {6}\r\n NIl nIl {7}\r\n \"8bIT\" 3) \"\") {625+}\r\n\u009a\u0092",
+  "(\"text\" \"\" (\"\" {8}\r\n) \"\" NiL \"\" 2 9) {99}\r\n%",
+  "((\"iMAgE\" \"\" nIL nil nIl \"\" 1)(((\"\" \"\" niL \"\" \"\" \"8BIt\" 8) {9}\r\n) \"\") \"\" nil ({1}\r\n NIL) nil)(\"TExT\" {5}\r\n (\"\" \"\") nIl nIl \"\" 3 3 nIL ({5}\r\n NIl)) {48+}\r\n\u00e0g\u00c4",
+  "(((\"\" {6}\r\n NIl {1}\r\n nIl \"\" 0) \"\")(({9}\r\n \"\" ({8}\r\n \"\") \"\" \"\" {1}\r\n 9) \"\") \"\") {840+}\r\n"
  ],
  "body-type-msg": [
-  "\"MESSAge\" \"glObaL\" nIL {2}\r\n NIl \"qUoTed-PrIntaBLe\" 8 (\"\" nil (({7}\r\n niL niL \"\")) ((\"\" \"\" {3}\r\n {4}\r\n)) ((\"\" \"\" nIL NiL)) ((\"\" \"\" nIl nIl)) NiL ((\"\" {5}\r\n NIl \"\")) Nil nIL) (\"mESsAge\" \"gLOBAL\" (\"\" \"\") NIL {3}\r\n \"BAse64\" 3 ({2}\r\n NIl nIl ((nIl \"\" NIl {1}\r\n)) nIl nil ((niL Nil niL niL)) (({1}\r\n \"\" nIL {1}\r\n)) {0}\r\n \"\") ({4}\r\n \"\" ({8}\r\n \"\") NIl nIl {3}\r\n 1) 6) 6",
-  "\"MESSaGE\" \"glObaL\" (\"\" \"\" \"\" {4}\r\n) NiL NIl \"8BIt\" 6 ({3}\r\n nil ((NIl NIL {6}\r\n \"\")) niL ((nIL {7}\r\n \"\" \"\")) ((NIl nil nil \"\")) niL niL \"\" {9}\r\n) ((\"mESsAGe\" \"gloBAl\" ({2}\r\n {0}\r\n) niL \"\" \"BiNaRy\" 9 (nIL {1}\r\n niL ((Nil {2}\r\n {7}\r\n NIl)) ((\"\" \"\" NiL NIL)) nil niL ((NIL NIl {3}\r\n \"\")) \"\" {6}\r\n) ({6}\r\n {9}\r\n nIL {5}\r\n nIL {2}\r\n 3) 8) \"\") 4",
-  "\"MESSaGe\" \"RFc822\" (\"\" {1}\r\n) NIl Nil {9}\r\n 0 (\"\" \"\" NIL NIL (({4}\r\n \"\" nil NiL)) ((\"\" nIl {9}\r\n \"\")) ((\"\" \"\" {7}\r\n NiL)) niL NIl nIL) (\"APPlICaTIon\" \"\" ({8}\r\n {0}\r\n) Nil {1}\r\n \"8BIt\" 7 \"\") 61",
-  "\"MEssaGe\" \"rFC822\" (\"\" {6}\r\n \"\" {3}\r\n) \"\" {9}\r\n \"8BIt\" 7 (nIl \"\" ((\"\" nil {7}\r\n nIL)) nIL NIL niL ((\"\" {9}\r\n {5}\r\n NiL)) nil \"\" nIL) (\"tExT\" \"\" ({2}\r\n \"\") nIL \"\" \"\" 7 4 {5}\r\n) 8",
-  "\"MeSSagE\" \"rFC822\" NIl {3}\r\n \"\" \"7BIt\" 6 (niL \"\" ((nIl \"\" {8}\r\n {5}\r\n)) ((\"\" nIL {6}\r\n {4}\r\n)) ((\"\" {0}\r\n nIl {2}\r\n)) (({7}\r\n {9}\r\n \"\" NIl)) NIL ((nil \"\" \"\" \"\")) NiL nil) (\"\" \"\" (\"\" \"\") nIL {3}\r\n {9}\r\n 9) 31",
-  "\"mESSage\" \"GlobaL\" nIl {6}\r\n {9}\r\n {0}\r\n 2 (nIl niL Nil nIL ((nIl {1}\r\n {9}\r\n {1}\r\n)) NIl nIL nIL NIL nIl) ({9}\r\n \"\" Nil nil nIl \"QuotEd-PRInTabLe\" 2 NIL) 31",
-  "\"mESsagE\" \"GloBAl\" nil \"\" {4}\r\n \"7BiT\" 1 (\"\" \"\" ((NIL {4}\r\n \"\" \"\")) ((nil NIL Nil niL)) ((Nil NIL \"\" {3}\r\n)) ((\"\" \"\" nIl \"\")) ((Nil NiL \"\" \"\")) ((\"\" NIL nIL NIL)) {4}\r\n nIl) (\"meSsAge\" \"rFc822\" nIl nil \"\" \"BiNARy\" 4 (NiL {5}\r\n NIL ((\"\" {5}\r\n {4}\r\n {9}\r\n)) nil ((\"\" nil Nil nIl)) nIL (({2}\r\n NIl \"\" {8}\r\n)) \"\" niL) (\"AuDiO\" \"\" NiL \"\" Nil {0}\r\n 7) 0) 4",
-  "\"mEsSAGE\" \"RfC822\" ({5}\r\n \"\" {2}\r\n {1}\r\n) {8}\r\n NIL \"\" 0 (nil {6}\r\n nil ((\"\" NIL \"\" NIl)) (({6}\r\n \"\" Nil \"\")) NiL ((\"\" nIl NIl nIL)) ((nil {0}\r\n nIl niL)) NIL niL) (((\"ApPLICatIoN\" \"\" ({2}\r\n \"\") Nil \"\" {7}\r\n 6) {4}\r\n) \"\") 6"
+  "\"MeSSagE\" \"rFC822\" NIl {3}\r\n\u00ef \"\f\" \"8bIt\" 358 ({4}\r\nY \"\u00ed\u008d\u00bc\" nIL Nil nil NIL nIl ((NiL {6}\r\n \"\" \"\")(niL NiL {2}\r\n \"\")) \"\u0003\" {5+}\r\n\u00ef) ((\"vIdEo\" {0}\r\n ({3}\r\n {1}\r\n) Nil niL \"BInArY\" 9) \"s\" (\"\" {5}\r\n) (\"\" (\"\" \"\")) ({7}\r\n) {5}\r\n) 78",
+  "\"MessAGe\" \"GLoBaL\" (\"\u00c2\u00ae\" \"\" {9}\r\n \"\u00f2\u008d\u0094\u0099\" {4}\r\n {2}\r\n) NIl nIl \"QuotED-pRintAbLe\" 85 (nil niL NiL (({0}\r\n NiL {3}\r\n NiL)(niL \"\" \"\" NIL)) NiL niL nil nil \"\" NIL) (((\"Text\" {6}\r\n NiL {4}\r\n \"\" \"\" 4 6) {9}\r\n (\"\" \"\"))(\"\" \"\" ({2}\r\n \"\") \"\" NIL \"quoted-pRinTABLe\" 4)(({8}\r\n {0}\r\n ({9}\r\n {1}\r\n) Nil NIl \"7bIt\" 8) \"\") {9}\r\n NiL) 5",
+  "\"mEssaGE\" \"gLoBAl\" ({8}\r\n \"\" {4+}\r\nS \"\") {4+}\r\n\u0088 niL {8}\r\n\u009d 6 (nil {8}\r\nw nIL NiL ((Nil {3}\r\n NIl {9}\r\n)(\"\" \"\" nIl {1}\r\n)) nil niL ((\"\" \"\" niL nil)) \"\u00e0\u00b1\u00b4\" \"\u00cd\u0082\") ((\"MessAGE\" {4}\r\n nIl \"\" \"\" \"8BIT\" 2 Nil)(\"VIdeo\" \"\" niL {4}\r\n NIL \"bInArY\" 8)(\"\" \"\" (\"\" {3}\r\n) NIl \"\" {2}\r\n 0)((({3}\r\n {7}\r\n (\"\" \"\") niL \"\" \"7BIt\" 2) {1}\r\n) \"\")(((\"font\" {5}\r\n NIL {7}\r\n niL \"BiNaRy\" 3) \"\") \"\") \"u\" niL Nil) 6",
+  "\"mEssage\" \"GLObAL\" NIl {8+}\r\n {1}\r\n {6+}\r\n\u00d1 7 (nIl nIL ((Nil {5}\r\n NIl \"\")) niL ((\"\" {7}\r\n nIl {1}\r\n)) ((\"\" NIL {3}\r\n \"\")) Nil ((\"\" nIl NIl nIl)(nIl \"\" NIl {1}\r\n)({0}\r\n \"\" {0}\r\n {1}\r\n)) {8+}\r\n \"\u00f4\u0085\u00ae\u0097\") ((\"vidEO\" {5}\r\n ({8}\r\n \"\") NIl nIl {3}\r\n 1) \"1\") 7",
+  "\"mEssage\" \"RFC822\" nIL Nil nil {6+}\r\n 2 (nil {3}\r\n$ NIl nil (({7}\r\n \"\" NiL nIl)) ((NiL NIL {5}\r\n nil)(Nil Nil nil niL)(nIL {6}\r\n nIl \"\")) ((NiL NIl niL \"\")(\"\" nIl nil nIL)) nIl {9+}\r\n\u009a {2}\r\n) (\"TeXT\" \"\" (\"\" \"\") {8}\r\n NIL \"8Bit\" 0 8) 3",
+  "\"messAge\" \"gLoBaL\" (\"\" \"\") \"\u0007\" {1+}\r\n {6+}\r\n 95 ({4+}\r\n \"\" ((Nil NiL NIL \"\")) ((\"\" nIL nIl NIL)) nil nil ((Nil {0}\r\n {1}\r\n nIl)) NiL {1+}\r\n5 Nil) (((((((\"\" {3}\r\n ({1}\r\n \"\") \"\" nil \"QuotEd-pRintABlE\" 2) {3}\r\n) \"\") \"\") {1}\r\n) \"\" (\"\" {1}\r\n)) \"\" (\"\" {0}\r\n \"\" \"\") nil {0}\r\n) 5"
  ],
  "body-type-text": [
-  "\"TEXT\" \"\" ({5}\r\n \"\" \"\" \"\") {3}\r\n {5}\r\n \"7Bit\" 5 78",
-  "\"TEXt\" {6}\r\n NIl nIl {7}\r\n \"8bIT\" 3 9",
-  "\"TExt\" \"\" niL \"\" {0}\r\n \"\" 5 82",
-  "\"TExt\" {7}\r\n ({7}\r\n {1}\r\n) NIl \"\" \"\" 1 9",
-  "\"TeXT\" \"\" (\"\" \"\") \"\" {0}\r\n \"8bit\" 8 7",
-  "\"TeXT\" \"\" nIl NIl \"\" {5}\r\n 4 1",
-  "\"Text\" {0}\r\n ({6}\r\n {5}\r\n \"\" \"\") {2}\r\n {5}\r\n {9}\r\n 7 51",
-  "\"tExT\" {5}\r\n (\"\" \"\" \"\" {2}\r\n) NiL {4}\r\n {9}\r\n 7 64"
+  "\"TExt\" \"\" (\"9\" \"\u00cf\u009c\" {0+}\r\n {1}\r\n \"\" {1}\r\n) {0+}\r\n\u00d9 nil \"QuOTEd-PRIntAble\" 1 165",
+  "\"TExt\" {2+}\r\n ({9}\r\nJ\u001d {2}\r\n \"\u00d1\u00b2\" \"\") Nil {9+}\r\n \"BaSe64\" 6 5",
+  "\"TeXT\" \"\\\\\b\u0013\" ({9+}\r\n \"\" \"\\\"\" {9+}\r\n\u0005 {7}\r\n {4}\r\n) NIL \"\" \"7BIt\" 16 2",
+  "\"TeXt\" \"\u000e\" nIl \"\u00ed\u0094\u0093\" nIl \"8BIt\" 1 1",
+  "\"tExT\" \"\u00d0\u00b1\\\\\u001a\" ({3}\r\n {5+}\r\n\u00a1@ \"\u00f4\u008f\u0095\u00b0\" {0+}\r\n) {1}\r\n niL \"BInARy\" 121 494121",
+  "\"tExt\" \"\" (\"\u00ef\u00bb\u00b4\" \"\\\\\u0011\" \"\u00ed\u0090\u0085\" \"P\") \"\" {6}\r\n \"8biT\" 4632 8",
+  "\"teXT\" {9}\r\n nIl nIl \"P\" \"QuoTeD-priNTABle\" 02 7",
+  "\"teXt\" {54}\r\n=\u0085 (\"\u00ee\u00a5\u00bd\" \"!\u00c7\u0089\" \"\" \"\u0002\" {4}\r\n \"\" \"\" \"\" \"\" {0}\r\n) nIl NiL \"bInarY\" 1 57"
  ],
  "capability": [
-  "!k",
-  "#",
+  "!",
+  "&",
   "6N",
-  "AUtH=|",
-  "Auth=b",
-  "G",
-  "aUth=e",
-  "auth=!"
+  "AuTH=$!'",
+  "AuTh=#!",
+  "autH=q",
+  "auth=!xE^'",
+  "~#"
  ],
  "capability-data": [
-  "CAPAbiLity IMAP4Rev2",
-  "CApABility aUth=~ ImAp4rEV2 aUTH=}",
-  "CaPAbiLitY imaP4Rev2 $ ! G",
-  "CaPaBilIty AutH=& ' imap4rev2",
-  "CaPabilITy iMAp4Rev2 aUtH=Y",
-  "CapaBIliTy ! iMap4Rev2",
-  "cApaBilITy ImAp4rEV2 aUtH=U",
-  "cApabIliTy auTH=3 imAp4rev2 2"
+  "CAPaBilITY iMaP4rEv2 AutH=&L$ auTH=m!",
+  "CApABiLiTy IMAp4Rev2",
+  "CaPAbiLitY imaP4Rev2 $$xE aUTh=;!",
+  "CaPabilITY AUTh=~Gy iMAp4rEV2 AuTh=M",
+  "cAPabiLIty iMaP4ReV2",
+  "cApabIliTy auTH=3 Auth=& $~ iMaP4REv2 ~K$ $w j1 !",
+  "capAbIlitY ImaP4REV2",
+  "capabILiTY |G IMAP4reV2 5 }~ ! aUTh=z aUtH=&"
  ],
  "charset": [
-  "!#",
-  "\"\u000f\\\\\"",
+  "\"\u000f\\\\\u0004\u00d3\u009b\u000b\f\"",
+  "\"\u0010&\u0005\"",
   "\"\"",
-  "\"]\u0001\"",
-  "\"\u00ed\u0091\u0096\u00c2\u00b1\"",
-  "\"\u00ef\u00a6\u00a0\"",
-  "#",
-  "$"
+  "\"\\\\\\\\\f\"",
+  "\"]\u0001H\u0005\"",
+  "'!!",
+  ",&y",
+  "a#"
  ],
  "child-mbox-flag": [
   "\\HAsnOchILdreN",
@@ -449,22 +460,22 @@
   "\\hascHilDreN"
  ],
  "childinfo-extended-item": [
-  "CHILDinFo (\"suBsCRIBeD\")",
-  "ChILdiNfo (\"}\" \"$\" \"SuBScriBed\")",
-  "ChIlDINFo (\"}\")",
-  "ChilDINfO (\"VENdoR.\u00ed\u0098\u008d-&\")",
-  "cHiLdInfo (\"vEnDOr.\u00d8\u00ba-~\")",
-  "chILDInFo (\"sUbscrIbeD\" \"SUBsCrIBED\" \"sUbscribed\" \"VEnDOr.w-'\" \"SUbSCrIbEd\")",
-  "chIlDiNfO (\"sUbScriBEd\" \"'\" \"n\" \"veNdor.g-!\")",
-  "childiNfO (\";\" \"&\" \"sUBScriBED\")"
+  "CHILdInfo (\"VeNdOr.\u00f0\u00a5\u00af\u00b1-$\" \"VeNdOr.J-} (((((((A)))))))\")",
+  "CHILdiNfo (\"sUbSCRIbED\")",
+  "ChILdiNfo (\"} ({7}\r\n ])\")",
+  "cHilDinfO (\"#\" \"' (c)\" \"| ((]))\")",
+  "cHildINFo (\"SUBScrIbED\" \"sUbsCRiBed\")",
+  "chILDInFo (\"sUbscrIbeD\" \"SUBsCrIBED\" \"sUbscribed\" \"VEnDOr.w-' (({2}\r\n))\")",
+  "chiLDInFO (\"VEndOr.\u00c8\u0090-e ((E) ])\" \"sUBscRibEd\" \"suBsCriBEd\" \"veNdor.g-!\")",
+  "childInFo (\"SuBsCRiBeD\")"
  ],
  "command": [
-  "! aUTHEnTiCatE ~\r\n",
-  "!$~ EXAMINe InbOx\r\n",
-  "#8! caPABIlITy\r\n",
+  "! aUTHEnTiCatE ~# =\r\n",
+  "!n$'! searCh HeadER \"\" $\r\n",
   "$! UnsubSCrIbE $\r\n",
-  "&#~ nOop\r\n",
-  "' StarTtLs\r\n",
+  "&!7'!! uid EXPUNGe 8:6\r\n",
+  "&Q| CAPAbIlIty\r\n",
+  "0vc$ loGouT\r\n",
   "b LOGOut\r\n",
   "y loGOUt\r\n"
  ],
@@ -478,73 +489,73 @@
   "nooP"
  ],
  "command-auth": [
-  "ExAmINE inBoX",
-  "NaMESPacE",
-  "RENaMe # iNboX",
-  "REName {1}\r\n {3}\r\n",
-  "STatUs Inbox (UIdnEXt uiDnext DELETed)",
-  "aPpEnD inbOX () {5+}\r\n\u00c3",
-  "list () iNBOX {5}\r\n retuRn ()",
+  "DeLETe iNbOx",
+  "EnABLE auTh=! AUTH=' auTh=!",
+  "SelEct f}",
+  "UnSubSCRIbE InbOx",
+  "aPpEnD inbOX (\\deleTeD) {6+}\r\n",
+  "deLETE INBOX",
+  "sUBScRIBE {6}\r\n",
   "unSUBscRiBE inbox"
  ],
  "command-nonauth": [
-  "AUtHeNtICATe &",
-  "AUthEntICate = =\r\n\r\n",
-  "AutHENTiCaTe '\r\n\r\n",
-  "LOGiN ] {6}\r\n",
-  "LOgIn {5}\r\n }",
-  "lOgIN ~ E",
-  "logiN ! \"\"",
-  "login # \"\""
+  "AUthEntICate =$'~ V/2=\r\nA/==\r\n/0m=",
+  "AuTHENTICatE 5 =\r\n/o/=\r\n+l/+/112/Yj/",
+  "Login ] {6}\r\n",
+  "aUthenTicAte }",
+  "lOgin ! {4}\r\n",
+  "login \"\" ~",
+  "sTaRTTls",
+  "stARTTlS"
  ],
  "command-select": [
-  "MovE * ]",
-  "SEaRcH RETurn () tExT ] Body \"\"",
-  "StOrE *:9 flaGS \\SEeN",
-  "clOse",
-  "expunge",
-  "mOVe * $",
-  "storE $ fLAgs ()",
-  "unselecT"
+  "ClosE",
+  "SeARCH flAgGed From ^",
+  "UnSElEcT",
+  "copy 9,$ ]!",
+  "mOVe * iNbOX",
+  "moVe 1,$ INBoX",
+  "uID COPY *,$ {1}\r\n",
+  "uId eXpUNge $"
  ],
  "continue-req": [
   "+ \r\n",
-  "+ //3+IS+5\r\n",
-  "+ 7//a\r\n",
-  "+ 7o==\r\n",
-  "+ [SERveRbuG] \u00ed\u0083\u00b8\r\n",
-  "+ [cannot] \u00ed\u008f\u008a\r\n",
-  "+ p\r\n"
+  "+ //3+IS+5V/2=\r\n",
+  "+ 9/==\r\n",
+  "+ B//9\r\n",
+  "+ [ALREaDyExiSts] \u00d0\u00b1\u00ed\u0084\u009e\r\n",
+  "+ [ALeRt] \u00f0\u00bd\u0087\u009d\r\n",
+  "+ [UidNOtsTickY] \u00de\u00bd\u00c7\u00a2\r\n"
  ],
  "copy": [
-  "COpY * ]",
+  "COPY 358,2 \"\"",
   "CoPY *,$ iNBOx",
-  "CoPY 8,$ \"\"",
-  "Copy 1,$ \"\"",
-  "cOpY $ #",
-  "cOpy $ iNbOx",
-  "coPy 1,$ INBoX",
-  "copy $ InBOx"
+  "CoPY 34:*,$ iNBOX",
+  "CoPY 87,$ iNboX",
+  "CopY 9,$ INBoX",
+  "cOpy $ \"\"",
+  "coPy $ ^]$]",
+  "copy 9,8 ]]"
  ],
  "create": [
-  "CREatE inBOX",
-  "CReATe ]",
-  "CReaTe inboX",
-  "CReatE iNbox",
+  "CReAtE iNbox",
   "CrEAte &",
-  "CrEatE {2}\r\n",
-  "CreAtE !",
-  "cReAte iNBoX"
+  "CreatE ]",
+  "cREaTe ]",
+  "cREate $",
+  "crEaTE inbox",
+  "crEate inBoX",
+  "crEate {1+}\r\n@"
  ],
  "date": [
-  "\"4-Mar-6799\"",
-  "\"5-SEP-8393\"",
-  "2-Dec-7654",
-  "3-aUg-7958",
-  "7-JUL-6914",
-  "7-jaN-9549",
-  "8-apr-6828",
-  "9-Aug-2656"
+  "\"5-AUg-3933\"",
+  "\"6-oCT-4161\"",
+  "\"7-jan-3090\"",
+  "\"9-apr-9524\"",
+  "2-jUn-4752",
+  "23-AUG-4396",
+  "82-mar-5207",
+  "98-feb-9053"
  ],
  "date-day": [
   "3",
@@ -605,14 +616,14 @@
   "9887"
  ],
  "delete": [
-  "DELetE inBOX",
-  "DElETe ]",
-  "DEleTe inboX",
-  "DEletE iNbox",
+  "DElEtE iNbox",
   "DeLEte &",
-  "DeLetE {2}\r\n",
-  "DelEtE !",
-  "dElEte iNBoX"
+  "DeletE ]",
+  "dELeTe ]",
+  "dELete $",
+  "deLeTE inbox",
+  "deLete inBoX",
+  "deLete {1+}\r\n@"
  ],
  "digit-nz": [
   "1",
@@ -625,180 +636,188 @@
  ],
  "eitem-standard-tag": [
   "!",
-  "!,&",
+  "!,&y",
   "#",
-  "#&$",
+  "#&$k",
   "N",
-  "k",
-  "y"
+  "y",
+  "}"
  ],
  "eitem-vendor-tag": [
-  "VENdor.qI-2!'",
-  "VeNDor.\t\u00f4\u0089\u00b7\u0098-$'~",
-  "VeNdOr.\u00e8\u009b\u009b\u00ed\u009f\u00b4-'",
-  "vENdOR.\u00d8\u0097-f}",
-  "vEnDoR.\u001a-$",
-  "vEndOr.\u00ed\u0083\u00b8-'",
-  "veNDOR.\u00ee\u008b\u00bc-t'}",
-  "vendoR.\u00ed\u008d\u00bc-y"
+  "VENDOR.\\\u00c8\u0090\u00ec\u008a\u0086-~",
+  "VEndOr.\u0001-&",
+  "VeNDor.\t\u00f4\u0089\u00b7\u0098\u00d9\u00bbu-!$",
+  "VendOr.6-~f&",
+  "VendoR.\u00ed\u0091\u0096I\u00c2\u00b1-!",
+  "vEnDOR.!{\u001a-m!",
+  "vEnDor.{-!",
+  "vendoR.\u00f4\u008f\u0095\u00b0-}"
  ],
  "enable": [
-  "ENAbLE auth=! auTH=& &",
-  "EnABLE aUth=~",
-  "EnABle z '",
-  "EnAble AUtH=' autH=q",
-  "eNABLE $",
-  "eNABLe } aUth=! ' Auth=!",
-  "eNAbLE AuTh=# v &",
-  "enable ! G"
+  "ENABle 5 Y",
+  "EnABLE auTh=!'",
+  "EnABle z=$' AutH=} auTH=$",
+  "EnAblE autH=!",
+  "EnaBle AUTH=&",
+  "enaBlE AuTh=m$$",
+  "enablE AUtH=!",
+  "enable Auth=^ |G"
  ],
  "enable-data": [
-  "ENAbLED",
+  "ENaBLed auth=!~ q}",
   "ENabLed",
-  "ENabLed b AUTH=2 auTh=# '",
-  "EnABLed & aUtH=! S AuTh=}",
-  "EnABleD AUth== $ ! G",
+  "EnABLed &~! Auth='",
+  "EnABleD AUth==$' AutH=} auTH=$",
   "eNAbLEd",
-  "eNaBled 7 Auth=, $",
-  "eNabled auTH=m auth=! f q"
+  "eNAbLeD .} ! }B AUTh=' Auth=!",
+  "eNAblEd AutH=!",
+  "enablEd"
  ],
  "env-bcc": [
   "((\"\" \"\" \"\" \"\")(\"\" \"\" NiL nIl)(Nil {3}\r\n NIL NIl))",
-  "((\"\" \"\" \"\" \"\"))",
+  "((\"\" niL NiL {2}\r\n)(nil \"\" \"\" \"\"))",
   "((\"\" {8}\r\n {5}\r\n nil)(nIL {6}\r\n {4}\r\n Nil)({0}\r\n nIl {2}\r\n {1}\r\n))",
-  "((niL \"\" NIl nIL))",
+  "(({2}\r\n NIl \"\" nIl)(\"\" {0}\r\n \"\" Nil)(nil \"\" nIl {5}\r\n))",
   "(({5}\r\n {0}\r\n {3}\r\n \"\")({3}\r\n \"\" {6}\r\n \"\"))",
-  "(({7}\r\n nIl nIL nil)({1}\r\n \"\" nIl \"\"))",
   "nIL",
-  "niL"
+  "niL",
+  "nil"
  ],
  "env-cc": [
   "((\"\" \"\" \"\" \"\")(\"\" \"\" NiL nIl)(Nil {3}\r\n NIL NIl))",
-  "((\"\" \"\" \"\" \"\"))",
+  "((\"\" niL NiL {2}\r\n)(nil \"\" \"\" \"\"))",
   "((\"\" {8}\r\n {5}\r\n nil)(nIL {6}\r\n {4}\r\n Nil)({0}\r\n nIl {2}\r\n {1}\r\n))",
-  "((niL \"\" NIl nIL))",
+  "(({2}\r\n NIl \"\" nIl)(\"\" {0}\r\n \"\" Nil)(nil \"\" nIl {5}\r\n))",
   "(({5}\r\n {0}\r\n {3}\r\n \"\")({3}\r\n \"\" {6}\r\n \"\"))",
-  "(({7}\r\n nIl nIL nil)({1}\r\n \"\" nIl \"\"))",
   "nIL",
-  "niL"
+  "niL",
+  "nil"
  ],
  "env-date": [
-  "\"\"",
-  "NIl",
+  "\"\f\u00eb\u00b9\u008d\"",
+  "NiL",
+  "Nil",
   "nIL",
-  "{5}\r\n",
-  "{9}\r\n"
+  "niL",
+  "{99+}\r\nA",
+  "{9}\r\n\u00ba"
  ],
  "env-from": [
   "((\"\" \"\" \"\" \"\")(\"\" \"\" NiL nIl)(Nil {3}\r\n NIL NIl))",
-  "((\"\" \"\" \"\" \"\"))",
+  "((\"\" niL NiL {2}\r\n)(nil \"\" \"\" \"\"))",
   "((\"\" {8}\r\n {5}\r\n nil)(nIL {6}\r\n {4}\r\n Nil)({0}\r\n nIl {2}\r\n {1}\r\n))",
-  "((niL \"\" NIl nIL))",
+  "(({2}\r\n NIl \"\" nIl)(\"\" {0}\r\n \"\" Nil)(nil \"\" nIl {5}\r\n))",
   "(({5}\r\n {0}\r\n {3}\r\n \"\")({3}\r\n \"\" {6}\r\n \"\"))",
-  "(({7}\r\n nIl nIL nil)({1}\r\n \"\" nIl \"\"))",
   "nIL",
-  "niL"
+  "niL",
+  "nil"
  ],
  "env-in-reply-to": [
-  "\"\"",
-  "NIl",
+  "\"\f\u00eb\u00b9\u008d\"",
+  "NiL",
+  "Nil",
   "nIL",
-  "{5}\r\n",
-  "{9}\r\n"
+  "niL",
+  "{99+}\r\nA",
+  "{9}\r\n\u00ba"
  ],
  "env-message-id": [
-  "\"\"",
-  "NIl",
+  "\"\f\u00eb\u00b9\u008d\"",
+  "NiL",
+  "Nil",
   "nIL",
-  "{5}\r\n",
-  "{9}\r\n"
+  "niL",
+  "{99+}\r\nA",
+  "{9}\r\n\u00ba"
  ],
  "env-reply-to": [
   "((\"\" \"\" \"\" \"\")(\"\" \"\" NiL nIl)(Nil {3}\r\n NIL NIl))",
-  "((\"\" \"\" \"\" \"\"))",
+  "((\"\" niL NiL {2}\r\n)(nil \"\" \"\" \"\"))",
   "((\"\" {8}\r\n {5}\r\n nil)(nIL {6}\r\n {4}\r\n Nil)({0}\r\n nIl {2}\r\n {1}\r\n))",
-  "((niL \"\" NIl nIL))",
+  "(({2}\r\n NIl \"\" nIl)(\"\" {0}\r\n \"\" Nil)(nil \"\" nIl {5}\r\n))",
   "(({5}\r\n {0}\r\n {3}\r\n \"\")({3}\r\n \"\" {6}\r\n \"\"))",
-  "(({7}\r\n nIl nIL nil)({1}\r\n \"\" nIl \"\"))",
   "nIL",
-  "niL"
+  "niL",
+  "nil"
  ],
  "env-sender": [
   "((\"\" \"\" \"\" \"\")(\"\" \"\" NiL nIl)(Nil {3}\r\n NIL NIl))",
-  "((\"\" \"\" \"\" \"\"))",
+  "((\"\" niL NiL {2}\r\n)(nil \"\" \"\" \"\"))",
   "((\"\" {8}\r\n {5}\r\n nil)(nIL {6}\r\n {4}\r\n Nil)({0}\r\n nIl {2}\r\n {1}\r\n))",
-  "((niL \"\" NIl nIL))",
+  "(({2}\r\n NIl \"\" nIl)(\"\" {0}\r\n \"\" Nil)(nil \"\" nIl {5}\r\n))",
   "(({5}\r\n {0}\r\n {3}\r\n \"\")({3}\r\n \"\" {6}\r\n \"\"))",
-  "(({7}\r\n nIl nIL nil)({1}\r\n \"\" nIl \"\"))",
   "nIL",
-  "niL"
+  "niL",
+  "nil"
  ],
  "env-subject": [
-  "\"\"",
-  "NIl",
+  "\"\f\u00eb\u00b9\u008d\"",
+  "NiL",
+  "Nil",
   "nIL",
-  "{5}\r\n",
-  "{9}\r\n"
+  "niL",
+  "{99+}\r\nA",
+  "{9}\r\n\u00ba"
  ],
  "env-to": [
   "((\"\" \"\" \"\" \"\")(\"\" \"\" NiL nIl)(Nil {3}\r\n NIL NIl))",
-  "((\"\" \"\" \"\" \"\"))",
+  "((\"\" niL NiL {2}\r\n)(nil \"\" \"\" \"\"))",
   "((\"\" {8}\r\n {5}\r\n nil)(nIL {6}\r\n {4}\r\n Nil)({0}\r\n nIl {2}\r\n {1}\r\n))",
-  "((niL \"\" NIl nIL))",
+  "(({2}\r\n NIl \"\" nIl)(\"\" {0}\r\n \"\" Nil)(nil \"\" nIl {5}\r\n))",
   "(({5}\r\n {0}\r\n {3}\r\n \"\")({3}\r\n \"\" {6}\r\n \"\"))",
-  "(({7}\r\n nIl nIL nil)({1}\r\n \"\" nIl \"\"))",
   "nIL",
-  "niL"
+  "niL",
+  "nil"
  ],
  "envelope": [
-  "(\"\" \"\" (({8}\r\n {3}\r\n nil NIl)) NIL ((\"\" niL nIL {2}\r\n)) ((nIl nIl \"\" nIl)(niL \"\" nil \"\")) niL niL niL \"\")",
-  "(NIl {8}\r\n ((\"\" {4}\r\n NIl NIL)(\"\" {1}\r\n \"\" {3}\r\n)) ((nIL nIL NiL \"\")(nIl {8}\r\n nIL {7}\r\n)) ((nIL NIl nil nil)(Nil Nil nil niL)) NiL nIL (({6}\r\n Nil {2}\r\n NIL)) {7}\r\n {9}\r\n)",
-  "(Nil NIL nIl nIl ((NIl {1}\r\n {7}\r\n niL)) ((NIL \"\" nIL {1}\r\n)(nIl \"\" Nil {4}\r\n)) ((\"\" nIL NiL {0}\r\n)) NiL \"\" nIL)",
-  "(nIl nil NiL nil Nil nIl NIl nIl \"\" {0}\r\n)",
-  "(nil nIL ((nIl {9}\r\n Nil {2}\r\n)) ((NiL niL \"\" \"\")) NIL nIL ((niL {3}\r\n NIL niL)) ((\"\" \"\" NiL {8}\r\n)) {9}\r\n NiL)",
-  "({2}\r\n NIL ((\"\" {0}\r\n nIl {2}\r\n)) niL (({9}\r\n \"\" NIl nIL)) ((\"\" \"\" \"\" \"\")) NiL nil \"\" \"\")",
-  "({5}\r\n niL nil NIl ((Nil \"\" \"\" nIL)(niL \"\" {0}\r\n nil)) nIl Nil nil \"\" {2}\r\n)",
-  "({6}\r\n \"\" NIL ((NIl {8}\r\n \"\" nIL)) NIl ((\"\" {0}\r\n nIl nIL)) Nil ((\"\" NIl \"\" NIL)({7}\r\n {7}\r\n nIl {1}\r\n)) nIl \"\")"
+  "(\"\" {1}\r\n Nil niL ((\"\" {4}\r\n NIl NIL)(\"\" {1}\r\n \"\" {3}\r\n)(\"\" nIL nIL NiL)(\"\" nIl {8}\r\n nIL)) ((\"\" {7}\r\n NIL {5}\r\n)(\"\" \"\" Nil Nil)({9}\r\n nIL {9}\r\n nIL)) ((nil NIl NIL {5}\r\n)({9}\r\n {2}\r\n \"\" nIL)) nIl {9+}\r\n\u009a\\ {8}\r\n\u00fe)",
+  "(NIL Nil nIl nIl niL niL ((\"\" {1}\r\n {1}\r\n nil)(NIl nIL nIL NiL)) ((NIl Nil {5}\r\n {4}\r\n)) \"\u001c\u00cb\u00a3\" niL)",
+  "(NiL {1}\r\n NIl nIL nIL NIL nIl nil {0+}\r\n niL)",
+  "(Nil nil (({0}\r\n nIL \"\" {6}\r\n)) NIL NIl ((Nil nil {6}\r\n {8}\r\n)) ((\"\" NiL nIL {7}\r\n)) NiL nil NIL)",
+  "(nIL nil (({0}\r\n nIl nIL {4}\r\n)(nil NIl \"\" NIL)({7}\r\n {7}\r\n nIl {1}\r\n)) ((\"\" NIL {3}\r\n \"\")) Nil ((\"\" nIl NIl nIl)(nIl \"\" NIl {1}\r\n)({0}\r\n \"\" {0}\r\n {1}\r\n)) ((\"\" nIl \"\" {1}\r\n)({7}\r\n {7}\r\n {0}\r\n \"\")) ((NIl \"\" {8}\r\n {4}\r\n)) nIL NiL)",
+  "(niL {2}\r\n nil ((\"\" \"\" \"\" niL)(\"\" {6}\r\n \"\" nIl)(nIl {7}\r\n NIL \"\")) NIL ((nil Nil \"\" NiL)(nIl nil NiL NiL)) niL Nil nIL {1+}\r\n\u0015)",
+  "(nil NIl (({9}\r\n \"\" {4}\r\n \"\")({4}\r\n \"\" \"\" \"\")) NIl nIl (({8}\r\n {5}\r\n NIL Nil)(nil nIL \"\" NIL)(NIL \"\" \"\" nil)) nil (({4}\r\n {7}\r\n \"\" \"\")) Nil NIL)",
+  "({5+}\r\nU \"6\u0004\" ((niL \"\" {0}\r\n nil)) ((Nil nil \"\" {2}\r\n)) ((nIL Nil nil NIL)(\"\" NIL {1}\r\n {7}\r\n)) (({3}\r\n nIL Nil {5}\r\n)(\"\" {3}\r\n {5}\r\n \"\")({8}\r\n \"\" {9}\r\n nIl)(Nil {3}\r\n NIL NIl)) (({7}\r\n nIl nIL nil)({1}\r\n \"\" nIl \"\")) (({9}\r\n \"\" nIl {5}\r\n)) {5+}\r\nt\u00a7 \"\u00c7\u0089\u0019\")"
  ],
  "esearch-response": [
-  "EsEArcH (TAg =)",
-  "EsEArcH (tag ]) aLl $",
-  "eSEARCH uId MaX 3 MAX 8 _ $",
-  "eSeArCH uiD",
-  "eSeaRCH UiD alL * AlL $",
-  "esEarcH",
-  "esEarch (tag {2}\r\n) min 3 mIN 9",
-  "esearCh mIn 9 Count 2"
+  "ESeaRch uID _ (\"\") coUnT 66",
+  "EsEArcH (TAg =]!)",
+  "eSEArCh",
+  "eSEarCh (Tag \"\") uiD",
+  "eSeaRch (tAg \"\")",
+  "esEARcH",
+  "esEarCh (TaG ]~) uId MiN 11 MAX 29 MIN 7 CoUnT 7 mAx 9",
+  "eseArch (tag ]) UId miN 9573 aLl $"
  ],
  "examine": [
-  "EXAmiNe \"\"",
-  "EXaMInE InBOX",
+  "EXAmiNe \"\u0005\"",
+  "EXaMiNe Inbox",
   "ExAMinE iNBox",
-  "eXAMInE InbOx",
-  "eXAmiNe inboX",
-  "eXaMiNe inBOx",
-  "exAminE {6}\r\n",
-  "examInE ~"
+  "eXaMiNE \"\u00ef\u00ab\u0090\"",
+  "eXamIne InBoX",
+  "exAmiNE ]",
+  "exaMInE INboX",
+  "examiNe \"\""
  ],
  "fetch": [
-  "FEtCH 3:* (boDY.PeEk[]<6.9>)",
-  "FeTCH 4,2:8 EnveloPe",
-  "FeTCh 9:*,$ fULl",
-  "FetCH $ internALDAtE",
-  "feTch $ FAsT",
-  "fetCH 5:5 alL",
-  "fetcH *:3,$ AlL",
-  "fetch 3,8 (biNARy[])"
+  "FeTCh 962,8 (bODY.PEEK[]<37.92>)",
+  "FeTCh 9:91 fULl",
+  "FeTcH $ aLl",
+  "FetcH $ (rfC822.SizE BOdy[]<8.89>)",
+  "fEtch $ FUll",
+  "fetcH $ fuLl",
+  "fetcH *:* FASt",
+  "fetcH *:36 aLl"
  ],
  "fetch-att": [
-  "BODy.pEek[heADER]",
   "BOdySTRucTuRE",
-  "Uid",
+  "bInaRY[]",
   "bODy",
-  "biNARY[]<2.2>",
+  "biNARY[]<2.9>",
   "envEloPe",
   "enveloPE",
-  "inTeRNaLDaTe"
+  "inTeRNaLDaTe",
+  "internALDAtE"
  ],
  "flag": [
   "\\DRAFT",
@@ -812,23 +831,23 @@
  ],
  "flag-extension": [
   "\\!",
-  "\\!#&",
-  "\\!k",
+  "\\!#&$k",
   "\\#",
   "\\$c",
   "\\&",
+  "\\2z",
   "\\6N",
   "\\|"
  ],
  "flag-fetch": [
-  "!",
+  "!k",
+  "\\FLaGgeD",
   "\\REceNt",
-  "\\draFT",
+  "\\ReCENT",
+  "\\aNsWErED",
   "\\flaGgED",
-  "\\rECeNt",
-  "\\rEcENt",
-  "\\recENT",
-  "\\recenT"
+  "\\rEcEnt",
+  "\\recENT"
  ],
  "flag-keyword": [
   "$JUnK",
@@ -849,36 +868,36 @@
   "$FoRwARdeD",
   "$PhIsHING",
   "\\*",
-  "\\ANsweRed",
   "\\FLaGgeD",
-  "\\}"
+  "\\}$!"
  ],
  "greeting": [
-  "* OK [pERMAnENTFLagS ()] \u00ee\u00a9\u0097\r\n",
-  "* Ok \u00f0\u00b9\u008f\u00ab\r\n",
-  "* PREaUTh [CANNOt] \r\n",
-  "* PREauTh [CaNNOT] \u00e0\u00be\u00b6\r\n",
-  "* PreAutH \u00f4\u0089\u00b7\u0098\r\n",
-  "* byE \u00ec\u008a\u0086\r\n",
-  "* bye [alreadYeXIsTS] \r\n",
-  "* ok [AppEnDUid 8 4] \u00e4\u00bf\u0087\r\n"
+  "* BYe [UNavAIlaBle] \r\n",
+  "* ByE \u00d8\u0097\r\n",
+  "* OK \u00f4\u0087\u0098\u00bb\u00c3\u00bf\u00ed\u0083\u00b8\r\n",
+  "* PREAuTh [cannot] \u00ed\u008f\u008a\u0006\u00d3\u00ae\r\n",
+  "* PreAutH \u00f4\u0089\u00b7\u0098\u00d9\u00bb\u0004\r\n",
+  "* bYE [cONTACtAdmiN] \r\n",
+  "* bye [rEaD-WrItE] \r\n",
+  "* prEautH [LIMIt] \r\n"
  ],
  "header-fld-name": [
   "\"\"",
-  "$]",
-  "{7}\r\n",
-  "{8}\r\n",
-  "{9}\r\n"
+  "\"\u00c9\u00a2\u00f4\u0080\u00b1\u008b\"",
+  "]",
+  "{19}\r\n\u0083",
+  "{6+}\r\n",
+  "}=]!]~"
  ],
  "header-list": [
-  "(!)",
-  "(\"\" \"\" ])",
-  "(\"\" , {4}\r\n)",
-  "(] ] {9}\r\n)",
-  "(])",
-  "({9}\r\n \"\" \"\" $)",
-  "({9}\r\n ~)",
-  "(~)"
+  "(\"\f\" \"\")",
+  "(\"\u0015\")",
+  "($6]!] ^ \"\")",
+  "(] \"\" J)",
+  "(] {1+}\r\n\u009a {4}\r\n \"\" {1}\r\n)",
+  "(]'] \"\")",
+  "(]}=]! {6+}\r\n\u001f E~)",
+  "(})"
  ],
  "idle": [
   "IDle\r\ndONE",
@@ -897,14 +916,14 @@
   "="
  ],
  "list": [
-  "LIST (rEmote) iNboX (*)",
-  "LIST iNboX ]",
-  "LIst (#) InboX \"\"",
+  "LISt \"\u00f0\u00ba\u008b\u00bf\" ({1}\r\n)",
+  "LIst (SUbscRibEd SuBscriBEd) \"\u00f4\u0080\u00b1\u008b\" (\"\") RETUrn (SUBScRibED)",
   "LiST () INbox (\"\")",
-  "LiSt \"\" *",
-  "LiSt INBOx \"\" rETURN ()",
-  "liSt (subSCRIbED) inbox \"\" retuRN ()",
-  "lisT InBOx \"\" retuRn ()"
+  "LiSt (rEcuRSIvEmATCH ! VEnDOr.w-' & SUBscrIBEd) {3+}\r\n\u00cc (]) ReTuRN (sUbScRibeD cHIldRen)",
+  "lIST () INboX \"\\\"\"",
+  "lIsT inBoX ]$]*",
+  "liSt () !w]] \"\\\"\" rETURn (cHIlDRen cHiLdREN chilDrEn veNDOR.\u0017-#)",
+  "lisT (& (\"\")) inbOX (]) rEturn ()"
  ],
  "list-char": [
   "$",
@@ -915,205 +934,205 @@
  ],
  "list-mailbox": [
   "\"\"",
-  "]",
+  "%c",
+  "*!",
+  "]]]",
+  "k",
   "x*",
-  "{7}\r\n",
-  "{8}\r\n",
-  "{9}\r\n"
+  "{19+}\r\n"
  ],
  "list-return-opt": [
-  "! ((^))",
+  "!' (({2}\r\n) ((])))",
+  "CHIldRen",
   "ChiLdrEN",
-  "STAtus (DELETed)",
-  "StAtUS (deLETED UIdNeXt)",
-  "StatuS (uiDvalidiTy)",
-  "VEndoR.{-!",
-  "VenDoR.h-' ((\"\"))",
-  "sUbsCriBED"
+  "SUbsCriBed",
+  "StaTus (UNsEeN uIdVaLiDity)",
+  "VeNdoR.\u00ef\u00aa\u008a-z (((((($))))))",
+  "VenDoR.h-'~ ((((k))))",
+  "sUbSCrIBeD"
  ],
  "list-return-opts": [
-  "RETUrN ()",
-  "ReTUrn (suBsCRiBEd)",
-  "ReTUrn (} ChildreN chIldRen #)",
-  "ReTuRn ()",
-  "ReturN (CHIlDrEN)",
-  "rETURN ()",
-  "rETURn ()",
-  "reTurn (sUBSCrIBed suBscribeD)"
+  "ReTURN (statUs (UNseen sIzE UiDNext) venDOR.\u00f4\u0082\u00ad\u00b8-~ STATUs (DElEtEd UnseEN) cHILdReN SuBscrIBEd VeNdOr.[-&)",
+  "ReTUrn (} ({7}\r\n) STatuS (UiDvAlidiTY uIdnext DElEtEd))",
+  "ReTuRN (VeNDOR.\u00d6\u0095-& ((((((])))))) StatUS (size UIdnEXt uiDnext))",
+  "ReTurN (!)",
+  "ReTurN ()",
+  "rETURn (childreN)",
+  "rETurn (SubscriBEd)",
+  "reTurn ()"
  ],
  "list-select-base-opt": [
-  "! (\"\")",
-  "$ (((x)))",
-  "'",
-  "' ((]))",
-  "SUbScRiBED",
-  "SubscRIbEd",
-  "Y",
-  "sUbscRIBED"
+  "'&",
+  "SUbscRibEd",
+  "SuBScrIbed",
+  "SuBScribed",
+  "SuBsCribeD",
+  "sUBScRiBED",
+  "sUbSCrIBeD",
+  "y ({4}\r\n ({1}\r\n) (\"\") \"\")"
  ],
  "list-select-base-opt-quoted": [
-  "\"! (\"\")\"",
-  "\"$ (((x)))\"",
-  "\"' ((]))\"",
-  "\"'\"",
-  "\"SUbScRiBED\"",
-  "\"SubscRIbEd\"",
-  "\"Y\"",
-  "\"sUbscRIBED\""
+  "\"#& (\"\" ] ((])))\"",
+  "\"'&\"",
+  "\"SUBScrIbed\"",
+  "\"SuBSCRibeD\"",
+  "\"SuBScRIbEd\"",
+  "\"VEnDor.\u00f4\u008f\u0089\u00b0-#!\"",
+  "\"sUbSCribed\"",
+  "\"subscriBED\""
  ],
  "list-select-independent-opt": [
-  "$ (((x)))",
-  "'",
-  "' ((]))",
+  "!,& (((\"\")))",
+  "'&",
   "ReMOte",
-  "RemotE",
-  "Y",
-  "remotE",
-  "vENdOr.\u00f4\u008d\u00bd\u0084-}"
+  "ReMoTe",
+  "rEMoTe",
+  "rEmoTe",
+  "reMoTE",
+  "vEndOR.\u00f4\u008c\u00aa\u008a\u0003-!"
  ],
  "list-select-mod-opt": [
-  "$ (((x)))",
-  "' ((]))",
-  "8 (\"\")",
-  "RecurSIvEmATch",
-  "rECURSiVemATCH",
-  "recurSiVEmATcH",
-  "t ((\"\"))",
-  "y"
+  "'&",
+  "ReCURSiveMatch",
+  "ReCUrsivemAtCH",
+  "rECuRsIVemAtch",
+  "rEcURsIVeMaTcH",
+  "rEcuRsivEmAtCh",
+  "recURSIvEMatch",
+  "veNdor.\u00ef\u00ab\u0090-~#!"
  ],
  "list-select-opt": [
-  "ReCurSivemAtcH",
-  "SUBSCrIbeD",
-  "sUBsCrIBed",
-  "subScRIbED",
-  "subScRIbed",
-  "veNdoR.\u0014-#",
-  "y",
-  "}"
+  "! (\"\")",
+  "ReCuRSIVemAtch",
+  "reCuRsIvemaTCh",
+  "suBsCRibeD",
+  "subsCribed",
+  "vEnDOR.!-! ({2}\r\n)",
+  "vEndOR.\u00f4\u008c\u00aa\u008a-z",
+  "veNdoR.\u0014-#"
  ],
  "list-select-opts": [
-  "(& rEMOte)",
+  "(& ({6}\r\n) vendor.A-~ ((((k)))) remoTe)",
   "()",
-  "(SuBScriBed suBsCrIbed ReCUrsIvematcH REcUrSiVEMAtcH)",
-  "(VeNdOr.\u00dd\u00bd-!)",
-  "(remote REMOtE)"
+  "(VeNdOr.\u00dd\u00bd-!)"
  ],
  "list-wildcards": [
   "%",
   "*"
  ],
  "literal": [
-  "{242+}\r\n",
-  "{5+}\r\n",
-  "{5+}\r\n\u0093\u0005A",
+  "{1940358}\r\n\u0003y",
+  "{3998+}\r\n0",
+  "{4+}\r\n@",
   "{5}\r\n>\u00f5",
-  "{82+}\r\n",
   "{9+}\r\n",
   "{91}\r\ncT",
-  "{983+}\r\n\u00b2K\u00ac"
+  "{9833+}\r\n"
  ],
  "literal8": [
+  "~{2424}\r\n",
   "~{3}\r\n>\u00f5",
-  "~{55}\r\n\u001f\u00eal\u0005",
-  "~{58}\r\n\u0002x",
-  "~{675}\r\n",
+  "~{55}\r\n\u001f\u00eal\u0005Z\u0091\u00e4",
+  "~{75}\r\n",
   "~{7}\r\n",
-  "~{7}\r\nnLs",
-  "~{9}\r\n\u0082",
+  "~{8}\r\n\u008d",
+  "~{98}\r\n",
   "~{9}\r\n\u00c6\u00d1\u00c2"
  ],
  "login": [
-  "LOGIn \"\" \"\"",
-  "LoGIn ] ]",
-  "LoGiN {8}\r\n \"\"",
-  "lOGIN \"\" \"\"",
-  "loGIN $ !",
-  "loGIn \"\" {5}\r\n",
-  "logIn ] E",
-  "login \"\" {1}\r\n"
+  "LOGin \"\f\" ]",
+  "LoGIn ]]w ]!]~E",
+  "LoGiN ##] {7+}\r\n\u0090\u00e2",
+  "LoGiN {6+}\r\n ]",
+  "LoGiN {8+}\r\n\u0083 {1+}\r\n@",
+  "LogiN ] ]J",
+  "loGIn \"\" \"\u00f4\u0080\u00b1\u008b\"",
+  "logiN {7}\r\n\u008b\u00e3 !^"
  ],
  "mailbox": [
-  "\"\"",
-  "InBoX",
-  "InbOX",
-  "InbOx",
-  "]",
-  "iNBOx",
-  "inboX"
+  "\"\\\"\"",
+  "INBOx",
+  "INbOx",
+  "InBox",
+  "]}=]!",
+  "^]$]",
+  "a]]",
+  "inbOx"
  ],
  "mailbox-data": [
-  "2 ExIsTs",
-  "93 ExisTS",
-  "SEaRCh",
-  "SeARch",
-  "flags (\\fLaggEd)",
-  "sEarCH",
-  "sEarcH",
-  "stAtus inbox ()"
+  "7 ReCeNt",
+  "8 RecEnt",
+  "93 exiSTS",
+  "STATUS iNboX (uIdVaLIDity 412 uIdneXT 72 uiDvAliDIty 2)",
+  "flagS ()",
+  "lIsT (\\noInfERIoRs) Nil Inbox (# () ! * {2}\r\n ())",
+  "seARCH",
+  "seArCh"
  ],
  "mailbox-list": [
-  "() \"\u000b\" iNBox",
-  "(\\! \\sUBSCRibEd) \"H\" {6}\r\n (] () \"\" ())",
-  "(\\HAschILDreN \\haScHIldrEn) nil ]",
-  "(\\NoinferIOrS \\NoSELect) nIL {3}\r\n (] 7)",
-  "(\\UNmaRked \\ReMOtE) nIL \"\" (~ ())",
-  "(\\haSNOchiLDREn \\!) nIl InBOX",
-  "(\\reMoTe) nil ] ()",
-  "(\\subsCriBed) nIl {7}\r\n (! 3)"
+  "() NIl InbOx (& ())",
+  "() NIl iNbOx",
+  "(\\#) \"\\\"\" INbOx ({2}\r\n 5 {1}\r\n () ] 7 ] 2:*)",
+  "(\\HAschILDreN \\haScHIldrEn \\HaSnochILdReN) \"\u00f4\u0080\u00b1\u008b\" ] ()",
+  "(\\NOInFerIORS \\RemotE \\NOiNfERIOrs \\hascHILDrEN \\noInferioRS \\SuBSCribED) \"\\\\\" InbOX ()",
+  "(\\rEMOte \\uNmArKed \\y) \"\u001d\" iNBOX ()",
+  "(\\rEMotE \\suBsCriBEd \\haSnoChildrEN \\UNMarKed \\REMoTE) \"\u00f0\u00ba\u008b\u00bf\" ]]",
+  "(\\sUbScriBEd \\noinFerIoRS) \"\\\\\" InbOx"
  ],
  "mbox-list-extended": [
-  "(\"\" ())",
-  "(\"\" 5)",
+  "(!^ 3 {9}\r\n 3 {3}\r\n (\"\"))",
   "()",
-  "(c () \"\" ())",
-  "(k ())",
-  "({9}\r\n 0 = 6 ! () \"\" 9)",
-  "(~ ())"
+  "({0}\r\n (\"\" ~) \"\" ())",
+  "({1}\r\n () \"\" $ \"\" 3 \"\" () $ *:5)",
+  "({9}\r\n 0 =] 3 {6}\r\n ((])))"
  ],
  "mbox-list-extended-item": [
-  "\"\" (\"\")",
-  "\"\" ()",
-  "\"\" 3",
-  "\"\" 6",
-  "\"\" 9",
-  "$ 4:7",
-  "] ()",
-  "k ((,))"
+  "\"\" (' \"\" (]) (k) \"\")",
+  "\"\" (({9}\r\n))",
+  "] $",
+  "] ((]))",
+  "]!]~ ()",
+  "c]]'] ()",
+  "{7+}\r\n\u0090\u00e2 *",
+  "~ ()"
  ],
  "mbox-list-extended-item-tag": [
   "\"\"",
-  "$]",
-  "{7}\r\n",
-  "{8}\r\n",
-  "{9}\r\n"
+  "\"\u00c9\u00a2\u00f4\u0080\u00b1\u008b\"",
+  "]",
+  "{19}\r\n\u0083",
+  "{6+}\r\n",
+  "}=]!]~"
  ],
  "mbox-or-pat": [
-  "%",
-  "(!)",
-  "(=)",
-  "({9}\r\n)",
-  "*",
-  "k"
+  "\"\"",
+  "(\"\u00c9\u00a2\")",
+  "({1+}\r\n)",
+  "({1+}\r\n\u009a)",
+  "({9}\r\nU)",
+  "**!",
+  ",]",
+  "]%"
  ],
  "mbx-list-flags": [
-  "\\$",
-  "\\NosElecT \\noINFErIORS",
-  "\\RemOTe \\! \\NoINferIorS \\nOinfeRIoRs",
-  "\\nOnEXIStENT \\nOiNfErIoRs",
-  "\\noNexiSTEnt \\HaSChilDreN",
-  "\\noinFERIoRS \\noInferioRS \\SuBSCribED",
-  "\\noinFeRIoRS \\HAsnOchiLDREN \\HaSnOchIldreN \\NOiNfERIOrs",
-  "\\uNmArKED \\nOiNferIoRs \\NoiNferioRs"
+  "\\MArkeD \\remOtE \\nOinFeriorS \\Y",
+  "\\NoNeXISTent",
+  "\\NoSELEct",
+  "\\RemOTe \\!!",
+  "\\hAsnoChIlDren \\'}",
+  "\\hasCHILdREN \\noselEcT",
+  "\\nOINFeRIors \\noinfeRIoRS \\HasnOCHiLDREN \\noSelECt",
+  "\\rEmoTE \\UnmArked"
  ],
  "mbx-list-oflag": [
+  "\\$",
   "\\&",
-  "\\HAsnOchiLDREN",
-  "\\HaSnOchIldreN",
-  "\\NOiNfERIOrs",
-  "\\NoINferIorS",
-  "\\hascHiLDrEN",
-  "\\nOinfeRIoRs",
-  "\\reMoTE"
+  "\\&}$!",
+  "\\NoINfERiOrS",
+  "\\SuBSCRibeD",
+  "\\Y",
+  "\\nOinfErIoRs",
+  "\\z"
  ],
  "mbx-list-sflag": [
   "\\MarkED",
@@ -1126,14 +1145,14 @@
   "\\uNmarked"
  ],
  "media-basic": [
-  "\"\" \"\"",
-  "\"\" {5}\r\n",
-  "\"FONt\" \"\"",
-  "\"MeSsAgE\" {1}\r\n",
-  "\"MesSage\" \"\"",
-  "\"auDiO\" {6}\r\n",
-  "\"iMaGe\" \"\"",
-  "{4}\r\n \"\""
+  "\"\" {19+}\r\n",
+  "\"\" {9+}\r\n",
+  "\"IMAGE\" {6+}\r\n\u00a2",
+  "\"MOdEL\" \"\"",
+  "\"MeSSage\" \"\u0013\u00f0\u00a9\u00a4\u00b5p\"",
+  "\"aUdIO\" {78+}\r\n\u00f6\u009a\u0092",
+  "{4+}\r\n\u00f5\u00a1@\u00d3 \"\u00ea\u0097\u0088\"",
+  "{6+}\r\n {9+}\r\n)\u00c6\u00f7"
  ],
  "media-message": [
   "\"MESSAgE\" \"rFC822\"",
@@ -1146,91 +1165,93 @@
   "\"mEssage\" \"RfC822\""
  ],
  "media-subtype": [
-  "\"\u0005\"",
+  "\"\u0007\u007f\"",
   "\"\"",
-  "\"U\"",
   "\"h\"",
-  "{0+}\r\n\u008e",
-  "{3}\r\n>"
+  "{3+}\r\n\u00f5",
+  "{5399+}\r\nA",
+  "{58}\r\n",
+  "{6+}\r\n",
+  "{8064}\r\n"
  ],
  "media-text": [
-  "\"TExt\" {3}\r\n",
-  "\"TeXT\" \"\"",
-  "\"TexT\" \"\"",
-  "\"TexT\" {9}\r\n",
-  "\"tEXt\" \"\"",
-  "\"tExT\" \"\"",
-  "\"text\" \"\"",
-  "\"text\" {8}\r\n"
+  "\"TEXT\" \"\u001a\u0019\b\u00f4\u008f\u0095\u00b0\"",
+  "\"TEXT\" \"\u00ef\u00ab\u0090\"",
+  "\"TExT\" \"\"",
+  "\"TExt\" \"\"",
+  "\"TeXT\" \"\\\\\b\u0013\u00f0\u00a9\u00a4\u00b5\"",
+  "\"TeXt\" {6+}\r\n\u0007\u00fa",
+  "\"tEXT\" \"\"",
+  "\"teXt\" \"\u00ed\u008d\u00bc\""
  ],
  "message-data": [
-  "4 ExPUnge",
-  "4 FetCh (bOdY (((\"moDeL\" \"\" ({6}\r\n {5}\r\n) \"\" \"\" \"\" 2) \"\") {8}\r\n) FlagS ())",
+  "1 FEtcH (flaGs ())",
+  "14103 ExPUnge",
+  "2 expungE",
+  "4 FetCh (bOdYSTRuctUrE (((\"tExt\" \"\" Nil niL \"\" \"BasE64\" 8 1) \"\") {5}\r\n) Flags ())",
   "53 eXpuNGe",
   "55 FeTcH (internaLDATe \"15-jaN-9008 29:73:09 +1435\")",
-  "6694 ExPuNgE",
   "7 FetCh (eNVeloPe (nil nIl nil (({4}\r\n \"\" nil \"\")) (({6}\r\n {4}\r\n Nil nil)) NIl niL NIl nIl {7}\r\n))",
-  "88 FetcH (bodY[] NiL FlAGS () bOdY[] {7}\r\n)",
-  "98 FEtCH (boDy[] NiL)"
+  "88 FetcH (bodY[1] \"\")"
  ],
  "move": [
-  "MOvE * ]",
+  "MOVE 358,2 \"\"",
   "MoVE *,$ iNBOx",
-  "MoVE 8,$ \"\"",
-  "Move 1,$ \"\"",
-  "mOvE $ #",
-  "mOve $ iNbOx",
-  "moVe 1,$ INBoX",
-  "move $ InBOx"
+  "MoVE 34:*,$ iNBOX",
+  "MoVE 87,$ iNboX",
+  "MovE 9,$ INBoX",
+  "mOve $ \"\"",
+  "moVe $ ^]$]",
+  "move 9,8 ]]"
  ],
  "msg-att": [
-  "(BiNARY.SIze[] 7)",
-  "(FLAGs ())",
-  "(FLagS (\\dRAfT \\RECEnt) fLAGS (\\rECENt) BodY (\"TeXt\" {2}\r\n (\"\" {5}\r\n) \"\" \"\" \"8BIt\" 5 6) flAgs () FLaGS ())",
-  "(FLagS (\\recENT \\flaGgED) FlaGs (\\ReCent))",
-  "(FlaGS () Body[] NiL BinaRY[] ~{8}\r\n)",
-  "(bINAry[] nIl)",
-  "(flags (\\ReCeNt) uid 2)",
-  "(rfC822.size 1 BodY (\"teXt\" \"\" (\"\" {3}\r\n) NIL niL \"7bIT\" 1 1))"
+  "(BODY[]<37> {7}\r\n)",
+  "(BoDy ((\"tExt\" \"\" Nil niL \"\" \"BasE64\" 8 1)((\"teXt\" \"\" (\"\" {3}\r\n) NIL niL \"7bIT\" 1 1) {4}\r\n) \"\" (\"\" {0}\r\n)))",
+  "(FLagS (\\recENT \\flaGgED ! \\rEcENt \\recenT \\rECeNt) biNARY.sIze[] 121 Flags (\\FlAGGEd \\flaGGED \\recent \\FLaGGeD))",
+  "(FlAGS (\\rEceNt))",
+  "(bInarY.Size[] 3389)",
+  "(binarY[] niL)",
+  "(boDysTRUctuRE ((\"MEssaGe\" \"RFc822\" nIL NIl nil {1}\r\n 0 (nil NiL nil Nil nIl NIl nIl ((nIl \"\" NIl {1}\r\n)) nIl nil) (({9}\r\n \"\" ({8}\r\n \"\") \"\" \"\" {1}\r\n 9) \"\") 3) \"\") fLaGs (\\recENT) fLagS ())",
+  "(uid 96)"
  ],
  "msg-att-dynamic": [
   "FLags ()",
   "FlAGs ()",
-  "fLAGS (\\reCENT)",
-  "fLAGs (\\ReCENT)",
-  "fLaGS (\\ansWerEd \\seEN \\REceNt \\dRAfT)",
-  "flAGS (\\RecEnt \\FLaGgED)",
-  "flAgs (\\AnSWered \\anSWeREd)",
-  "flAgs (\\dElETEd \\seeN \\reCEnt)"
+  "fLAGS ()",
+  "fLAGS (\\flaGGED \\recent \\FLaGGeD \\RECent)",
+  "fLAGS (\\rECENt)",
+  "fLaGS (\\ansWerEd \\seEN \\REceNt \\dRAfT \\RECEnt)",
+  "fLagS (\\rECeNt)",
+  "flAgs (\\rEceNT)"
  ],
  "msg-att-static": [
-  "BINArY[] nil",
-  "BInArY.SIZE[1] 64",
-  "BinAry.siZE[] 5",
-  "INtErNALDate \"65-JAn-6899 68:88:77 +0900\"",
-  "bOdY[] \"\"",
-  "boDY[HeaDeR.fields (])]<6> nil",
-  "rFC822.SizE 67",
-  "uid 2"
+  "BInaRy.size[3.342.2] 9",
+  "BODyStrUcture (((((((\"texT\" {6}\r\n ({3}\r\n {8}\r\n) nIL nIL {1}\r\n 6 9) \"\") \"\") \"\") {8}\r\n) \"\") \"\")",
+  "BinaRy[8892] ~{1589}\r\n@\u00d3\u00bb\u00cd",
+  "bODYstRUCtURE (((\"mEssAGe\" \"GlObAl\" NIl \"\" nIl \"\" 1 (\"\" nIl ((niL \"\" nil \"\")) niL niL niL ((niL \"\" \"\" {3}\r\n)) NIL \"\" nil) ((((\"Text\" \"\" (\"\" {0}\r\n) {0}\r\n NiL \"bInarY\" 1 3) \"\") {3}\r\n) \"\") 7) {8}\r\n)((\"mEsSAGE\" \"gLobaL\" NIl nIl \"\" {3}\r\n 7 ({9}\r\n nIl NIl nIl ((nIl \"\" NIl {1}\r\n)) nIl nil ((niL Nil niL niL)) \"\" \"\") ((\"tEXt\" {1}\r\n (\"\" {0}\r\n) {9}\r\n {4}\r\n \"7bIt\" 2 4) {3}\r\n) 9) {3}\r\n) \"\")",
+  "boDY[HeaDeR.fields ({6}\r\n)]<95> nIl",
+  "rFc822.siZe 5",
+  "uID 2",
+  "uId 7"
  ],
  "name-component": [
   "%\u00e0\u00bf\u0081\u00db\u00b9",
-  "&\u00f3\u0084\u00ad\u00a6\u00f4\u008a\u008a\u00b6\u00ef\u0089\u00b0",
+  "&\u00f3\u0084\u00ad\u00a6\u00f4\u008a\u008a\u00b6\u00ef\u0089\u00b0\u00dd\u00bd",
   "C",
-  "u",
-  "\u00c4\u00a3\u00cb\u0084\u00f4\u0089\u00b7\u0098\u00d9\u00bb",
-  "\u00dd\u00bd",
+  "\u00c4\u00a3\u00cb\u0084\u00f4\u0089\u00b7\u0098\u00d9\u00bbu",
+  "\u00de\u0087",
   "\u00ed\u0091\u0096I\u00c2\u00b1",
-  "\u00f4\u0087\u008d\u0091Tm\u00f1\u00b0\u009f\u008a"
+  "\u00f4\u0087\u008d\u0091Tm\u00f1\u00b0\u009f\u008azsf",
+  "\u00f4\u008f\u0095\u00b0"
  ],
  "namespace": [
-  "((\"\" \"\u0005\")(\"\" \"z\"))",
-  "((\"\" \"x\")(\"\" nIL)(\"\" nIl))",
-  "((\"\" NIL))",
-  "(({2}\r\n niL)({9}\r\n \"\u00d0\u008d\")(\"\" nil))",
-  "(({5}\r\n \"\u0006\")({0}\r\n \"\u00ee\u0093\u00a4\"))",
-  "(({5}\r\n \"\u00c2\u00b1\")(\"\" nIL))",
-  "(({9}\r\n \"&\"))",
+  "((\"\u0001\u0007\" Nil)({5+}\r\nt \"\u0005\"))",
+  "(({3}\r\n\u00a5\u00af \"\\\"\"))",
+  "(({6+}\r\n NiL {2}\r\n ({1}\r\n {7}\r\n))(\"\\\\\" \"\u001a\" {3}\r\n ({5}\r\n) \"\" (\"\"))(\"\" \"\u00ea\u0097\u0088\")({3}\r\n NIL))",
+  "(({6}\r\n8 \"\u00de\u00bd\"))",
+  "(({9}\r\nU \"\\\\\" \"\" (\"\" {3}\r\n) \"\" (\"\"))({0+}\r\n\u00d8 \"p\")(\"\" \"\\\\\"))",
+  "Nil",
+  "nIl",
   "niL"
  ],
  "namespace-command": [
@@ -1244,40 +1265,40 @@
   "namEsPaCe"
  ],
  "namespace-descr": [
-  "(\"\u0005\" \"\\\"\")",
-  "(\"\u0007\" \"\\\"\")",
-  "(\"\" \"o\")",
-  "(\"\" \"\u00c3\u00ad\" {0}\r\n (\"\") \"\" ({1}\r\n))",
-  "(\"\" niL {5}\r\n ({0}\r\n))",
-  "(\"\\\"\" nil \"\" (\"\"))",
-  "(\"\\\\\" \"\\\"\")",
-  "({1}\r\n \"\b\" \"\" ({2}\r\n))"
+  "(\"\" niL {5+}\r\n (\"\f\" {3}\r\n \"\" {6}\r\n \"\"))",
+  "(\"\\\\\u001a\u0019\b\u00f4\u008f\u0095\u00b0\" NIl {3+}\r\n ({3+}\r\n\u00cc) {7}\r\n (\"\"))",
+  "(\"\u00dc\u008b\u000b5\u0001\u0016\" nIl)",
+  "({1+}\r\n\u00d9\u00ce7\\ NiL)",
+  "({1451}\r\n \"\u00e0\u00b7\u00b1\")",
+  "({58}\r\n \" \" {2}\r\n (\"\" {4}\r\n) \"\" (\"\" \"\"))",
+  "({6}\r\n \"V\")",
+  "({9412+}\r\n\u00dd \"\u000b\" {9+}\r\n ({7}\r\n\u00df) \"\" (\"\" \"\") {6}\r\n (\"\"))"
  ],
  "namespace-response": [
-  "NaMEsPAcE NiL ((\"\" \"\u00ef\u00ab\u0090\")) NiL",
-  "NaMEspAce ((\"\" \"6\")(\"\" \"\u0013\")) ((\"\" nIl)(\"\" \"p\")) nil",
-  "NamespACE (({1}\r\n \"\u0019\")) (({5}\r\n \"\u00ef\u0080\u00b6\")) (({8}\r\n nil))",
-  "nAmespAce (({3}\r\n nIL)) nIl nil",
-  "naMESPacE NIl nIl NIl",
-  "naMeSPACE Nil NIL ((\"\" nil))",
-  "naMeSpaCE nIL nIl nIl",
-  "namESPAcE ((\"\" \"\u0007\")({0}\r\n \"\u00ee\u0093\u00a4\")) (({9}\r\n niL)({2}\r\n \"\u00de\u00bd\")) ((\"\" nil)(\"\" \"\u0001\"))"
+  "NAMEspAce (({7}\r\n\u001a \"k\")) ((\"\" \"\u000b\" {9}\r\n (\"\") {7}\r\n (\"\"))) Nil",
+  "NAMeSpacE ((\"\" \"\u00cf\u00af\" {9}\r\n (\"\") {1}\r\n (\"\"))(\"\" nIl {3}\r\n ({1}\r\n))) ((\"\\\\\" \"\\\\\" \"\" ({1}\r\n))) NiL",
+  "NaMESPACe ((\"\u00f0\u00bc\u0088\u0080\" niL)) nil NiL",
+  "NaMEspAce ((\"6\" \"\u0004\" \"\" (\"\"))({0}\r\n nil)(\"\" Nil)(\"\" \"\\\\\")) ((\"\" \"\u00e4\u008f\u0091\")) (({7+}\r\n\u00fa niL)(\"\" NIL \"\" (\"\"))(\"\" \",\")(\"\" \"\b\")({2}\r\n nIL)(\"\" NIl))",
+  "NamEspace (({0}\r\n niL \"\" (\"\") {1}\r\n ({4}\r\n))(\"\" \"#\")(\"\" Nil)(\"\" NIl)) ((\"\" \"\u0016\")) NiL",
+  "nAMEsPACE Nil ((\"}\" \"c\")(\"\" \"\u0003\")) nIL",
+  "nAMesPace NIl (({6}\r\n\u00c8 \"j\")) (({3}\r\ny \"\u0005\" \"\" ({6}\r\n) \"\" ({3}\r\n)))",
+  "namEsPace ((\"\u000b\" \"\u0014\")) (({6}\r\n# \"\u00f0\u009b\u00af\u00b6\")(\"\" \"\u00f0\u00a5\u008c\u0084\" {6}\r\n ({6}\r\n))) ((\"\u0002\" NIl)(\"\" \"\u00c2\u0094\")(\"\" \"\u00ee\u0089\u00be\")({6}\r\n \"\u00ef\u00bb\u00b4\")({0}\r\n \"\u00ed\u0095\u00b0\"))"
  ],
  "namespace-response-extension": [
-  " \"\u0005\" (\"\u00eb\u00b9\u008d\")",
-  " \"\" (\"\u00f4\u0080\u00b1\u008b\")",
-  " \"\" ({0}\r\n\u0011 \"\" {0}\r\n)",
-  " \"\" ({8}\r\n)",
-  " \"w\" ({7+}\r\n\u00fa)",
-  " {3+}\r\n ({7+}\r\n\u0090 \"\" \"\" \"\" {3}\r\n)",
-  " {3}\r\n> (\"\")",
-  " {5+}\r\n\u00a1 ({8+}\r\nV)"
+  " \"\" ({4941+}\r\n \"Ir\" {7}\r\n* \"\" \"\f\")",
+  " \"\\\"\u00ec\u0084\u0087\f\" ({2}\r\n {66+}\r\n\u00fb)",
+  " \"\u00ed\u009c\u00b2\" (\"\")",
+  " \"\u00ef\u0080\u00b6\" (\"\" {99+}\r\n)",
+  " {0}\r\n (\"\" \"H\")",
+  " {19+}\r\n ({116}\r\n {16+}\r\n\u0007\u00fa \"\")",
+  " {1}\r\n\u00b0B\u0090\u00e2\u00db (\"\f\u0006\u00ea\u0097\u0088\" \"\\\\\\\"\")",
+  " {3+}\r\n\u00f5 (\"h\" \"\u0007\u007f\" {58}\r\n\u0003y \"\" \"\u00ed\u008d\u00bc\")"
  ],
  "namespace-response-extensions": [
   "",
-  " \"\" (\"\" \"\")",
-  " \"\" (\"\" {5}\r\n {0}\r\n)",
-  " \"\" ({6}\r\n \"\" {0}\r\n) \"\" (\"\") {4}\r\n (\"\") \"\" (\"\")"
+  " \"\" (\"\") \"\" ({8}\r\n) \"\u0005\" (\"\u00eb\u00b9\u008d\")",
+  " \"\" (\"\u00ed\u008d\u00bc\" {0}\r\n\u0011\u009a {0}\r\n) \"\")",
+  " {16}\r\n\u00e7\u0007\u00fa (\"\\\\\u001a\u0019\" \"\u0007\u00de\u0095\" {0+}\r\n) {1}\r\n (\"x\")"
  ],
  "nil": [
   "NiL",
@@ -1288,11 +1309,13 @@
   "nil"
  ],
  "nstring": [
-  "\"\"",
-  "NIl",
+  "\"\f\u00eb\u00b9\u008d\"",
+  "Nil",
   "nIL",
-  "{5}\r\n",
-  "{9}\r\n"
+  "niL",
+  "{6+}\r\n",
+  "{998}\r\n",
+  "{9}\r\n\u00ba"
  ],
  "number": [
   "08",
@@ -1339,196 +1362,201 @@
   "\\receNt"
  ],
  "obsolete-recent-response": [
-  "04 reCent",
-  "24 REceNt",
-  "378 reCeNT",
+  "3787 rECent",
+  "4 reCent",
   "43 reCenT",
-  "5 receNT",
-  "502 ReCEnT",
+  "502 rECeNt",
   "57 REceNt",
-  "626 ReceNt"
+  "6194035 reCEnT",
+  "64 RECeNt",
+  "7 RECenT"
  ],
  "obsolete-search-response": [
-  "SEarCh 750 3 2",
+  "SEArCh 3",
   "SeARch",
-  "SeArCH",
   "SeaRcH",
   "sEArch",
-  "seArCh",
-  "seaRCh",
-  "searcH 4 72 7"
+  "seArch",
+  "searcH 3 2 424",
+  "searcH 4 726 94035 9"
  ],
  "oldname-extended-item": [
   "OLDNamE (iNBOX)",
+  "OlDNAMe (Inbox)",
   "OlDNamE (INbox)",
-  "OldNAME (])",
+  "OldNAME (]]'])",
   "OldNaME (inboX)",
   "OldnAme (inBoX)",
   "oldnAMe (INboX)",
-  "oldnAmE (INbOx)",
-  "oldnAme (iNBOx)"
+  "oldnAmE (INbOx)"
  ],
  "option-extension": [
-  "! ((]))",
-  "$ ({1}\r\n ((((])))))",
-  "E ({0}\r\n)",
-  "VendOr.m-6 ((!) |)",
-  "vENdoR.\u00f0\u00b2\u008a\u0098-!",
-  "vEndOR.\u00f4\u008c\u00aa\u008a-z",
-  "}",
-  "~ (((((((\"\")))))) (\"\"))"
+  "$'!",
+  "VENDor.g\u00cb\u008c-'! (\"\")",
+  "VeNdor.\u00f4\u008d\u0099\u00a1\u00f0\u00a5\u00af\u00b1\u00d2\u009c\u00f4\u008e\u0092\u00bf-!| (((((((A))))) {8}\r\n (y)))",
+  "vENDOr.\u00e0\u00be\u00b6\u00f1\u00b0\u009f\u008azs-! ((((((]))))))",
+  "vENdoR.\u00f0\u00b2\u008a\u0098-!! ((] (]) (k)) (, (\"\")))",
+  "vEnDOr.\u00ee\u0094\u00a3)-~! (])",
+  "veNdor.\u00ef\u00ab\u0090-~#!",
+  "~' ({8}\r\n ((((]))) (])) ')"
  ],
  "option-standard-tag": [
   "!",
-  "!,&",
+  "!,&y",
   "#",
-  "#&$",
+  "#&$k",
   "N",
-  "k",
-  "y"
+  "y",
+  "}"
  ],
  "option-val-comp": [
-  "!",
   "\"\"",
-  "($ #) ! ^",
-  "((({1}\r\n))) ($)",
-  "((])) ]",
-  ", (\"\") ((]))",
-  "x (((k)))"
+  "\"3\"",
+  "(!) |] ((]) ((((\"\"))))) (\"\")",
+  "((((]))))",
+  "((] (=)) !) \"\" (])",
+  "(] !)",
+  "({1}\r\n)",
+  "k \"\" ~"
  ],
  "option-val-comp-item": [
-  "\"\"",
-  "(!)",
-  "(\"\" ~)",
-  "((]))",
-  "(])",
-  "]",
-  "~"
+  "\"\u00eb\u00b9\u008d\"",
+  "((($) ]) (!) | ((((])))))",
+  "((] (=)) !)",
+  "((] ~) ((((])))))",
+  "(]] ({1}\r\n))",
+  "({1}\r\n)",
+  "E",
+  "]']"
  ],
  "option-value": [
+  "(\"\" ]] ((((($))))))",
   "(\"\")",
-  "(' \"\" (]) (k))",
-  "((!) ^)",
-  "((]) (((({1}\r\n)))) ($))",
-  "(e)",
-  "({2}\r\n \"\" !)",
+  "('x])",
+  "((! ^))",
+  "(]~ {1}\r\n)",
+  "(k \"\" ~)",
   "({9}\r\n {9}\r\n)"
  ],
  "option-vendor-tag": [
-  "VENdor.qI-2!'",
-  "VeNDor.\t\u00f4\u0089\u00b7\u0098-$'~",
-  "VeNdOr.\u00e8\u009b\u009b\u00ed\u009f\u00b4-'",
-  "vENdOR.\u00d8\u0097-f}",
-  "vEnDoR.\u001a-$",
-  "vEndOr.\u00ed\u0083\u00b8-'",
-  "veNDOR.\u00ee\u008b\u00bc-t'}",
-  "vendoR.\u00ed\u008d\u00bc-y"
+  "VENDOR.\\\u00c8\u0090\u00ec\u008a\u0086-~",
+  "VEndOr.\u0001-&",
+  "VeNDor.\t\u00f4\u0089\u00b7\u0098\u00d9\u00bbu-!$",
+  "VendOr.6-~f&",
+  "VendoR.\u00ed\u0091\u0096I\u00c2\u00b1-!",
+  "vEnDOR.!{\u001a-m!",
+  "vEnDor.{-!",
+  "vendoR.\u00f4\u008f\u0095\u00b0-}"
  ],
  "partial": [
-  "<26.9403>",
-  "<4.29>",
+  "<40358.8>",
   "<5.629>",
-  "<539.98>",
-  "<698.33>",
+  "<53998.3>",
+  "<6.34>",
+  "<6.7>",
+  "<69833.726>",
   "<7.18>",
-  "<7.6>",
-  "<8.8>"
+  "<9.64>"
  ],
  "partial-range": [
-  "035.2",
-  "04.499",
-  "3.5",
+  "0358",
+  "04.4998",
+  "19.5",
+  "2.3424",
   "43.39",
   "57",
-  "6.6",
-  "633",
-  "787"
+  "626.6",
+  "633.9833"
  ],
  "password": [
   "\"\"",
-  "$]",
-  "{7}\r\n",
-  "{8}\r\n",
-  "{9}\r\n"
+  "\"\u00c9\u00a2\u00f4\u0080\u00b1\u008b\"",
+  "]",
+  "{19}\r\n\u0083",
+  "{6+}\r\n",
+  "}=]!]~"
  ],
  "patterns": [
-  "(\"\")",
-  "($%)",
-  "(**)",
+  "(\"\\\"\")",
+  "(%']*)",
+  "(*)",
   "(]%)",
-  "(])",
-  "(~)"
+  "(]b])",
+  "(e)",
+  "(k)",
+  "({63+}\r\n\u00c6\u00d1\u00c2)"
  ],
  "quoted": [
+  "\"\u0005\"",
   "\"\b\u0013\u00f0\u00a9\u00a4\u00b5p\"",
   "\"\"",
-  "\"\u00c2\u00b1\"",
+  "\"V\u000bR\"",
   "\"\u00d7\u008a\"",
-  "\"\u00ef\u00a6\u00a0\""
+  "\"\u00f4\u0083\u00aa\u009b\u00c3\u00ad\u00db\u00ab\""
  ],
  "quoted-specials": [
   "\"",
   "\\"
  ],
  "rename": [
-  "RENaMe INBOx ]",
-  "REnaMe inboX INbOX",
-  "ReNAme & \"\"",
-  "ReNAme inbOx \"\"",
-  "ReNaME \"\" InboX",
-  "RenamE iNboX \"\"",
-  "rENAMe iNbox inbox",
-  "rEnaMe iNbOx ^"
+  "ReNAmE InBOX inBOX",
+  "ReNAme & $!",
+  "ReNaME iNbox inBoX",
+  "ReNamE {2+}\r\n) inbOx",
+  "RenAME InBOX '!",
+  "rENaMe ] #",
+  "rEName inboX inbox",
+  "reNamE inBoX Inbox"
  ],
  "resp-code-apnd": [
-  "APpeNdUId 787 9",
-  "ApPENDuiD 75 5",
+  "APPeNduID 3 9",
+  "ApPENDuid 358892 4",
   "ApPEndUid 3 57",
-  "ApPenDUID 9 9",
-  "AppenDUiD 9 35",
-  "aPpendUid 55 3",
-  "appEndUid 6 9",
-  "appendUiD 11 6"
+  "ApPeNDUId 9 75",
+  "AppEnDUid 9833 55",
+  "AppEnduiD 945 3",
+  "aPpenDuId 458 104",
+  "aPpenduiD 5 11"
  ],
  "resp-code-copy": [
-  "CoPYuiD 93 9,1:8,7:9,3 4",
-  "CoPyUID 29 6,1:2,7 3:9",
-  "CoPyUID 3625 8,9,4:7 6:7,6,8,8",
-  "CoPyUID 89 1,2,3,5,7:3 5",
-  "CopYuid 9 9 5",
-  "cOPyUiD 7 1:7,3:2 1:4,7:1,3:2",
-  "coPyuId 9403 6,1:1,5:4,9,5:1 2",
-  "copyUiD 91 8 6:2,2,8:9,4:2,4:2"
+  "CoPYuiD 77502 2,34 9,4",
+  "CoPYuiD 93 91 8,79:83,5:5,9:6,4,9",
+  "CoPyUiD 5 9:6,8:2,1:8,9:9,4,1:5 7261:265",
+  "cOpyUID 2216 79,72:40,2:8,6:7,6,5:3,6:7,6,8,8 1,33,2,2:1",
+  "cOpyUid 2 2,31,41,2,3,5,7:3,7:8,5:9,6:2 9,28,9,4:5",
+  "coPYUId 8 3,47,8,1:2,5,3:9,8,8:5,3,7:8 9:466,70,3:1,2,7,1:6,2:9,1:8,8,2:2,7:4,2",
+  "coPyuid 9 4 6:4669,141,4,4,1,2",
+  "copYuId 70 93 6728:6"
  ],
  "resp-cond-auth": [
   "OK ",
   "Ok ",
-  "Ok \u00c6\u00b4",
   "PreAutH [trYcrEate] \u00df\u00b1",
-  "pREauTh [tRyCreatE] \u00c9\u00a2",
-  "prEAutH [eXPIred] ^",
-  "preAuth [NoTSAved] ",
-  "preautH [cOrrUptioN] \u00ca\u0090"
+  "oK \u00ef\u00b4\u009c5",
+  "pREauTh [tRyCreatE] \u00c9\u00a2\u00d8\u00ba\u00ed\u0085\u008e\u00d7\u009c",
+  "pReaUTH \u00f0\u0097\u00a6\u00b1\u00e0\u00b0\u0092",
+  "prEautH ",
+  "preAuth [NoTSAved] "
  ],
  "resp-cond-bye": [
-  "BYe [lImIT] \u00d8\u00ba",
-  "BYe [parSE] \u00c4\u00b1",
-  "BYe \u00c6\u0081",
+  "ByE \t\u00ed\u0085\u008e\u00d7\u009c",
+  "ByE [coNTACtADmin] \fw",
   "ByE \u00ef\u00be\u00ae",
-  "bYE ",
-  "bYe ",
-  "byE [lImIT] ",
-  "byE [uNkNoWN-cte] "
+  "Bye ",
+  "Bye <",
+  "Bye \u00d9\u00bb\u0004\u0002G",
+  "bYe \u00f0\u00bd\u0087\u009d",
+  "bye "
  ],
  "resp-cond-state": [
-  "NO [cLosED] ",
-  "NO [copYuId 4 6 9] ",
-  "No \u000b",
-  "No [AUThORizationfAiled] \u00ed\u0089\u00bd",
-  "OK [coNtAcTaDmin] \u00d5\u009b",
-  "Ok [AlERT] ",
-  "bad [limIt] \u00e0\u00ab\u009d",
-  "nO [coNTaCTadmIN] \u00db\u008d"
+  "BaD [aUthEntICAtIoNFAIled] \u0006\u00ed\u008f\u008a\u0006\u00d3\u00ae\u00f4\u0081\u00b7\u0092",
+  "NO [copYuId 458 1:1,5:4,9 8] ",
+  "NO \u00f4\u0089\u0089\u009b",
+  "No [parSE] \u00c4\u00b1\u000b\u00ee\u00a5\u00bd",
+  "OK ",
+  "Ok [copyuiD 7 5,1,7:8 3:8,5,3:7] ",
+  "baD [AuTHOrIzAtionFaIled] ",
+  "no \u00e0\u00b9\u00b0"
  ],
  "resp-specials": [
   "]"
@@ -1536,9 +1564,9 @@
  "resp-text": [
   "",
   "[HasCHILdReN] \u00dd\u00bd",
+  "[PermANenTflAgs (\\Y)] \u00cf\u00b3\u000b",
   "[closED] ",
   "[trycreAte] \u000b",
-  "\u007f\u00ed\u0083\u00b8",
   "\u00c5\u0082\u00f4\u0089\u0089\u009b",
   "\u00ed\u009e\u0095"
  ],
@@ -1553,168 +1581,168 @@
   "unKnowN-CTE"
  ],
  "response": [
-  "' Bad \r\n",
-  "* BYe \r\n",
-  "* ByE \r\n",
-  "* Bye \r\n} no \r\n",
-  "* byE \r\n",
-  "* bye \r\n",
-  "+ \r\n+ \r\n* cApAbILITy iMap4REV2\r\n# No \r\n",
-  "+ \r\n+ \r\n+ \r\n* ENAbleD\r\n! oK \r\n"
+  "# bAd [AUThORizationfAiled] \u00ed\u0089\u00bd\r\n",
+  "&y oK \r\n",
+  "'& nO [;] K\r\n",
+  "* BYe \u00ee\u00be\u008f\r\n* bYe [uIdnexT 7] \r\n",
+  "* ENaBLED\r\n* bYe [PArsE] \u00da\u00a0\r\n",
+  "+ [ALreaDyexISTs] \u00ce\u00a7\r\n* naMeSPACE Nil NIL ((\"\" nil))\r\n* Ok \r\n[ ok \u00df\u0085\r\n",
+  "n$'! bAD \r\n",
+  "|~}9 OK [alREADyexiSts] \u00ce\u00bc\r\n"
  ],
  "response-data": [
-  "* 0 rEcEnT\r\n",
-  "* 39 FetcH (envelOpE (\"\" {6}\r\n ((nIl nil {8}\r\n {5}\r\n)) ((\"\" nIL {6}\r\n {4}\r\n)) ((\"\" {0}\r\n nIl {2}\r\n)) (({7}\r\n {9}\r\n \"\" NIl)) NIL ((nil \"\" \"\" \"\")) NiL nil))\r\n",
-  "* 66 exPuNgE\r\n",
-  "* CaPABILITy 5 iMAp4rEv2\r\n",
-  "* Ok [AlERT] \r\n",
-  "* bYe \r\n",
+  "* 164 FEtCh (boDystRucTurE (((((\"\" \"\" (\"\" \"\") \"\" NIL \"binary\" 2) \"\") \"\") \"\") {0}\r\n))\r\n",
+  "* 39 fetCH (fLaGS (\\ansWerEd \\seEN))\r\n",
+  "* 9 FeTCH (IntERnALdAtE \" 1-aug-6065 64:68:95 -9856\")\r\n",
+  "* BYe [pRivacYREquIREd] \r\n",
+  "* Ok \u00ee\u008b\u00a7\r\n",
   "* eNaBled\r\n",
-  "* eSearCH\r\n"
+  "* lIst (\\NoINFERioRs \\NoNEXIsTENt \\NoInFeRiOrS) \"\u00f0\u00b6\u0088\u0089\" ! ()\r\n",
+  "* ok \u00ed\u008d\u00bc\r\n"
  ],
  "response-done": [
-  "! Ok \r\n",
-  "! oK \r\n",
-  "* BYe \r\n",
-  "* ByE \r\n",
-  "* bYE \r\n",
-  "* bye \r\n",
-  "v NO \r\n",
-  "x oK \r\n"
+  "#8!!# no [SERveRbuG] \u00ed\u0083\u00b8\r\n",
+  "* BYe [HasCHILdReN] \u00dd\u00bd\r\n",
+  "* BYe [apPeNdUid 8 9] \r\n",
+  "* BYe [hAsCHildRen] \r\n",
+  "* Bye [UidNOtsTickY] \u00de\u00bd\u00c7\u00a2\r\n",
+  "* byE \r\n",
+  "|~}9; bad [inUse] \u00ce\u00bc\r\n",
+  "~! baD [AuTHOrIzAtionFaIled] \r\n"
  ],
  "response-fatal": [
-  "* BYE [coNtAcTaDmin] \u00d5\u009b\r\n",
-  "* ByE \u0004\r\n",
-  "* Bye [OverQuotA] \r\n",
-  "* bYE \r\n",
-  "* bYE [cLosED] \r\n",
-  "* bYE [copYuId 4 6 9] \r\n",
-  "* bYe [AUThORizationfAiled] \u00ed\u0089\u00bd\r\n",
-  "* bYe [AlERT] \r\n"
+  "* BYe [parSE] \u00c4\u00b1\u000b\u00ee\u00a5\u00bd\r\n",
+  "* Bye [EXPIrEd] \u00c5\u00ba\r\n",
+  "* Bye [eXpUnGeissUED] \u00f0\u009d\u00a2\u00b2\r\n",
+  "* bYE [copYuId 45 9 8:9] \t\u00ed\u0085\u008e\u00d7\u009c\r\n",
+  "* bYe [ClOsED] \u00f4\u0089\u0089\u009b\r\n",
+  "* bYe [copyuiD 7 5,1 4] \r\n",
+  "* byE [lImIT] \r\n",
+  "* bye \r\n"
  ],
  "response-tagged": [
-  "! bAd [paRse] 5\r\n",
-  "$! NO [PRIVACyrEquIreD] \u00ec\u008a\u0086\r\n",
-  "3z OK \u00f4\u0084\u00b2\u00ab\r\n",
-  "4 Ok [ALreaDyexISTs] \u00ce\u00a7\r\n",
-  "w~ Ok \r\n",
-  "y OK [UnknoWN-CtE] \t\r\n",
-  "~ No \u00f3\u0084\u00ad\u00a6\r\n",
-  "~ OK \r\n"
+  "!z[}&!' BAD [ClOsED] \u00ee\u0094\u00a3\f\u00c6\u00ad\u0001\r\n",
+  "# BaD [TrycrEaTe] \u00e0\u00a7\u0088\r\n",
+  "3z OK \u00f4\u0084\u00b2\u00ab\u00d6\u00b8B\r\n",
+  "<' BAD [ExpirED] \u00d1\u00bb\r\n",
+  "L!! NO [CoNtACTadmIn] \u00f0\u00b9\u008f\u00ab\r\n",
+  "]|y OK [alREADyexiSts] \u00ce\u00bc\r\n",
+  "o~ OK \r\n",
+  "y OK [UnknoWN-CtE] \t\u00ed\u0085\u008e\u00d7\u009c\r\n"
  ],
  "return-option": [
   "ChiLdrEN",
-  "STATus (uidneXT)",
-  "STAtuS (UiDVaLiDiTY)",
-  "StAtUS (deLETED UIdNeXt UidNexT)",
-  "StatuS (uiDvalidiTy)",
-  "SuBsCribEd",
-  "VenDoR.h-' ((\"\"))",
-  "status (uiDNeXT UIdneXT)"
+  "SUBsCRIBED",
+  "VEndoR.{\u001a-}!$ (((\"\")))",
+  "VeNdOr.\u00dd\u00bd-!",
+  "VenDoR.h\u00e9\u00a2\u0092-&$k",
+  "cHILDReN",
+  "cHiLDREn",
+  "subscRiBEd"
  ],
  "search": [
-  "SEarCH FlAggEd",
-  "SeARch ReTurn () cHARSet } uiD 9 frOm {5}\r\n",
-  "SeARch cHArseT \"\" uid $ seNTSINcE 6-apr-9947 cc ' SenTBeFOrE 2-mAr-8260",
-  "SeArch rEtUrn (AlL aLL) bODy {4}\r\n uNkEywoRd $pHisHing",
-  "Search chaRset \"\" seNtsinCe \"8-ApR-7792\"",
-  "seARch cHarset \"\" UNdrAft sENtsiNce 1-dEC-8748 Not LARgEr 1 unSeEN",
-  "seaRCH cHArseT \"\" FLAGGEd",
-  "seaRcH CHarSET ' DrAFt sMALLER 8"
+  "SeARch cHArseT \"\" smALlEr 4 (DRAft AnSWeReD To {8}\r\n sUBjeCT $ Since 9-OcT-4298)",
+  "SeaRCh Before \"7-auG-0097\" sENtBEFoRe \"9-dEc-6199\"",
+  "SeaRCh ChARsET \"\" uid $",
+  "SearCH rETurN (C) UnSeen Body {3}\r\n",
+  "SearCH reTURN (MiN) 7,$ UNaNSWErEd uNansWered unSEen FlAgGed",
+  "sEarCh rEtURn () Cc \"\" beFOre \"5-AuG-5588\" sEnTsIncE 9-Apr-4196",
+  "seARCh rETURn () unfLAgGEd LARgEr 107 UNaNsWEred",
+  "seARch ReTUrN (SAve) chARsET \"\" sEEn"
  ],
  "search-correlator": [
-  " (TAg \"\")",
-  " (TAg ])",
+  " (TAG \"\u001a\u0019\")",
   " (TaG ])",
-  " (Tag \"\")",
-  " (tAG })",
-  " (tAg E)",
-  " (tAg e)",
-  " (tag $)"
+  " (Tag \"zp\")",
+  " (tAG }=]!])",
+  " (tAg ]'])",
+  " (taG a]])",
+  " (tag ])",
+  " (tag ]~)"
  ],
  "search-key": [
-  "BefoRE 8-apR-5814",
-  "LaRgEr 70",
-  "SENtSiNCE \"7-MAR-7415\"",
+  "SEnToN \"2-jAN-2741\"",
   "SmAlLER 19",
-  "UNDELETed",
-  "UNFlagGED",
-  "uNSEEn",
+  "UNfLaggEd",
+  "bOdy ]z'",
+  "lArgeR 171",
+  "or sENtsiNce 1-dEC-8748 OR OR sentON \"1-maR-0876\" SeNtbEfORE \"9-sep-0464\" To {0}\r\n",
+  "uNFLAGGEd",
   "undEleTed"
  ],
  "search-mod-params": [
-  "(!)",
-  "(\"\")",
+  "$",
+  "(\"\" (]) (k) \"\" ~)",
+  "((]))",
   "()",
-  "(])",
-  "({6}\r\n)",
-  "5",
-  "6",
+  "*:8,$",
+  "2",
+  "24",
   "9"
  ],
  "search-modifier-name": [
-  "-.",
-  "-6",
+  "-",
   "-:::",
-  "A5:4",
-  "I",
-  "T",
-  "Y_",
-  "_4"
+  "._6",
+  "T-:",
+  "_6",
+  "ix",
+  "q905:4",
+  "z5"
  ],
  "search-program": [
-  "ChARset \"\" sENtbeFOre \"6-mAy-5690\"",
-  "ChArSET G SuBjEct ]",
-  "CharsEt # boDy ~",
-  "CharseT h UNFlagGED",
-  "cHARSEt \"\" HEAdeR ] ]",
-  "cHArsEt $ $",
-  "chArSet & uNSEEn",
+  "CHarSET ', subJEcT ]&$",
+  "CHarSet $! KeYwOrD !| keyWORD $jUNk",
+  "CharsEt #8!! SENton \"4-jUn-2272\"",
+  "UiD *,*:*",
+  "cc '",
+  "chARseT ~ SEntSINce \"50-JUn-0723\" ON 3-apR-1213 UNDeletED",
+  "sMAlLEr 262 KeYwOrD $NOtjuNk",
   "unAnsWereD SeNTON 9-jUL-1929"
  ],
  "search-ret-data-ext": [
-  "--: ()",
-  "-6 $",
-  "-:: 3",
-  ".-: ()",
-  ".60 (({1}\r\n))",
-  "I 3",
-  "V: 5",
-  "_:O ()"
+  "- (((\"\")) (\"\"))",
+  "- ()",
+  "- 95",
+  "-::: *:8,$",
+  "X 7",
+  "_ (] !)",
+  "_. 53",
+  "s ()"
  ],
  "search-ret-opt-ext": [
-  "-",
-  "-:: 0",
-  ".2:",
-  "R 4:8",
-  "_0",
-  "_:- 3",
-  "_:9 $",
-  "ix"
+  "- ()",
+  "-::: 3",
+  ". 7",
+  ".4 9",
+  "._6",
+  "V3 6",
+  "_4",
+  "o"
  ],
  "search-return-data": [
-  "- ()",
-  ". 5",
-  "All *:*",
-  "I ()",
-  "MIn 14",
-  "aLl $",
-  "mIN 55",
-  "min 8"
+  "- 0",
+  ".:: *:8",
+  "Ak1 (] !)",
+  "All 7:9,4:8,$",
+  "MAX 9",
+  "Y-_ 3",
+  "cOunt 98",
+  "coUNT 4"
  ],
  "search-return-opt": [
-  "CoUNt",
   "MiN",
-  "_",
-  "all",
-  "mAx",
-  "mIn",
-  "max",
-  "sAve"
+  "Min",
+  "_ (!)",
+  "alL",
+  "cOuNT",
+  "counT",
+  "sAve",
+  "saVE"
  ],
  "search-return-opts": [
   " RETUrN ()",
-  " REturn (min _ cOUNt)",
+  " REturn (min _: 4)",
   " ReTUrn (cOUNt max all)",
   " RetUrn (CoUNt)",
   " RetuRn (MAx)",
@@ -1723,81 +1751,77 @@
   " rETURn ()"
  ],
  "search-return-value": [
-  "(!)",
-  "(\"\")",
+  "$",
+  "(\"\" (]) (k) \"\" ~)",
+  "((]))",
   "()",
-  "(])",
-  "({6}\r\n)",
-  "5",
-  "6",
+  "*:8,$",
+  "2",
+  "24",
   "9"
  ],
  "section": [
-  "[1.miME]",
-  "[1.teXt]",
-  "[9.mImE]",
-  "[9]",
-  "[HEaDEr.fIeLDS (#)]",
-  "[HeADer]",
-  "[]"
+  "[19.3.7]",
+  "[4787.mimE]",
+  "[]",
+  "[hEaDer]",
+  "[tEXt]"
  ],
  "section-binary": [
-  "[2.9]",
-  "[2]",
-  "[3.9.7]",
-  "[4.3.3]",
-  "[94.5]",
+  "[4.39]",
+  "[43.9833.5.294.5.8.1]",
+  "[602.3424]",
   "[]"
  ],
  "section-msgtext": [
-  "HEADEr",
-  "HEADeR",
-  "HEadEr.FIeldS ($ ' ])",
-  "TexT",
-  "hEAdEr",
-  "hEaDeR",
-  "hEader.fIeLDs (])",
-  "hEader.fiEldS (])"
+  "HEadEr.FIeldS ($! x])",
+  "TExt",
+  "hEADER",
+  "hEADEr.fIelDs.nOt (\"\" {9}\r\n {2}\r\n ] !)",
+  "heADeR",
+  "heAdER",
+  "tExT",
+  "teXt"
  ],
  "section-part": [
-  "14.499.12",
-  "2.9.2",
-  "4.82",
+  "11",
+  "216",
+  "2216.909.3",
+  "5.7502.3424",
   "53.39",
-  "726.6.5.8.1",
-  "8.478.33",
-  "9.5",
+  "8.4787.4626.6.5.82.9",
+  "8064",
   "91"
  ],
  "section-spec": [
-  "3.9.mime",
+  "4.82",
+  "53998.11.9.2.mimE",
+  "6",
   "6.miME",
-  "9.5.9",
-  "HEADer.fieLDS (])",
-  "HEadEr.fielDs (])",
+  "9.279.55",
   "TExt",
-  "heADEr",
-  "header.fIElds (])"
+  "hEAdEr",
+  "header.fIElds (] ])"
  ],
  "section-text": [
-  "HEaDeR",
   "TExt",
-  "header",
-  "header.fIElds (])",
+  "hEAdEr",
+  "hEaDEr",
+  "header.fIElds (] ])",
   "mIMe",
   "mImE",
   "miME",
-  "tEXt"
+  "miMe"
  ],
  "select": [
-  "SELecT inBOX",
-  "SElECt ]",
-  "SEleCt inboX",
-  "SElecT iNbox",
+  "SElEcT iNbox",
   "SeLEct &",
-  "SeLecT {2}\r\n",
-  "SelEcT !",
-  "sElEct iNBoX"
+  "SelecT ]",
+  "sELeCt ]",
+  "sELect $",
+  "seLeCT inbox",
+  "seLect inBoX",
+  "seLect {1+}\r\n@"
  ],
  "seq-last-command": [
   "$"
@@ -1808,27 +1832,26 @@
  ],
  "seq-range": [
   "*:*",
-  "*:45",
   "2:*",
-  "5:29",
+  "5:294035",
   "7:*",
-  "87:4"
+  "87:*"
  ],
  "sequence-set": [
   "$",
   "*",
-  "3:7,*",
-  "7:9,4:8"
+  "3:983,$",
+  "7:6,6:2"
  ],
  "status": [
-  "STatUs iNBOX (UIDvAlIdiTy UnsEEN UnseEn meSSAGeS)",
-  "StATus & (UIdnext uiDneXt DeletED uIdnext DElEtEd)",
-  "sTAtUs \"\" (UIDvalIDITy deLetED UIDNExT UnSeEn UnseEN)",
-  "sTatUs INbOX (UIdneXt)",
-  "sTatuS InboX (Unseen)",
-  "stATus \"\" (uiDnext DELETed)",
-  "staTuS {3}\r\n (meSsAgEs)",
-  "status ! (uNsEEN uNSEEN)"
+  "STAtUs {7+}\r\n\u0090 (mESSAgES meSsages sIzE uNSEeN)",
+  "STAtuS iNboX (sIzE)",
+  "StATus & (MessageS UidNext)",
+  "StAtUS \"\u00ef\u00ab\u0090\" (UidValidIty)",
+  "sTatus \"\" (uidvalIdITy)",
+  "stATus \"\f\" (MEsSAGES uiDvALIDiTY)",
+  "stAtUs ]J (Unseen)",
+  "statuS InBoX (UiDNext)"
  ],
  "status-att": [
   "MEssaGes",
@@ -1841,24 +1864,24 @@
   "uiDvalidiTy"
  ],
  "status-att-list": [
-  "DELeted 5 DeLeTeD 3 uiDnexT 2",
-  "UIdneXt 12 uIdneXT 7 deleTeD 9 SizE 7 uidvaLIDItY 3",
-  "UidNexT 32",
-  "dEleTEd 9 UnSEen 9 MessAgeS 9 DeletED 8",
-  "siZe 7 uiDVAlIdITY 3 messageS 4",
-  "size 9",
-  "uidvalIdITy 2 UIDneXt 6 sIze 2",
-  "unseen 2 MEsSAgEs 3 uNSEeN 4"
+  "UIDvalIDItY 4",
+  "UIdneXt 121820 mEssAges 5127",
+  "UNseEn 8823",
+  "dEleTEd 91",
+  "messagEs 3 MessAgEs 358",
+  "uIdnext 8 dElEtED 0 UIDVAlIdiTY 3 UnseeN 94 UiDVALidiTy 68 MESsAGes 6 messagES 9",
+  "uNseeN 94692",
+  "uiDneXT 8"
  ],
  "status-att-val": [
-  "DelETED 9",
-  "SizE 75",
-  "UIdnext 7",
-  "UidNext 403",
+  "MEsSaGES 262588",
+  "MeSSaGEs 424",
+  "MessageS 9",
   "dEleTEd 91",
-  "delEteD 72",
-  "mEsSAgES 6",
-  "sIzE 25"
+  "deLETED 6",
+  "mEssaGeS 5",
+  "sIzE 25",
+  "uNsEen 179"
  ],
  "status-option": [
   "StATUS (messageS)",
@@ -1871,107 +1894,109 @@
   "sTatuS (meSSAGeS)"
  ],
  "store": [
-  "StORe 9:*,$ flAgS (\\ansWerEd)",
-  "StOrE 9 fLaGS.Silent (\\dRaFT)",
-  "StoRE *:3,$ +FlAgS.silEnT (\\FlaggeD)",
-  "Store 9,$ fLAgs.sileNt (\\&)",
-  "sToRE 1,*:7 FLAgs ()",
-  "stORe *:*,$ -flagS \\seEn \\ANsWERed \\aNsWeReD",
-  "stOre *:* +FLAgS.siLent (\\aNsWEREd)",
+  "StORe *,$ flaGS \\seEn \\dRAFT",
+  "StORe 9:91 flAgS (\\ansWerEd \\draFT \\flaggeD \\dRaFT)",
+  "StoRE *:31 flaGs (\\flaGGed)",
+  "StorE $ fLaGs.SIlENt ()",
+  "Store 37:*,$ -flAgs (\\ANSWEreD \\ANSwEREd \\AnSwErEd)",
+  "sToRe $ fLaGs.sIlEnt ()",
+  "sTore $ FLaGs.SILeNt \\SeeN \\L \\flaGGED \\delEted \\&",
   "stoRE $ FLAGS ()"
  ],
  "store-att-flags": [
+  "+FLAgS \\deLetED \\DRAft \\seeN \\fLagGed \\SEen",
   "+FLagS.Silent (\\fLaggEd)",
   "+fLAgS.SilEnt ($jUNK)",
-  "FLagS.SilENt \\SEen \\seeN \\fLagGed \\SEen",
-  "Flags.siLent ($ForwARDeD)",
-  "fLAGS ()",
+  "+flaGs.silenT \\DraFt \\ANsWERed \\aNsWeReD",
+  "-flAGS (\\#)",
   "fLAgs ()",
-  "flAgs.siLent ()",
-  "flaGS \\SEeN \\dRafT \\L \\flaGGED"
+  "fLAgs.silENT (\\fLAggeD \\SeEN)",
+  "flaGS \\SEeN \\dRafT \\L \\flaGGED \\delEted \\&"
  ],
  "string": [
+  "\"\u0007\u007f\"",
   "\"\"",
-  "\"U\"",
-  "{3}\r\n>\u00f5",
-  "{5+}\r\n\u00ac",
-  "{5+}\r\n\u00c3\u0093",
-  "{6+}\r\n\u00c2",
-  "{9+}\r\n"
+  "\"h\"",
+  "{3+}\r\n\u00f5",
+  "{4}\r\n\u00f4",
+  "{53998}\r\n",
+  "{58}\r\n"
  ],
  "subscribe": [
-  "SUbscRibE inBoX",
-  "SuBScrIbe \"\"",
-  "SubscRIbE INboX",
-  "SubscRibE iNBOx",
-  "sUBSCriBe iNBOX",
-  "sUBScrIbE !",
-  "sUbsCRIBe ]",
-  "subscRiBE INbOx"
+  "SUBScrIbe INBOX",
+  "SUBScriBe inbox",
+  "SuBScrIbe \"h\"",
+  "SubSCRIbE InbOx",
+  "sUBSCrIBe inbox",
+  "suBscRibE \"\"",
+  "suBscribe ]]]",
+  "subscrIbE ~E~"
  ],
  "tag": [
   "!",
-  "!d",
+  "!-&y",
   "#",
   "#&$k",
-  "&y",
   "N",
   "y",
   "}"
  ],
  "tag-string": [
   "\"\"",
-  "$]",
-  "{7}\r\n",
-  "{8}\r\n",
-  "{9}\r\n"
+  "\"\u00c9\u00a2\u00f4\u0080\u00b1\u008b\"",
+  "]",
+  "{19}\r\n\u0083",
+  "{6+}\r\n",
+  "}=]!]~"
  ],
  "tagged-ext-comp": [
-  "!",
   "\"\"",
-  "($ #) ! ^",
-  "((({1}\r\n))) ($)",
-  "((])) ]",
-  ", (\"\") ((]))",
-  "x (((k)))"
+  "\"3\"",
+  "(!) |] ((]) ((((\"\"))))) (\"\")",
+  "((((]))))",
+  "((] (=)) !) \"\" (])",
+  "(] !)",
+  "({1}\r\n)",
+  "k \"\" ~"
  ],
  "tagged-ext-comp-item": [
-  "\"\"",
-  "(!)",
-  "(\"\" ~)",
-  "((]))",
-  "(])",
-  "]",
-  "~"
+  "\"\u00eb\u00b9\u008d\"",
+  "((($) ]) (!) | ((((])))))",
+  "((] (=)) !)",
+  "((] ~) ((((])))))",
+  "(]] ({1}\r\n))",
+  "({1}\r\n)",
+  "E",
+  "]']"
  ],
  "tagged-ext-label": [
   "-",
-  "-.",
   "-:::",
-  "-O2",
-  ".",
-  "_4",
+  "._6",
+  "T-:",
+  "_6",
   "ix",
-  "q905:"
+  "q905:4",
+  "z5"
  ],
  "tagged-ext-simple": [
-  "*",
-  "*:4,$",
-  "1,$",
+  "$",
   "3",
-  "53",
-  "7:9,4:8",
-  "8",
-  "93"
+  "358",
+  "55",
+  "787",
+  "93",
+  "95"
  ],
  "tagged-ext-val": [
   "$",
-  "(' \"\")",
+  "(\"\" (]))",
+  "((\"\"))",
   "()",
-  "({6}\r\n)",
-  "5",
-  "8",
-  "9"
+  "*:8,$",
+  "004",
+  "9",
+  "998"
  ],
  "tagged-label-char": [
   "-",
@@ -1987,14 +2012,14 @@
   "_"
  ],
  "text": [
-  "\u0004\u0002G",
   "p",
   "\u00c3\u00ad\u000b\u00c9\u008f",
-  "\u00c4\u00a3\u00cb\u0084\u00f4\u0089\u00b7\u0098\u00d9\u00bb",
+  "\u00c4\u00a3\u00cb\u0084\u00f4\u0089\u00b7\u0098\u00d9\u00bb\u0004\u0002G",
   "\u00d7\u009c",
   "\u00e0\u00be\u00b0\u00f4\u0080\u00b1\u008b",
   "\u00e2\u00a6\u00b1\u00e0\u00b0\u0092",
-  "\u00ee\u00b2\u00ab\u00d6\u00b8B"
+  "\u00ee\u00b2\u00ab\u00d6\u00b8B",
+  "\u00f0\u00b0\u00b8\u00bd\u0006\u000b"
  ],
  "time": [
   "05:55:82",
@@ -2007,44 +2032,44 @@
   "97:58:52"
  ],
  "uid": [
-  "UiD ExpuNGE *:*",
-  "UiD mOVe * $",
-  "Uid cOpy 8 \"\"",
-  "uId COPy $ {7}\r\n",
-  "uiD SEaRCh ChARSet E FlaGged",
-  "uiD SeaRch retUrN () unKeywoRd $MdNsENT",
-  "uiD copy $ \"\"",
-  "uid moVe 9:* ]"
+  "UiD CoPy $ iNbox",
+  "UiD FETcH $ faSt",
+  "UiD mOVe * iNbOX",
+  "Uid StoRE *,$ +flAgs.sILENt \\draft",
+  "Uid fEtCh $ FuLl",
+  "uId expUNge $",
+  "uiD SeArCh (Keyword $mdnSEnT)",
+  "uid Copy $ InboX"
  ],
  "uid-expunge": [
-  "EXPunGe *",
-  "EXpunge 4:7,*",
-  "ExPUnGe $",
-  "ExPUngE *,*:4",
-  "ExPUngE 9,$",
+  "ExPUngE *,*:4,$",
+  "ExPUngE 98,$",
+  "ExPuNgE $",
   "ExPunGE $",
-  "ExPunGe 1,$",
-  "eXpUnGe 2"
+  "ExPunGe 19,$",
+  "eXpuNge 13:82",
+  "exPungE $",
+  "expuNgE $"
  ],
  "uid-range": [
-  "104:539",
   "18:3",
+  "3:2",
   "53:9",
-  "55:7",
-  "787:9",
-  "940:458",
-  "98:3",
+  "5:998",
+  "726:940358",
+  "787:4",
+  "8:5",
   "9:57"
  ],
  "uid-set": [
-  "1:2",
-  "2:9",
-  "43",
-  "5",
-  "5:5,2,5,7:7,1",
-  "6:1,9:3,2",
-  "98,4,3,9:6",
-  "9:7"
+  "2",
+  "5,898,78,8:33",
+  "6:629",
+  "7",
+  "8,798:33,36,4,4,9,5,7:7,1,7:3,3,1:8,6,1:2,7",
+  "8,8892",
+  "9",
+  "9:26,9,7:3,2"
  ],
  "uniqueid": [
   "18",
@@ -2056,31 +2081,32 @@
   "9"
  ],
  "unsubscribe": [
-  "UnSUbScRiBE \"\"",
+  "UNsubscribE inbox",
   "UnSUbsCriBE inBOX",
-  "UnSuBSCRibe !",
-  "UnSubScribE iNboX",
-  "UnsuBSCRIbE iNBOX",
-  "uNsUBscribe ]",
-  "unSUbScRIbe }",
-  "unSubScriBe ]"
+  "UnSuBSCRibE inBOX",
+  "UnSubSCRIbE InbOx",
+  "UnsUbscribE INbOX",
+  "uNsUBscribe ]~E~",
+  "unSubScrIBE InBOX",
+  "unsUbscribe iNBOX"
  ],
  "userid": [
   "\"\"",
-  "$]",
-  "{7}\r\n",
-  "{8}\r\n",
-  "{9}\r\n"
+  "\"\u00c9\u00a2\u00f4\u0080\u00b1\u008b\"",
+  "]",
+  "{19}\r\n\u0083",
+  "{6+}\r\n",
+  "}=]!]~"
  ],
  "vendor-token": [
+  "VENDOR.\\\u00c8\u0090\u00ec\u008a\u0086",
+  "VENDor.8",
   "VEnDOr.w\u00e0\u00b8\u00b3",
-  "VEnDOr.\u00ee\u00b6\u00bd",
-  "VeNDor.\t\u00f4\u0089\u00b7\u0098\u00d9\u00bb",
-  "VenDor.\u00e0\u00b0\u0092",
-  "vENdOr.\u00cc\u00acq",
-  "vEnDOR.!{\u001a",
-  "veNDOR.\u00ee\u008b\u00bc",
-  "veNdOR.O\u00d3\u009b\u00d2\u00a4"
+  "VEnDor.\u00f4\u008f\u0089\u00b0\u00dd\u00bd",
+  "VeNDor.\t\u00f4\u0089\u00b7\u0098\u00d9\u00bbu",
+  "vENdOr.\u00f3\u00bc\u0087\u009d",
+  "vEndOR.\u00ee\u00b2\u00ab\u00d6\u00b8I",
+  "venDor.6\u00d2\u00a4\u00f4\u008e\u009e\u008fx\u0002\u00ed\u008d\u00bc"
  ],
  "zone": [
   "+3059",
