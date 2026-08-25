@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+* `NodeVisitor` dispatch is case-insensitive, so `visit_URI` runs.  `visit`
+  looked the node name up casefolded while the dispatch table was keyed on the
+  method-name suffix verbatim, so a method named for the rule as its grammar
+  spells it -- `visit_URI`, `visit_IPv4address`, `visit_ATOM_CHAR` -- was filed
+  under a key nothing ever asked for.  A miss returns `_skip_visit`, so the
+  node was skipped with no error and no warning
+  (https://github.com/declaresub/abnf/issues/259).
+
+  ABNF rule names are case-insensitive, so both spellings always named one
+  rule; where a visitor defines both, the lowercase one still wins, as before.
+
 * Defining a core rule from a grammar module now raises `GrammarError`
   instead of replacing it for every grammar in the process.  The RFC 5234
   appendix B core rules live on the base `Rule` class so any grammar can
