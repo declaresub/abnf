@@ -44,6 +44,47 @@ Postal.load_grammar(
 than the base `Rule`) so your rules live in their own registry and cannot collide
 with another grammar's.
 
+## You cannot redefine a core rule
+
+The RFC 5234 appendix B core rules — `ALPHA`, `BIT`, `CHAR`, `CR`, `CRLF`,
+`CTL`, `DIGIT`, `DQUOTE`, `HEXDIG`, `HTAB`, `LF`, `LWSP`, `OCTET`, `SP`,
+`VCHAR`, `WSP` — live on the base `Rule` class so that every grammar can use
+them without declaring them. Reference them freely:
+
+```python
+R.create("pair = DIGIT ALPHA")
+```
+
+Defining one is refused, because there is only one of each and it is shared:
+
+```python
+R.create('DIGIT = %x30-39 / "_"')
+# GrammarError: 'DIGIT' is a core rule from RFC 5234 appendix B, shared by every
+# grammar, so a grammar cannot define it ...
+```
+
+Without that check the definition replaced `DIGIT` for *every* grammar in the
+process. A config-format grammar allowing `1_000` made `abnf.grammars.rfc3339`
+accept `2_26` as a four-digit year
+([issue #256](https://github.com/declaresub/abnf/issues/256)).
+
+Older RFCs — RFC 2616 section 2.2 among them — restate these rules in their own
+text. Leave those lines out when you transcribe: the core rules are already
+there, and the ones those RFCs define are the same rules.
+
+```{warning}
+You can change a core rule for everything by defining it on the base class:
+
+    from abnf.parser import Rule
+    Rule.create('DIGIT = %x30-39 / "_"')
+
+This is almost never a good idea. It rewrites the rule for every grammar in the
+process, including the bundled ones and any library that imports them, and
+nothing downstream has a way to opt out. It is allowed because it is explicit
+about doing so — a grammar module cannot reach this by accident — and it emits
+a `GrammarWarning`. Prefer a differently named rule of your own.
+```
+
 ## Left recursion will not work
 
 `abnf` is a recursive-descent parser, so a rule that can reach itself in

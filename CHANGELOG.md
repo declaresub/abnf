@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+* Defining a core rule from a grammar module now raises `GrammarError`
+  instead of replacing it for every grammar in the process.  The RFC 5234
+  appendix B core rules live on the base `Rule` class so any grammar can
+  reference them, and `Rule.get` falls back to that registry -- which is right
+  for a reference and wrong as somewhere to write.  `Rule("DIGIT")` and
+  `MyGrammar("DIGIT")` were one object, so a grammar defining
+  `DIGIT = %x30-39 / "_"` made `abnf.grammars.rfc3339` accept `2_26` as a
+  four-digit year (https://github.com/declaresub/abnf/issues/256).
+
+  `=/` is refused for the same reason: it mutates the shared rule exactly as
+  `=` does.  Referencing core rules is unaffected, and rules with ordinary
+  names remain per-subclass as documented.
+
+  Defining one on `abnf.parser.Rule` itself is still permitted -- it is
+  explicit about its scope and it warns -- but `how-to/write-your-own-grammar-
+  module` now says plainly why you should not.  Older RFCs such as RFC 2616
+  restate the core rules in their own text; leave those lines out when
+  transcribing, as `abnf.grammars.rfc2616` already does.
+
 * A comment inside `defined-as` no longer turns `=` into `=/`.  RFC 5234
   section 4 has `defined-as = *c-wsp ("=" / "=/") *c-wsp`, and `c-wsp` reaches
   `comment` by way of `c-nl`, so a comment may sit on either side of the
