@@ -2289,3 +2289,66 @@ def test_259_an_unrelated_node_is_still_skipped():
 
     node = rfc3986.Rule('URI').parse_all('http://example.com/')
     assert V().visit(node) is None
+# Issue #258: `first_match_alternation` is a descriptor serving both supported
+# spellings.  Assigning it on a class object -- rather than in a class body --
+# was an ordinary type.__setattr__ that dropped a bool into the class dict and
+# shadowed it.  Nothing read that bool, so the attribute reported a setting the
+# parser was not using; and the documented per-rule spelling silently stopped
+# working for that class from then on, because it too went to a plain dict.
+def test_258_assigning_on_the_class_object_is_refused():
+    class M(Rule):
+        pass
+
+    M.create('r = "a" / "ab"')
+    with pytest.raises(AttributeError, match='cannot be assigned'):
+        M.first_match_alternation = True
+
+
+def test_258_the_message_names_both_supported_spellings():
+    class M(Rule):
+        pass
+
+    with pytest.raises(AttributeError) as excinfo:
+        M.first_match_alternation = True
+    message = str(excinfo.value)
+    assert 'class body' in message
+    assert "first_match_alternation = True" in message
+
+
+def test_258_class_body_spelling_still_works():
+    class N(Rule):
+        first_match_alternation = True
+
+    N.create('r = "a" / "ab"')
+    # First match takes "a" and stops; longest match would consume "ab".
+    assert N('r').parse('ab', 0)[1] == 1
+
+
+def test_258_per_rule_spelling_still_works():
+    class P(Rule):
+        pass
+
+    P.create('r = "a" / "ab"')
+    assert P('r').parse('ab', 0)[1] == 2
+    P('r').first_match_alternation = True
+    assert P('r').parse('ab', 0)[1] == 1
+    P('r').first_match_alternation = False
+    assert P('r').parse('ab', 0)[1] == 2
+
+
+def test_258_a_non_bool_in_the_class_body_is_refused():
+    """It shadows the descriptor exactly as a stray assignment does."""
+    with pytest.raises(TypeError, match='must be True or False'):
+
+        class Q(Rule):
+            first_match_alternation = 1  # pyright: ignore[reportAssignmentType]
+
+
+def test_258_other_class_attributes_are_unaffected():
+    class R2(Rule):
+        pass
+
+    R2.grammar = ['r = "a"']
+    assert R2.grammar == ['r = "a"']
+    R2.create('r = "a"')
+    assert R2('r').parse_all('a').value == 'a'

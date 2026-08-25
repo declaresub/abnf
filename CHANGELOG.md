@@ -12,6 +12,23 @@
 
   ABNF rule names are case-insensitive, so both spellings always named one
   rule; where a visitor defines both, the lowercase one still wins, as before.
+* Assigning `first_match_alternation` on a grammar class raises
+  `AttributeError` instead of being accepted and ignored.  The setting is
+  implemented by a descriptor serving both supported spellings; assigning it on
+  a class object -- rather than in a class body -- dropped a plain `bool` into
+  the class dict and shadowed that descriptor.  Nothing read the bool, so the
+  attribute reported a setting the parser was not using, and the documented
+  per-rule spelling then failed silently for that grammar from then on
+  (https://github.com/declaresub/abnf/issues/258).
+
+  Both supported spellings are unchanged.  A non-`bool` in the class body is
+  refused too, with `TypeError`: it shadows the descriptor exactly as a stray
+  assignment does.
+
+  `Rule` now has a metaclass, which is what makes the assignment interceptable.
+  One consequence worth knowing: a subclass combining `Rule` with a class whose
+  metaclass is unrelated -- `class R(Rule, abc.ABC)` -- now raises a metaclass
+  conflict.  Combining with `typing.Generic` and ordinary bases is unaffected.
 
 * Defining a core rule from a grammar module now raises `GrammarError`
   instead of replacing it for every grammar in the process.  The RFC 5234
