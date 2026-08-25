@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+* Documentation corrections and additions prompted by the recent grammar work:
+
+  * Left recursion is now documented at all.  A recursive-descent parser cannot
+    evaluate it, and under longest-match alternation the rule matches *nothing*,
+    not even the alternatives that would succeed alone -- so the symptom is a
+    rule that refuses everything, which reads as a bad grammar rather than an
+    unsupported one.  `how-to/write-your-own-grammar-module` gives the rewrite,
+    and `explanation/alternation-semantics` explains why longest match makes it
+    total.
+  * A prose value raises `ParseError`, not `GrammarError`.
+    `how-to/validate-input` said the latter.  The distinction matters: a prose
+    failure is indistinguishable from a mismatched input, so in an alternation
+    the parse can succeed with the prose rule absent from the tree, which is
+    how #245 survived.
+  * `explanation/alternation-semantics` recommended `first_match_alternation`
+    per rule, citing `rfc3986`'s `host` as the example to follow.  #232 removed
+    exactly that, because under first match the alternation commits to
+    `IPv4address` on a prefix and rejects `1.2.3.4.5` outright.  No bundled
+    grammar uses the flag now.
+  * The import-collision `GrammarWarning` from #246 is documented, in
+    `reference/api` and in the how-to's section on importing rules.
+  * The README says how to regenerate both fuzz corpora, and what the abnfgen
+    one is for.
+
+  Every example added here was executed rather than written from memory.
+
 * The abnfgen corpus generator no longer silently drops samples containing
   surrogates.  It decoded abnfgen's output as strict UTF-8, which refuses
   them -- so grammars admitting the surrogate block were quietly under-tested,

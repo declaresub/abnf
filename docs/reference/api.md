@@ -93,8 +93,19 @@ mind that this checks only for the presence of `lparse`, not its signature.
 .. autoexception:: abnf.GrammarWarning
 ```
 
+`GrammarWarning` is raised for a rule redefined by a later `=` (rather than
+extended by `=/`), for two rules whose names differ only in case, and for an
+import that overwrites a definition which is not a prose placeholder — see
+{doc}`../how-to/write-your-own-grammar-module`.
+
 `ParseError.start` is the code-point offset where the parse failed, and is
 identical on both backends.
+
+A **prose value** raises `ParseError`, not `GrammarError`: `abnf` cannot
+implement `<any CHAR except CTLs>`, so a rule containing one always fails, and
+it fails indistinguishably from a mismatched input. In an alternation or an
+optional group that means the parse can succeed with the prose rule simply
+absent from the tree — see {doc}`../how-to/validate-input`.
 
 `ParseError.parser` describes what failed, but *how* it describes it depends on
 the backend: the pure-Python implementation stores the parser object itself,

@@ -44,6 +44,44 @@ Postal.load_grammar(
 than the base `Rule`) so your rules live in their own registry and cannot collide
 with another grammar's.
 
+## Left recursion will not work
+
+`abnf` is a recursive-descent parser, so a rule that can reach itself in
+leftmost position has no base case to reach: it recurses until the stack runs
+out. The failure is reported as a `ParseError`, which makes it look like the
+input was wrong.
+
+```text
+list = item / list "," item          ; do not write this
+```
+
+Under longest-match alternation — the default — this is worse than it looks.
+Every alternative is evaluated, so the recursive one is always reached, and the
+rule matches **nothing at all**, not even the plain `item` that its own first
+alternative admits.
+
+```python
+Rule("list").parse_all("a")          # ParseError, despite `item` matching
+```
+
+Rewrite it to the right-recursive form, which describes the same language:
+
+```text
+list = item *("," item)
+```
+
+Where the repeated part is more than one element, hoist it into its own rule:
+
+```text
+comp      = comp-item *(SP comp-item)
+comp-item = astring / "(" comp ")"
+```
+
+RFCs do write left-recursive rules — RFC 9051 has two, which is
+[issue #252](https://github.com/declaresub/abnf/issues/252) — so transcribing a
+grammar faithfully is not sufficient. If a rule of yours refuses everything
+including its own simplest alternative, this is the first thing to check.
+
 ## Importing rules from another module
 
 Real RFC grammars reuse rules from other RFCs. The bundled grammars do this with the
@@ -79,3 +117,24 @@ The imported rules are stitched into the subclass's registry at class-definition
 time, so `Rule("preference")` can reference `token` and `OWS` as if they were
 defined locally. Browse `abnf.grammars` for more patterns, and see
 {doc}`../reference/bundled-grammars` for the full list.
+
+### An import replaces a rule of the same name
+
+Imports are applied *after* the grammar text, so importing a name your own
+grammar defines replaces your definition with the other module's. That is
+deliberate — it is how a module declares a rule it does not own and lets the
+import supply it:
+
+```text
+token = <token, see [HTTP], Section 5.6.2>        ; filled in by the import
+```
+
+Replacing anything *other* than a prose placeholder is almost always an
+accident, and `abnf` warns about it:
+
+```python
+importing "atom" from rfc5322 overwrites the definition rfc9051 declares for it.
+```
+
+The warning is a `GrammarWarning`. Turn it into an error while developing a
+grammar with `warnings.simplefilter("error", GrammarWarning)`.

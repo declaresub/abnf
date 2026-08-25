@@ -72,5 +72,29 @@ match, because `path-abempty` is listed first and succeeds immediately
 
 So first match is not a drop-in speedup for a grammar transcribed from an RFC.
 Enable it for a grammar written with ordered choice in mind, or per rule where
-you have checked the alternatives — `abnf.grammars.rfc3986` does the latter for
-`host`, where the RFC's own order is the intended one.
+you have checked every alternative.
+
+No bundled grammar uses it. `abnf.grammars.rfc3986` set it on `host`, citing
+RFC 3986 section 3.2.2, and it was wrong: under first match the alternation
+commits to `IPv4address` on a *prefix*, so `1.2.3.4.5` matched `1.2.3.4`,
+`reg-name` was never tried, and the whole URI was rejected. Section 3.2.2 is
+about attributing a match of the *whole* host, which longest match already
+does — a full IPv4 host ties with `reg-name`, and declaration order breaks the
+tie in `IPv4address`'s favour
+([issue #232](https://github.com/declaresub/abnf/issues/232)).
+
+## Longest match makes left recursion total
+
+Because every alternative is evaluated, a rule that can reach itself in
+leftmost position is always reached — so it matches nothing at all, not even
+the alternatives that would have succeeded on their own:
+
+```text
+list = item / list "," item          ; matches nothing, not even `item`
+```
+
+Recursive descent cannot evaluate that alternative under either setting, but
+first match would at least let a leading `item` through. See
+{doc}`../how-to/write-your-own-grammar-module` for the rewrite. RFC 9051
+contained two such rules
+([issue #252](https://github.com/declaresub/abnf/issues/252)).

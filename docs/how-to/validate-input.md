@@ -33,6 +33,26 @@ node, offset = rfc5322.Rule("address").parse("test@example.com and more", 0)
 
 ```{note}
 A `ParseError` carries the parser and offset at which parsing failed. A
-`GrammarError` (a different exception) means the grammar itself is unusable at that
-point — an undefined rule or a prose-value — not that the input was invalid.
+`GrammarError` (a different exception) means the grammar itself is unusable at
+that point — an undefined rule — not that the input was invalid.
+```
+
+```{warning}
+A **prose value** raises `ParseError`, not `GrammarError`. RFC grammars are full
+of prose (`<any CHAR except CTLs>`), and `abnf` cannot implement English: a rule
+containing one always fails, and it fails the same way a mismatched input does.
+
+That is worth knowing because the failure need not surface as a rejection. If
+the rule sits in an alternation, or is optional, some other alternative absorbs
+the input and the parse *succeeds* with the prose rule missing from the tree:
+
+```python
+# RFC 9051 before issue #245: `resp-text-code` ended in a prose value, so
+# `resp-text` fell through to `[text]`, which admits almost anything.
+node = rfc9051.Rule("resp-text").parse_all("[MYCODE some text] hello")
+[child.name for child in node.children]     # ['text'] -- no resp-text-code
+```
+
+Replace prose with the character set it describes. All the bundled grammars do,
+and a test asserts none of them reaches a prose value.
 ```

@@ -91,6 +91,19 @@ Run the test suite (skip the slower fuzz tests with `--ignore=tests/fuzz`):
 pytest --cov-report term-missing --cov=abnf
 ```
 
+`tests/fuzz/` holds two committed corpora, replayed by every run. If you change a
+grammar module, regenerate them:
+
+```console
+python tests/fuzz/gen_corpus.py rfc9051           # Hypothesis, walks the built parser
+python tests/fuzz/gen_abnfgen_corpus.py rfc9051   # abnfgen, reads the grammar text
+```
+
+The second needs [abnfgen](http://www.quut.com/abnfgen/) on your PATH (or `ABNFGEN`
+set to it); CI only replays what is committed. Reading the text rather than the
+built parser is the point — it catches a grammar that did not become the parser it
+describes, which a generator walking that parser cannot.
+
 Pre-commit hooks run ruff, pyright, check-manifest, and tox. Install them once with
 `pre-commit install`. See the *Explanation* and *How-to* docs for working with the
 Rust backend.
