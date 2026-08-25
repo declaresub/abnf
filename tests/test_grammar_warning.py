@@ -157,3 +157,68 @@ def test_246_no_bundled_grammar_warns_on_import():
     )
     warned = [line for line in result.stdout.splitlines() if line]
     assert not warned, f"bundled grammars emit GrammarWarning on import: {warned}"
+
+
+# Issue #257: RFC 5234 section 4 has `defined-as = *c-wsp ("=" / "=/") *c-wsp`,
+# and c-wsp reaches `comment` through c-nl -- so a comment may sit on either
+# side of the operator and is part of the defined-as span.  `visit_defined_as`
+# returned that span stripped, which removes whitespace but not comment text,
+# so the result compared unequal to "=" and fell into the "=/" branch.
+def test_257_comment_before_equals_defines_a_new_rule():
+    class R(Rule):
+        pass
+
+    R.load_grammar('bar ;note\r\n = "x"\r\n')
+    assert R('bar').parse_all('x').value == 'x'
+
+
+def test_257_comment_before_equals_is_still_a_redefinition():
+    class R(Rule):
+        pass
+
+    R.load_grammar('foo = "x"\r\n')
+    with pytest.warns(GrammarWarning, match="redefines 'foo'"):
+        R.load_grammar('foo ;note\r\n = "y"\r\n')
+    # '=' discards the earlier definition; '=/' would have kept it.
+    assert R('foo').parse_all('y').value == 'y'
+    with pytest.raises(ParseError):
+        R('foo').parse_all('x')
+
+
+def test_257_comment_containing_the_other_operator_is_not_the_operator():
+    """Scanning the span for '=/' would misread this as an incremental rule."""
+
+    class R(Rule):
+        pass
+
+    R.load_grammar('foo = "x"\r\n')
+    with pytest.warns(GrammarWarning):
+        R.load_grammar('foo ;see =/ below\r\n = "y"\r\n')
+    with pytest.raises(ParseError):
+        R('foo').parse_all('x')
+
+
+def test_257_comment_after_the_operator_too():
+    class R(Rule):
+        pass
+
+    R.load_grammar('baz =;note\r\n "x"\r\n')
+    assert R('baz').parse_all('x').value == 'x'
+
+
+def test_257_real_incremental_alternative_still_works():
+    class R(Rule):
+        pass
+
+    R.load_grammar('q = "x"\r\nq =/ "y"\r\n')
+    assert R('q').parse_all('x').value == 'x'
+    assert R('q').parse_all('y').value == 'y'
+
+
+def test_257_incremental_alternative_with_a_comment():
+    class R(Rule):
+        pass
+
+    R.load_grammar('q = "x"\r\nq ;note\r\n =/ "y"\r\n')
+    assert R('q').parse_all('x').value == 'x'
+    assert R('q').parse_all('y').value == 'y'
