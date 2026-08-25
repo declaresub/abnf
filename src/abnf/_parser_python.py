@@ -631,7 +631,42 @@ class _FirstMatchAlternation:
         instance._set_first_match_alternation(value)
 
 
-class Rule:
+class _RuleMeta(type):
+    """Metaclass for :class:`Rule`, guarding one attribute.
+
+    ``first_match_alternation`` is a descriptor.  Assigning to it *on a class
+    object* -- ``MyGrammar.first_match_alternation = True``, rather than in the
+    class body -- is an ordinary ``type.__setattr__``, which drops a plain
+    ``bool`` into the class dict and shadows the descriptor.  Nothing then
+    reads that bool: alternations are built from ``_first_match_default``,
+    which is untouched.  So the attribute reported a setting the parser was not
+    using, and, worse, the documented per-rule spelling
+    (``rule.first_match_alternation = True``) stopped working for that class
+    from then on, silently, because it too went to a plain dict rather than
+    through the descriptor.
+
+    Refusing the assignment leaves the descriptor in place, so both supported
+    spellings keep working and neither can be quietly disabled.
+    See https://github.com/declaresub/abnf/issues/258 .
+    """
+
+    def __setattr__(cls, name: str, value: typing.Any) -> None:
+        if name == "first_match_alternation":
+            msg = (
+                "first_match_alternation cannot be assigned on a grammar class. "
+                "Set it in the class body, before the grammar is loaded:\n\n"
+                "    class MyGrammar(Rule):\n"
+                "        first_match_alternation = True\n\n"
+                "or on one rule: MyGrammar('rulename').first_match_alternation = "
+                "True.  Assigning it here would replace the descriptor that "
+                "implements both, leaving the flag reading back True while the "
+                "parser went on using longest match."
+            )
+            raise AttributeError(msg)
+        super().__setattr__(name, value)
+
+
+class Rule(metaclass=_RuleMeta):
     """A parser generated from an ABNF rule.
 
     To create a Rule object, use Rule.create.
@@ -757,6 +792,14 @@ class Rule:
     def __init_subclass__(cls, **kwargs: typing.Any) -> None:
         super().__init_subclass__(**kwargs)
         raw = cls.__dict__.get("first_match_alternation")
+        if raw is not None and not isinstance(raw, bool):
+            msg = (
+                "first_match_alternation must be True or False, not "
+                f"{type(raw).__name__}.  A value of any other type is left "
+                "shadowing the descriptor that implements the setting, which "
+                "would disable it for this grammar without saying so."
+            )
+            raise TypeError(msg)
         if isinstance(raw, bool):
             cls._first_match_default = raw
             # Restore the inherited property: a plain bool left in the

@@ -15,6 +15,23 @@ class MyGrammar(Rule):
     first_match_alternation = True
 ```
 
+```{important}
+It must be set **in the class body**, not assigned on the class afterwards:
+
+    MyGrammar.first_match_alternation = True     # AttributeError
+
+That assignment would replace the descriptor implementing this setting with a
+plain `bool`. The flag would then read back `True` while the parser carried on
+using longest match, and the per-rule spelling below would stop working for
+that grammar entirely. Since 2.9.0 it is refused rather than accepted and
+ignored ([issue #258](https://github.com/declaresub/abnf/issues/258)).
+
+To decide the setting at run time, put the value in the class body:
+
+    class MyGrammar(Rule):
+        first_match_alternation = use_first_match
+```
+
 Set in a class body it becomes the grammar's default, applied to every
 alternation built for it — including alternations nested inside a group or
 repetition, which a rule does not otherwise expose.
