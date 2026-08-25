@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+* The abnfgen corpus generator no longer silently drops samples containing
+  surrogates.  It decoded abnfgen's output as strict UTF-8, which refuses
+  them -- so grammars admitting the surrogate block were quietly under-tested,
+  which is the exact code-point range issue #173 was about.  `rfc9116`'s
+  `comment` is one: RFC 9116 writes it `"#" *(WSP / VCHAR / %x80-FFFFF)`, and
+  that range spans `D800-DFFF`.  Decoding with `surrogatepass` keeps them, and
+  the corpus now generates to depth 9 rather than 5, where the more
+  interesting samples live.
+
+  `tests/test_rfc9116.py` pins both ends of that range and both ends of the
+  surrogate block outright, rather than leaving it to whether a given seed
+  happens to produce one.
+
 * `abnf.grammars.rfc9051`'s `tagged-ext-comp` and `option-val-comp` match
   something.  Both matched *nothing at all* -- not even the bare `astring`
   their own first alternative admits -- because RFC 9051 writes them

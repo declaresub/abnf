@@ -7,49 +7,50 @@
   "  \t\t"
  ],
  "Strict-Transport-Security": [
-  "STriCt-tRANSPoRt-SECUrItY:\t  \t ;;",
-  "StRIct-trANspoRT-seCuRIty: \t\t ;\t |=.",
-  "StRict-TRAnSpOrt-SEcURity:!=&",
-  "sTRicT-trAnspOrt-securITY:\t",
-  "stRICT-tRaNSporT-sECuRitY:",
-  "stRict-tRaNSPOrT-Security:\t\t\t#",
-  "strICT-tRANspOrt-SecUrIty:\t",
-  "strIct-transpORT-sECurity: ^ ;|=\"\";$;!"
+  "STRICt-TranspOrT-SEcURIty:  +'^",
+  "STrICt-transpOrt-secURiTY:'\t ;\t.=' \t\t ; \t \t ;  \t",
+  "StRIct-trANspoRT-seCuRIty: \t\t`&|+=+%",
+  "StrIcT-trAnspoRT-SeCuriTY:\t.; \t",
+  "sTRict-TRanSPoRt-secuRiTy:  \t\t-|.=&%;\t$%'=\"\";",
+  "sTriCt-trAnsPoRt-secUrITy:\t\t !; ^=\"\\\u0093\"",
+  "sTricT-TRaNsPort-SeCUritY: RTX=^ ;&^=_  \t;\t;\t \t;!=\"\"",
+  "sTrict-TrAnsPorT-sECuRitY: \t'\t;\t \t ;\t&=\"\""
  ],
  "directive": [
-  "!w",
-  "#_=\"\"",
-  "%+=\"\"",
+  "#_$=w",
   "'",
-  "*.=\"\"",
-  "1=1",
-  "_!=A"
+  "*.$^!`=\"!\"",
+  "^`+!_",
+  "_",
+  "_!^=1",
+  "`*"
  ],
  "directive-name": [
+  "!",
   "!$",
   "'",
-  "-#$",
-  "2",
+  "+",
   "_!^",
   "_|.",
-  "~"
+  "~",
+  "~~"
  ],
  "directive-value": [
+  "\" \t\"",
   "\"\"",
+  "\"\\\u00ed\"",
   "\"\\\u00f3\\\t\"",
-  "#",
-  "#A",
-  "#_",
-  "+",
-  "01",
-  "_"
+  "#._#~",
+  "'$*#",
+  "-",
+  "`&|+.%"
  ],
  "quoted-string": [
   "\"\"",
+  "\"\\\t\"",
   "\"\\ \"",
-  "\"\\w\\ ]\\\t\"",
   "\"e\"",
-  "\"\u00c49\\\t!\""
+  "\"\u00c49\\\t!|\\ ]\\\t\""
  ],
  "token": [
   "!",

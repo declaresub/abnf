@@ -4,7 +4,7 @@
   "\t",
   "\t\t",
   " ",
-  "  \t"
+  "  \t\t"
  ],
  "OWS": [
   "",
@@ -14,61 +14,61 @@
   "  \t\t"
  ],
  "Prefer": [
-  "PrEFer: +$;*;|;,&=`;#; , `",
-  "PrefER: r^=\"\"",
-  "pREfeR: ~=\"\" ;#,&=\"\"",
-  "pRefer:`'=`;^ ,^;+;, Z;,+",
-  "prEFER:\t\t-;+;#;",
-  "prEFEr:_=&;;-;",
-  "prEfER:.",
-  "preFer:\t-S=-\t;;%"
+  "PREFER:\t\t  ~`*~",
+  "PREfeR:$&,$= \t%$",
+  "PRefEr:'\t   =  \t\tT%-,_-=\t\"\";",
+  "PrEFer: +$= \t~~",
+  "PrEfeR:|'!|=_#~",
+  "pREfeR:\t-~;  ^*.= \"\";\t*%=!",
+  "pReFEr:\t^ \t =\"\",$=|;\t \t,  b6;*  ;\t,\t \t ||#=\t#, b;*;$;",
+  "pRefEr: \t\t &-%^ = \"\" ;\t\t, |- = RT\t;\t-"
  ],
  "Preference-Applied": [
-  "PrEFerEncE-appLIEd:$A=\"\"\t , \t~ ,',|",
-  "pREfEreNcE-APpLIEd:_",
-  "pRefErENCE-aPpliED:-!=&",
-  "prEFErENCE-APplIed: *=+",
-  "prEferENCe-apPLIeD: \t\t+.=\"\",$=\"\"\t, p,|,!",
-  "prEference-aPPLIeD:   |=\"\"",
-  "preFERenCE-apPliED:\t\t ..=~",
-  "prefErEncE-apPLieD: ~=\"\"  ,\t',',-"
+  "PRefErENce-applIEd:\t \t~|+|.`=\t \t\t\"t\\r \"",
+  "PrEFerEncE-appLIEd:$A1=|%.",
+  "PrEfEreNce-APpliEd:_+=\"\"",
+  "PrEfereNcE-apPLIed:U",
+  "PrefeRenCE-apPLiEd: +\t\t\t\t\t ,%`",
+  "pRefERenCe-applIED: ~ ,.=\"\\\t\\\u00b2\",~,.||=\t'  \t, ~=\"\",\t |=&",
+  "prEfERencE-aPPlIed:\t~%",
+  "preferenCE-ApPLied:  _ ,~=\t\t\t\"\" ,^\t = &,  '=\"\",K=*"
  ],
  "applied-pref": [
-  "!",
-  "%",
-  "&~",
-  "'",
-  "*.$ =\t\"\"",
-  "A=3",
-  "_!^",
-  "~~"
+  "#_$   \t = \t^",
+  "&`#~-",
+  "1*+# =`",
+  "_",
+  "_!^=\" c\"",
+  "_=$#",
+  "`^ =&^",
+  "|."
  ],
  "parameter": [
-  "!",
-  "%",
-  "&~",
-  "'",
-  "*.$ =\t\"\"",
-  "A=3",
-  "_!^",
-  "~~"
+  "#_$   \t = \t^",
+  "&`#~-",
+  "1*+# =`",
+  "_",
+  "_!^=\" c\"",
+  "_=$#",
+  "`^ =&^",
+  "|."
  ],
  "preference": [
-  "$*#;;;;",
-  "*\t\t; ~ ;",
-  "-!*; 8;.;+;",
-  "6;'=\"\";.;",
-  "_!^;",
-  "`1#=\t*  ;%=~",
-  "`U\t= . ; ;",
-  "~ =\t_ ;&\t;`"
+  "&~",
+  "-*.=`",
+  "-=+%",
+  "^ =..#*",
+  "_!^=\" c\";;",
+  "|\t = `-",
+  "|.= #;&-%^ ;\t_\t=\t*; ;#=_",
+  "~  =.&_"
  ],
  "quoted-string": [
   "\"\"",
+  "\"\\\t\"",
   "\"\\ \"",
-  "\"\\w\\ ]\\\t\"",
   "\"e\"",
-  "\"\u00c49\\\t!\""
+  "\"\u00c49\\\t!|\\ ]\\\t\""
  ],
  "token": [
   "!",
@@ -81,13 +81,13 @@
   "~~"
  ],
  "word": [
+  "\" \t\"",
   "\"\"",
+  "\"\\\u00ed\"",
   "\"\\\u00f3\\\t\"",
-  "#",
-  "#A",
-  "#_",
-  "+",
-  "01",
-  "_"
+  "#._#~",
+  "'$*#",
+  "-",
+  "`&|+.%"
  ]
 }
