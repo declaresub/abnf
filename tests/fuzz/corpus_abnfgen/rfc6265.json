@@ -1,0 +1,226 @@
+{
+ "OWS": [
+  "",
+  "\r\n\t",
+  "\r\n\t\t\r\n  ",
+  "\r\n\t\r\n\t",
+  "\r\n "
+ ],
+ "cookie-av": [
+  "ExpiRes=sUn, 88 may 5805 20:12:49 GmT",
+  "Max-AGe=35",
+  "SeCUre",
+  "SecURe",
+  "eXpIreS=Fri, 23 may 8986 95:43:74 Gmt",
+  "expireS=ThU, 09 DEc 6377 09:22:22 gMt",
+  "htTPONLy",
+  "pAtH="
+ ],
+ "cookie-header": [
+  "COOKiE:\r\n \r\n  #=\"\" ",
+  "COOkie:|=; -= ",
+  "COokiE: \r\n\t\t~=\"\"; %=\"\"; .=\"\"",
+  "CoOKie:\r\n\ti=\"\"\r\n \r\n ",
+  "CooKie:U=\r\n \r\n  ",
+  "CookIe: p=\"\"; 6=\r\n\t",
+  "cOOkiE:\r\n\t\r\n\t !=\"\"",
+  "cOokiE:2=   "
+ ],
+ "cookie-name": [
+  "#*",
+  "'!+",
+  "-",
+  "2|v",
+  "7ll",
+  "9",
+  "ON~",
+  "i$#"
+ ],
+ "cookie-octet": [
+  "!",
+  "#",
+  "&",
+  "2",
+  "=",
+  "o"
+ ],
+ "cookie-pair": [
+  "!!=\"!!\"",
+  "!=\"\"",
+  "!o=",
+  "*=&",
+  "2=\"q[\"",
+  "9=q)",
+  "|=\"\""
+ ],
+ "cookie-string": [
+  "#=\"1\"; ~=\"\"",
+  "4=\"\"",
+  "9=\"=\"; '=\"\"; '=",
+  "9=); I=\"\"",
+  "P=); e=; !=\"\"",
+  "d=",
+  "y=\"@\"; 4=",
+  "|=; v=\"\""
+ ],
+ "cookie-value": [
+  "",
+  "!",
+  "\"\"",
+  "\"0[W\"",
+  "\"4\"",
+  "\"d'\"",
+  "<1!",
+  "~n"
+ ],
+ "domain-av": [
+  "DOmAiN=6",
+  "DOmAiN=::c:b:C",
+  "DoMAin=0",
+  "DoMaiN=z",
+  "DomAIN=86.248.42.189",
+  "doMAIn=248.235.95.158",
+  "doMain=0",
+  "domaIn=127.90.250.211"
+ ],
+ "domain-value": [
+  "199.210.254.252",
+  "252.119.242.6",
+  "254.119.252.8",
+  "6.P",
+  "::",
+  "::50.251.114.119",
+  "B:6:a:d:d:F:230.125.0.255",
+  "E:1:d:d:d:c:3:c"
+ ],
+ "expires-av": [
+  "EXPiReS=Wed, 75 juN 6568 98:95:43 GmT",
+  "EXpIReS=frI, 19 oCT 6829 50:98:61 gMt",
+  "EXpiREs=tUe, 99 auG 5898 92:33:16 GMT",
+  "ExPIreS=THU, 83 MAr 6526 61:95:90 gMt",
+  "exPIrEs=SaT, 56 JUl 3477 72:95:62 gMT",
+  "exPIrEs=tue, 05 MAY 8907 65:40:16 Gmt",
+  "expireS=TuE, 71 AUg 6734 34:80:21 gmt",
+  "expires=tUE, 00 SEP 5141 30:39:37 gMt"
+ ],
+ "extension-av": [
+  "",
+  "$",
+  "&(",
+  "*R94",
+  "8",
+  "U.",
+  "~+^"
+ ],
+ "httponly-av": [
+  "HTtpoNLY",
+  "HtTPonLy",
+  "HtTponlY",
+  "HttPonlY",
+  "hTtPOnlY",
+  "hTtPOnly",
+  "htTpONly",
+  "httpoNlY"
+ ],
+ "max-age-av": [
+  "MaX-aGE=2216",
+  "MaX-agE=9",
+  "Max-age=5",
+  "mAX-AgE=5",
+  "mAx-Age=77502",
+  "maX-AgE=68",
+  "max-AGe=43",
+  "max-aGe=4626"
+ ],
+ "non-zero-digit": [
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "9"
+ ],
+ "obs-fold": [
+  "\r\n"
+ ],
+ "path-av": [
+  "PATH=k+",
+  "PAtH=L",
+  "PAtH=z",
+  "PAth=R94",
+  "PaTH=j8 ",
+  "PaTH=xA3",
+  "PaTh=%",
+  "pATh=e~+"
+ ],
+ "path-value": [
+  "",
+  "$",
+  "&(",
+  "*R94",
+  "8",
+  "U.",
+  "~+^"
+ ],
+ "sane-cookie-date": [
+  "Fri, 05 jun 8873 93:56:26 gMt",
+  "THU, 16 feB 6799 09:47:22 GmT",
+  "Thu, 19 jAN 4119 70:89:92 gMT",
+  "WeD, 25 Aug 2950 79:56:52 gmT",
+  "fri, 20 mar 0520 71:64:27 GMT",
+  "fri, 98 OcT 8429 89:85:11 Gmt",
+  "tHu, 68 Jan 6899 68:88:77 gMT",
+  "wED, 96 Nov 3770 96:27:25 GmT"
+ ],
+ "secure-av": [
+  "SECurE",
+  "SEcure",
+  "SeCUre",
+  "sEcURe",
+  "sEcUrE",
+  "sEcuRe",
+  "seCUre",
+  "secURe"
+ ],
+ "set-cookie-header": [
+  "SET-CooKie: .=\"\"",
+  "SET-cOokiE: G=\"\"; httPonLy; ",
+  "SeT-coOkiE: i=\"\"",
+  "Set-CoOkie: |=; ",
+  "Set-Cookie: !=\"\"; Expires=fRi, 10 MAY 9637 70:62:72 GmT; pAtH=",
+  "sET-cOokiE: !=\"\"",
+  "set-cOoKIe: L=\"\"; ; path=; pAtH=",
+  "set-coOkIe: 1=\"\""
+ ],
+ "set-cookie-string": [
+  "#=&",
+  "2=; pAth=; HTTPonlY; eXPIReS=moN, 85 SeP 1096 91:35:41 GMT",
+  "9=\"=\"; max-AgE=5; sEcUrE; ; max-AgE=7",
+  "G=\"\"; httPoNlY; ; exPires=Sun, 45 mar 2331 50:41:97 Gmt; DoMAIn=V",
+  "k='; sEcure",
+  "o=\"\"",
+  "x=\"\"",
+  "~=\"\"; ExpiRES=moN, 21 sEp 1302 16:55:13 GMt"
+ ],
+ "subdomain": [
+  "199.210.254.252",
+  "250.169.5.64",
+  "4",
+  "69.9",
+  "7P",
+  "8.220.72.117",
+  "9.219.176.248",
+  "a:d:d:F:a:C:0.255.126.255"
+ ],
+ "token": [
+  "'!+#",
+  "*",
+  "-",
+  "9",
+  "N~2|",
+  "i$#O",
+  "v7ll",
+  "~~4G"
+ ]
+}

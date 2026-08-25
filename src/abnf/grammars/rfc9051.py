@@ -225,8 +225,11 @@ class Rule(_Rule):
         "option-extension = (option-standard-tag / option-vendor-tag) "
         "[SP option-value]",
         "option-standard-tag = atom",
-        "option-val-comp = astring / option-val-comp *(SP option-val-comp) "
-        '/ "(" option-val-comp ")"',
+        # Left-recursive in RFC 9051 (section 4.4) in exactly the same shape
+        # as tagged-ext-comp above, and unparseable for the same reason.
+        # See https://github.com/declaresub/abnf/issues/252 .
+        "option-val-comp = option-val-comp-item *(SP option-val-comp-item)",
+        'option-val-comp-item = astring / "(" option-val-comp ")"',
         'option-value = "(" option-val-comp ")"',
         'option-vendor-tag = vendor-token "-" atom',
         'partial-range = number64 ["." nz-number64]',
@@ -330,8 +333,22 @@ class Rule(_Rule):
         "tagged-ext-label = tagged-label-fchar *tagged-label-char",
         'tagged-label-fchar = ALPHA / "-" / "_" / "."',
         'tagged-label-char = tagged-label-fchar / DIGIT / ":"',
-        "tagged-ext-comp = astring / tagged-ext-comp *(SP tagged-ext-comp) "
-        '/ "(" tagged-ext-comp ")"',
+        # RFC 9051 writes this left-recursively:
+        #
+        #   tagged-ext-comp = astring /
+        #                     tagged-ext-comp *(SP tagged-ext-comp) /
+        #                     "(" tagged-ext-comp ")"
+        #
+        # A recursive-descent parser cannot evaluate the middle alternative,
+        # and under longest-match alternation every alternative is tried --
+        # so the rule matched *nothing*, not even the bare `astring` the
+        # first alternative admits, and took ~20 dependent rules with it.
+        # The middle alternative says "one or more comps separated by SP",
+        # so hoisting the item into its own rule says the same thing without
+        # the left recursion.  See
+        # https://github.com/declaresub/abnf/issues/252 .
+        "tagged-ext-comp = tagged-ext-comp-item *(SP tagged-ext-comp-item)",
+        'tagged-ext-comp-item = astring / "(" tagged-ext-comp ")"',
         "tagged-ext-simple = sequence-set / number / number64",
         'tagged-ext-val = tagged-ext-simple / "(" [tagged-ext-comp] ")"',
         "text = 1*(TEXT-CHAR / UTF8-2 / UTF8-3 / UTF8-4)",

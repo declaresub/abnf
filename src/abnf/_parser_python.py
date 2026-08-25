@@ -643,6 +643,15 @@ class Rule:
 
     _obj_map: typing.ClassVar[dict[tuple[type[Rule], str], Rule]] = {}
 
+    #: The import list the grammar loader applied, recorded so that a
+    #: module's *effective* grammar can be reconstructed as text.  Neither
+    #: half says on its own what a module parses: `grammar` is missing the
+    #: substitutions, and the loaded rules have the substitutions but no
+    #: text.  Empty for a class built any other way.  See
+    #: `abnf.grammars.misc._apply_imports` and
+    #: `tests/fuzz/effective_grammar.py`.
+    _imported_rules: typing.ClassVar[tuple[tuple[str, Rule], ...]] = ()
+
     def __new__(cls, name: str, definition: Parser | None = None):
         """Overrides super().__new__ to implement a symbol table via object caching."""
 

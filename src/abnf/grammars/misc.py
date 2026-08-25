@@ -29,6 +29,12 @@ def _apply_imports(cls: type[Rule], imported_rules: list[tuple[str, Rule]]) -> N
     bundled grammars is prose exactly at the top level, so that is enough.
     """
 
+    #: Recorded for tooling that needs a module's effective grammar as text --
+    #: see tests/fuzz/gen_abnfgen_corpus.py.  The decorator would otherwise
+    #: discard the list, and it cannot be recovered from the loaded rules,
+    #: whose definitions carry no record of where they came from.
+    cls._imported_rules = tuple(imported_rules)
+
     for name, source in imported_rules:
         existing = cls._obj_map.get((cls, name.casefold()))
         definition = getattr(existing, "_definition", None)

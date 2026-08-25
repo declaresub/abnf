@@ -1,0 +1,172 @@
+{
+ "URI": [
+  "MAiLTo:?@[]",
+  "MaILto:*@[]",
+  "MaIlTO:\"\"@Y",
+  "MaiLto:\"\"@*",
+  "MailTo:'@%",
+  "mAilto:=@*",
+  "maIlto:\"\"@[]",
+  "maiLTO:\"\"@#"
+ ],
+ "addr-spec": [
+  "\"\t\"()@!",
+  "\" \"@=",
+  "%()@[]",
+  "()%@#",
+  "V@[ ]",
+  "_.|@\t$",
+  "{@#.*",
+  "}.!@()[ ]"
+ ],
+ "dmarc-adkim": [
+  "ADKIM\t =s",
+  "AdKIM= r",
+  "AdKIm\t = \ts",
+  "AdKIm  \t\t= \t r",
+  "AdKiM  =\t\tr",
+  "aDkIM= r",
+  "aDkiM  =\t S",
+  "adkim\t\t=s"
+ ],
+ "dmarc-ainterval": [
+  "RI =  \t\t01",
+  "Ri=\t2",
+  "Ri= \t8",
+  "Ri= 93",
+  "Ri=1",
+  "ri \t\t= 6194",
+  "ri= 4",
+  "ri=633"
+ ],
+ "dmarc-aspf": [
+  "ASPF=r",
+  "ASPf\t\t=  \t\ts",
+  "ASPf=r",
+  "AsPF =\tr",
+  "AsPF= r",
+  "Aspf\t=R",
+  "aSpf= R",
+  "asPf  \t\t=\tR"
+ ],
+ "dmarc-auri": [
+  "RUA=MaiLto:'@[], MaiLto:$@/!2T,mailto:\"\"@$ ,MAilTo:\"\"@?",
+  "RuA\t\t  =MaiLTO:#@+!72G",
+  "RuA\t\t=mAIlTo:\"\"@}",
+  "RuA\t \t=MailTO:{@[]",
+  "RuA\t=maIlto:\"\"@|!2,MAIlto:X@{",
+  "RuA=\t MailTO:1@?!50G",
+  "rUA= maiLTO:|@`!72,MAiLto:\"\"@/,\tmAIlTo:\"\"@'!7",
+  "ruA\t=mAiLto:`@/,MAILTO:}@-"
+ ],
+ "dmarc-fo": [
+  "FO= D",
+  "Fo= 0 :0",
+  "fO \t\t\t= \tD",
+  "fO \t=s:s",
+  "fO   =S:S",
+  "fO  =\t 1:1",
+  "fo   =1   :0\t:1",
+  "fo  =1"
+ ],
+ "dmarc-furi": [
+  "RUF=MaiLto:'@[], MaiLto:$@/!2T,mailto:\"\"@$ ,MAilTo:\"\"@?",
+  "RuF\t\t  =MaiLTO:#@+!72G",
+  "RuF\t\t=mAIlTo:\"\"@}",
+  "RuF\t \t=MailTO:{@[]",
+  "RuF\t=maIlto:\"\"@|!2,MAIlto:X@{",
+  "RuF=\t MailTO:1@?!50G",
+  "rUF= maiLTO:|@`!72,MAiLto:\"\"@/,\tmAIlTo:\"\"@'!7",
+  "ruF\t=mAiLto:`@/,MAILTO:}@-"
+ ],
+ "dmarc-percent": [
+  "PCT=\t \t11",
+  "PcT=\t 91",
+  "Pct=78",
+  "pCT=\t\t 100",
+  "pCt\t=\t\t0",
+  "pCt \t=100",
+  "pCt= \t 100",
+  "pct \t\t=42"
+ ],
+ "dmarc-record": [
+  "V\t = \t DMARC1; ",
+  "V\t=\t DMARC1; \t\t\t;",
+  "V\t=DMARC1 \t ;   sp=nOne ;\tADKim=S;",
+  "V=DMARC1\t\t;\t ;\t",
+  "V=DMARC1 ;",
+  "V=DMARC1 ; PcT=9;\tAdkiM=r\t ; \t",
+  "v  =DMARC1; \t  ;\t\t",
+  "v =\t\tDMARC1 ;   ;"
+ ],
+ "dmarc-request": [
+  "P\t\t = \t NONe",
+  "P\t=\t quARAntInE",
+  "P  =\t\tNone",
+  "p\t\t=QuArANTIne",
+  "p  \t\t= \t nOnE",
+  "p =rEjeCT",
+  "p=QUarantine",
+  "p=quArantine"
+ ],
+ "dmarc-rfmt": [
+  "Rf  \t\t= \t afrF",
+  "Rf =AFrF",
+  "Rf= \taFrF",
+  "Rf= afRF",
+  "Rf=AFRf",
+  "rF=aFrF",
+  "rf=  \t\tAfRF",
+  "rf=afRf"
+ ],
+ "dmarc-sep": [
+  "\t ;",
+  "  \t\t;",
+  " ;",
+  " ;\t",
+  " ;\t\t  ",
+  " ; ",
+  ";\t",
+  ";\t\t"
+ ],
+ "dmarc-srequest": [
+  "SP=\t\tnone",
+  "SP=reJect",
+  "Sp\t =rEJECt",
+  "Sp= NOne",
+  "sP\t  =\t\tNone",
+  "sP= None",
+  "sp= REjEct",
+  "sp=QUaRaNtINE"
+ ],
+ "dmarc-tag": [
+  "ADkim=r",
+  "RI=4",
+  "RuA = \tmaIltO:\"\"@!",
+  "RuA= maIlto:+@=",
+  "aSPf=R",
+  "aSpF = s",
+  "fO \t=0",
+  "p  =ReJeCt"
+ ],
+ "dmarc-uri": [
+  "MAiLTO:?@{!47",
+  "MaILto:*@[]!619t",
+  "MailTO:\"\"@*",
+  "MailTo:\"\"@'",
+  "mAiLtO:*@`!8k",
+  "maiLTO:~@[]",
+  "maiLtO:\"\"@$!91g",
+  "mailTO:\"\"@[]!750G"
+ ],
+ "dmarc-version": [
+  "V\t\t=DMARC1",
+  "V\t=\t   DMARC1",
+  "V\t=\t DMARC1",
+  "v\t\t\t =\tDMARC1",
+  "v  \t\t= \t DMARC1",
+  "v =DMARC1",
+  "v=\tDMARC1",
+  "v=DMARC1"
+ ]
+}

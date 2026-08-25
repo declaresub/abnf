@@ -1,0 +1,122 @@
+{
+ "HTTP-date": [
+  "Fri, 69 sEp 2741 01:90:65 GMT",
+  "SatUrdAy, 22-ocT-19 25:68:26 Gmt",
+  "TuEsDay, 67-MaR-22 76:26:68 gmt",
+  "saT, 35 Oct 7487 40:17:29 GMT",
+  "sundaY, 29-jUn-48 69:82:31 gMT",
+  "thU jun 84 70:48:90 8337",
+  "thu jAN 00 82:37:10 9691",
+  "wEDnesDAY, 83-Feb-26 61:95:90 gMt"
+ ],
+ "asctime-date": [
+  "FRi ocT 19 25:68:26 0656",
+  "Fri sEP 79 88:39:35 6526",
+  "MoN mar 69 52:32:41 5568",
+  "SAT APR 31 45:76:98 4707",
+  "TuE seP 97 95:05:07 1264",
+  "Tue mAY 92 75:19:48 6998",
+  "mon JUL 69 14:51:13 0439",
+  "suN jUL  1 92:17:16 7990"
+ ],
+ "date1": [
+  "14 mar 5243",
+  "33 jaN 6619",
+  "45 oCT 0683",
+  "54 NoV 2553",
+  "74 feb 7830",
+  "89 auG 2219",
+  "91 seP 2390",
+  "97 AuG 7410"
+ ],
+ "date2": [
+  "14-feb-43",
+  "33-jAn-19",
+  "45-SEP-83",
+  "54-dEC-53",
+  "74-jan-30",
+  "89-jUL-19",
+  "91-aUG-90",
+  "97-jUl-10"
+ ],
+ "date3": [
+  "AUG  9",
+  "JuL 58",
+  "MAY 90",
+  "dec  3",
+  "jAn  3",
+  "may 80",
+  "may 98",
+  "nOv 22"
+ ],
+ "month": [
+  "JUn",
+  "OcT",
+  "Sep",
+  "dEC",
+  "dec",
+  "jaN",
+  "mar",
+  "nOv"
+ ],
+ "rfc1123-date": [
+  "Fri, 05 jun 8873 93:56:26 gMt",
+  "THU, 16 feB 6799 09:47:22 GmT",
+  "Thu, 19 jAN 4119 70:89:92 gMT",
+  "WeD, 25 Aug 2950 79:56:52 gmT",
+  "fri, 20 mar 0520 71:64:27 GMT",
+  "fri, 98 OcT 8429 89:85:11 Gmt",
+  "tHu, 68 Jan 6899 68:88:77 gMT",
+  "wED, 96 Nov 3770 96:27:25 GmT"
+ ],
+ "rfc850-date": [
+  "FriDAy, 71-feB-33 56:26:19 gmT",
+  "SATURdaY, 70-SEP-99 45:92:16 gmT",
+  "ThuRsday, 25-apr-70 74:19:83 GmT",
+  "frIDAY, 29-seP-39 06:42:76 gMt",
+  "mONDAy, 15-jaN-90 08:93:31 Gmt",
+  "sunDAY, 67-jUl-40 91:82:13 GMT",
+  "tUEsDaY, 55-NOv-92 74:01:90 gmt",
+  "tuEsdAy, 85-juL-58 19:48:99 gMT"
+ ],
+ "time": [
+  "05:55:82",
+  "26:19:54",
+  "30:97:30",
+  "45:05:29",
+  "80:42:53",
+  "83:33:79",
+  "87:93:56",
+  "97:58:52"
+ ],
+ "token": [
+  "'!+#",
+  "*",
+  "-",
+  "9",
+  "N~2|",
+  "i$#O",
+  "v7ll",
+  "~~4G"
+ ],
+ "weekday": [
+  "FrIDay",
+  "FrIdAy",
+  "FriDAy",
+  "MondAy",
+  "THUrSdAy",
+  "TuEsday",
+  "sunDAY",
+  "thUrsday"
+ ],
+ "wkday": [
+  "FrI",
+  "Fri",
+  "Mon",
+  "Sat",
+  "moN",
+  "sUN",
+  "sUn",
+  "wed"
+ ]
+}

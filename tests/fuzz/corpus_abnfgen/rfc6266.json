@@ -1,0 +1,115 @@
+{
+ "OWS": [
+  "",
+  "\t",
+  "\t\t",
+  " ",
+  "  \t\t"
+ ],
+ "content-disposition": [
+  "COnTENt-DisPositioN:INlINE",
+  "CoNTenT-dISposITIon:\tinliNe",
+  "CoNtENT-diSposITION:INLInE;\t FilEnaME=%\t;$=\"\";+=\"\"",
+  "ConteNt-disPOSitION:iNlIne\t; +*=iSo-8859-1'';fILenaME=\"\";FilEnAME='",
+  "coNTEnt-DISPosItIOn:\t AttAcHMENT; .*=uTf-8''",
+  "coNteNt-DIsPOsItIoN:iNlInE; filENamE*=iso-8859-1''; %=\"\"",
+  "coNtent-DiSPOSiTIOn:  \t*",
+  "conTenT-diSpOsItion:E"
+ ],
+ "disp-ext-parm": [
+  "!_=\"\"",
+  "#.=^",
+  "*=\"\"",
+  "-*=utf-8'no-nyN'%BD",
+  "-=\"\"",
+  "W*=iso-8859-1'sGn-Ch-De'%EA",
+  "^*=IsO-8859-1'gy'!",
+  "e^=\"\""
+ ],
+ "disp-ext-type": [
+  "!$",
+  "'",
+  "-#$",
+  "2",
+  "_!^",
+  "_|.",
+  "~"
+ ],
+ "disposition-parm": [
+  "'=\"\"",
+  "4=`",
+  "8=#",
+  "FILeNaME=\"\"",
+  "Filename=#",
+  "fIlEnAmE=&",
+  "fiLEnAMe='",
+  "|=Z"
+ ],
+ "disposition-type": [
+  "$",
+  "-",
+  "ATtaChmENt",
+  "AtTacHMENt",
+  "G",
+  "iNlIne",
+  "iNliNe",
+  "|"
+ ],
+ "ext-token": [
+  "!*",
+  "&`#*",
+  "&~*",
+  "*$#*",
+  "**",
+  "A*",
+  "_!^*",
+  "~~*"
+ ],
+ "ext-value": [
+  "ISo-8859-1'X-z'",
+  "UTF-8''",
+  "Utf-8''",
+  "iSO-8859-1''%AF",
+  "iSo-8859-1''",
+  "uTf-8'lg'",
+  "utf-8''%Cb##",
+  "utf-8''%FB"
+ ],
+ "filename-parm": [
+  "FILEnaMe*=UTf-8''",
+  "FIlenAmE*=&''%Bd",
+  "FiLeNAME=+",
+  "FiLeNAme*=utf-8''",
+  "fILenAme*=uTF-8''",
+  "fIleName*=Utf-8'X-2'%6c",
+  "filenAmE=`",
+  "filename*=utf-8''+"
+ ],
+ "quoted-string": [
+  "\"\"",
+  "\"\\ \"",
+  "\"\\w\\ ]\\\t\"",
+  "\"e\"",
+  "\"\u00c49\\\t!\""
+ ],
+ "token": [
+  "!",
+  "!$",
+  "'",
+  "+",
+  "_!^",
+  "_|.",
+  "~",
+  "~~"
+ ],
+ "value": [
+  "\"\"",
+  "\"\\\u00f3\\\t\"",
+  "#",
+  "#A",
+  "#_",
+  "+",
+  "01",
+  "_"
+ ]
+}

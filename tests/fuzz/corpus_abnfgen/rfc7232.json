@@ -1,0 +1,109 @@
+{
+ "ETag": [
+  "\"!\"",
+  "\"\"",
+  "\"\u00c7{\"",
+  "W/\"!\"",
+  "W/\"\"",
+  "W/\"%W\"",
+  "W/\"@\"",
+  "W/\"`\""
+ ],
+ "HTTP-date": [
+  "Fri, 49 Dec 8425 53:97:58 GMT",
+  "Fri, 71 May 1984 86:98:33 GMT",
+  "Fri, 92 Sep 4404 16:86:22 GMT",
+  "Friday, 94-Dec-56 44:82:50 GMT",
+  "Mon, 32 Apr 2885 77:30:00 GMT",
+  "Saturday, 91-Aug-77 09:22:22 GMT",
+  "Thu, 79 Mar 0614 22:68:65 GMT",
+  "Wednesday, 30-Jun-79 88:39:35 GMT"
+ ],
+ "If-Match": [
+  "*",
+  ",,,W/\"w\",,\"\",",
+  ",,W/\"\u00c4\"\t,,,",
+  "W/\"\",\"\",\"\","
+ ],
+ "If-Modified-Since": [
+  "Fri, 49 Dec 8425 53:97:58 GMT",
+  "Fri, 71 May 1984 86:98:33 GMT",
+  "Fri, 92 Sep 4404 16:86:22 GMT",
+  "Friday, 94-Dec-56 44:82:50 GMT",
+  "Mon, 32 Apr 2885 77:30:00 GMT",
+  "Saturday, 91-Aug-77 09:22:22 GMT",
+  "Thu, 79 Mar 0614 22:68:65 GMT",
+  "Wednesday, 30-Jun-79 88:39:35 GMT"
+ ],
+ "If-None-Match": [
+  "*",
+  ",,,W/\"w\",,\"\",",
+  ",,W/\"\u00c4\"\t,,,",
+  "W/\"\",\"\",\"\","
+ ],
+ "If-Unmodified-Since": [
+  "Fri, 49 Dec 8425 53:97:58 GMT",
+  "Fri, 71 May 1984 86:98:33 GMT",
+  "Fri, 92 Sep 4404 16:86:22 GMT",
+  "Friday, 94-Dec-56 44:82:50 GMT",
+  "Mon, 32 Apr 2885 77:30:00 GMT",
+  "Saturday, 91-Aug-77 09:22:22 GMT",
+  "Thu, 79 Mar 0614 22:68:65 GMT",
+  "Wednesday, 30-Jun-79 88:39:35 GMT"
+ ],
+ "Last-Modified": [
+  "Fri, 49 Dec 8425 53:97:58 GMT",
+  "Fri, 71 May 1984 86:98:33 GMT",
+  "Fri, 92 Sep 4404 16:86:22 GMT",
+  "Friday, 94-Dec-56 44:82:50 GMT",
+  "Mon, 32 Apr 2885 77:30:00 GMT",
+  "Saturday, 91-Aug-77 09:22:22 GMT",
+  "Thu, 79 Mar 0614 22:68:65 GMT",
+  "Wednesday, 30-Jun-79 88:39:35 GMT"
+ ],
+ "OWS": [
+  "",
+  "\t",
+  "\t\t",
+  " ",
+  "  \t\t"
+ ],
+ "entity-tag": [
+  "\"\"",
+  "\"\u00c7{\"",
+  "W/\"!\"",
+  "W/\"\"",
+  "W/\"%W\u0085\"",
+  "W/\"`\"",
+  "W/\"\u00b1\""
+ ],
+ "etagc": [
+  "!",
+  "G",
+  "r",
+  "\u0089",
+  "\u00aa",
+  "\u00f5"
+ ],
+ "obs-text": [
+  "\u0089",
+  "\u0094",
+  "\u009f",
+  "\u00b2",
+  "\u00be",
+  "\u00c7",
+  "\u00fa",
+  "\u00fc"
+ ],
+ "opaque-tag": [
+  "\"!C\"",
+  "\"\"",
+  "\"@\"",
+  "\"\u00cfw%W\"",
+  "\"\u00ee\"",
+  "\"\u00f3\u00c4\u00b1\""
+ ],
+ "weak": [
+  "W/"
+ ]
+}
