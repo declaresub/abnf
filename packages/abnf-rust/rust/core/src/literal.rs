@@ -126,14 +126,17 @@ impl Literal {
                 }
             }
             LiteralKind::String { value, pattern } => {
-                // Mirror Python's `if start < len(source)` guard (see
-                // `_lparse_value`), which raises even for an empty
-                // literal at EOF.  Without it the length check below
-                // would let a zero-length pattern match at any
-                // out-of-range start.
-                if start >= source.len() {
-                    return Err(self.parse_error(start));
-                }
+                // Enough source must remain for the whole literal.  This
+                // one check covers both cases: a non-empty literal needs
+                // room, and a zero-length one needs only `start <=
+                // source.len()`, which is what `end > source.len()` says
+                // when `plen` is 0.
+                //
+                // There used to be a `start >= source.len()` guard above
+                // this, mirroring Python's, which also refused a
+                // zero-length literal at end of input -- so `""` matched
+                // everywhere except there.  See
+                // https://github.com/declaresub/abnf/issues/260 .
                 let plen = value.len();
                 let end = start + plen;
                 if end > source.len() {
@@ -210,11 +213,22 @@ mod tests {
         assert!(lit.lparse(&[0xD800, 0x62], 0).is_err());
     }
 
+    /// #260: a zero-length literal matches the empty string wherever the
+    /// source reaches, end of input included -- but not past it.
     #[test]
-    fn empty_literal_raises_at_eof() {
+    fn empty_literal_matches_at_eof_but_not_beyond() {
         let lit = Literal::string("", false);
-        assert!(lit.lparse(&[], 0).is_err());
-        assert!(lit.lparse(&cps("x"), 0).is_ok());
+        assert!(lit.lparse(&[], 0).is_ok(), "empty source, offset 0");
+        assert!(lit.lparse(&cps("x"), 0).is_ok(), "start of input");
+        assert!(lit.lparse(&cps("x"), 1).is_ok(), "end of input");
+        assert!(lit.lparse(&cps("x"), 2).is_err(), "past end of input");
+        assert!(lit.lparse(&[], 1).is_err(), "past end of empty source");
+
+        // A non-empty literal still needs room for all of itself.
+        let lit = Literal::string("ab", false);
+        assert!(lit.lparse(&cps("ab"), 0).is_ok());
+        assert!(lit.lparse(&cps("a"), 0).is_err());
+        assert!(lit.lparse(&cps("ab"), 2).is_err());
     }
 
     #[test]

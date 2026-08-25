@@ -146,7 +146,13 @@ ParseCacheValue = list[Match] | MatchSet | _CachedParseError
 # 29.9ns vs 34.6ns), and it isolates asyncio tasks as well as threads.  Only
 # `Rule.parse` ever writes it -- never a generator, whose `set` would leak into
 # the caller's context between yields.
-_ParseMemo = tuple[Source, dict[tuple[int, int], ParseCacheValue]]
+#: Keyed on ``(parser, start)``.  The parser is the object itself rather than
+#: its ``id``: an id is unique only among live objects, so a parser freed
+#: mid-parse could have its address reused and inherit the dead one's entries
+#: (issue #262).  Holding it keeps it alive for exactly the life of the memo,
+#: which is one ``Rule.parse`` call.
+_ParseMemoKey = tuple[object, int]
+_ParseMemo = tuple[Source, dict[_ParseMemoKey, ParseCacheValue]]
 _parse_memo: contextvars.ContextVar[_ParseMemo | None] = contextvars.ContextVar(
     "abnf_parse_memo", default=None
 )
@@ -413,7 +419,12 @@ class Repetition:
         ctx = _parse_memo.get()
         memo = ctx[1] if ctx is not None and ctx[0] is source else {}
 
-        cache_key = (id(self), start)
+        # Key on the object, not `id(self)`: an id is unique only among live
+        # objects, so a `Repetition` freed mid-parse could have its address
+        # reused and hand its cached matches to a different parser.  Holding
+        # the object keeps it alive for exactly as long as the memo, which is
+        # this one parse.  See https://github.com/declaresub/abnf/issues/262 .
+        cache_key = (self, start)
         cached_matchset = memo.get(cache_key)
         if cached_matchset is not None:
             if isinstance(cached_matchset, _CachedParseError):
@@ -574,20 +585,27 @@ class Literal:
 
     def _lparse_value(self, source: str, start: int) -> Matches:
         """Parse source when self.value represents a literal."""
-        # we check position to ensure that the case pattern = '' and start >= len(source)
-        # is handled correctly.
-        if start < len(source):
-            src = source[start : start + len(self.value)]
-            match = src if self.case_sensitive else _ascii_fold(src)
-            if match == self.pattern:
-                yield Match(
-                    [typing.cast(Node, LiteralNode(src, start, len(src)))],
-                    start + len(src),
-                )
-            else:
-                raise ParseError(self, start)
-        else:
+        # Enough source must remain for the whole literal.  Slicing would not
+        # say so on its own: `source[start:start + n]` silently returns a short
+        # string past the end, and for a zero-length literal it returns `''`
+        # at *any* start, however far out of range.
+        #
+        # The guard used to be `start < len(source)`, which also refused a
+        # zero-length literal at end of input -- so `""` matched at every
+        # offset except `len(source)`, and `"a" ""` could not match `"a"`
+        # while `"" "a"` could.  RFC 5234's char-val admits zero characters,
+        # and a zero-length match cannot depend on what follows it.
+        # See https://github.com/declaresub/abnf/issues/260 .
+        if start + len(self.value) > len(source):
             raise ParseError(self, start)
+        src = source[start : start + len(self.value)]
+        match = src if self.case_sensitive else _ascii_fold(src)
+        if match != self.pattern:
+            raise ParseError(self, start)
+        yield Match(
+            [typing.cast(Node, LiteralNode(src, start, len(src)))],
+            start + len(src),
+        )
 
     def __str__(self):
         # str(self.value) handles the case value == tuple.
@@ -1748,7 +1766,19 @@ class NumValVisitor(NodeVisitor):
     @staticmethod
     def _decode_bytes(data: str, base: int) -> str:
         """Decodes num-val byte data. Intended to be private."""
-        return chr(int(data, base=base))
+        value = int(data, base=base)
+        # `chr` raises ValueError past U+10FFFF, which reaches the caller as a
+        # builtin error naming neither the rule nor the grammar.  A num-val
+        # outside the code-point space is a grammar error like any other.
+        # See https://github.com/declaresub/abnf/issues/261 .
+        if value > 0x10FFFF:
+            prefix = {2: "%b", 10: "%d", 16: "%x"}.get(base, "%")
+            msg = (
+                f"{prefix}{data} is not a Unicode code point: values run to "
+                "%x10FFFF."
+            )
+            raise GrammarError(msg)
+        return chr(value)
 
 
 class ABNFGrammarNodeVisitor(NodeVisitor):
@@ -1942,6 +1972,19 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
             rule.definition = elements
             rule._alternations = tuple(self._alternations)
         else:
+            # '=/' adds to a definition, so there must be one.  Reading it
+            # unguarded surfaced as `AttributeError: no attribute
+            # '_definition'`, which reads as a library fault rather than as
+            # "this grammar is wrong".  RFC 5234 section 3.3 allows
+            # incremental alternatives only for an already-defined rule.
+            # See https://github.com/declaresub/abnf/issues/261 .
+            if getattr(rule, "_definition", None) is None:
+                msg = (
+                    f"rule {rule_name!r} has no definition to add to: '=/' adds "
+                    "an alternative to an existing rule (RFC 5234 section 3.3). "
+                    "Use '=' to define it."
+                )
+                raise GrammarError(msg)
             # '=/' keeps the earlier definition as one arm, so its
             # alternations stay live and stay configurable.
             previous = rule._alternation_parsers()

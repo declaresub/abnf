@@ -2,6 +2,40 @@
 
 ## Unreleased
 
+* An empty literal matches at end of input.  `Literal._lparse_value`
+  guarded with `start < len(source)`, so `""` matched an empty span at every
+  offset *except* `len(source)`: `"a" ""` could not match `"a"` while
+  `"" "a"` could.  RFC 5234's `char-val` admits zero characters, and a
+  zero-length match cannot depend on what follows it
+  (https://github.com/declaresub/abnf/issues/260).
+
+  The check is now `start + len(value) > len(source)`, which says the one
+  thing that matters -- enough source must remain for the whole literal -- and
+  covers the empty case without a special branch.  An offset genuinely past
+  the end still raises, which is what the original M2 regression was about:
+  that fix resolved a rust/Python divergence in favour of the reference
+  without checking the reference against the RFC, and pinned the wrong
+  behaviour in tests.  Both backends changed; the rust unit test that asserted
+  it is updated.
+
+* Two invalid grammars raise `GrammarError` instead of a raw Python exception
+  (https://github.com/declaresub/abnf/issues/261):
+
+  * A num-val past the end of the code-point space -- `%x110000` -- raised
+    `ValueError` from `chr`, naming neither the rule nor the grammar.
+  * `=/` on a rule with no definition raised
+    `AttributeError: no attribute '_definition'`, which reads as a library
+    fault rather than as an invalid grammar.  RFC 5234 section 3.3 allows
+    incremental alternatives only for an already-defined rule.
+
+* The per-parse memo keys on the parser object rather than on `id(self)`.  An
+  id is unique only among live objects, so a `Repetition` freed during a parse
+  could have its address reused and hand its cached matches to a different
+  parser -- reachable only from a custom `Parser` that builds and drops
+  combinators mid-parse, but a latent hazard rather than a trade-off.  Holding
+  the object keeps it alive for exactly as long as the memo, which is the one
+  parse (https://github.com/declaresub/abnf/issues/262).
+
 * `NodeVisitor` dispatch is case-insensitive, so `visit_URI` runs.  `visit`
   looked the node name up casefolded while the dispatch table was keyed on the
   method-name suffix verbatim, so a method named for the rule as its grammar

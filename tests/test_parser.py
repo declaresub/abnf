@@ -1315,32 +1315,53 @@ def test_m1_callback_parser_still_treats_parse_error_as_backtrack():
 
 
 # ---------------------------------------------------------------------------
-# M2 regression: `Literal('')` must raise `ParseError` when invoked at a
-# position past the end of source.  The pure-Python reference checks
-# `start < len(source)` before considering any match (so even an empty
-# literal cannot match at EOF); the Rust fast path skipped that check
-# whenever `plen == 0`, silently matching the empty string at EOF.
+# `Literal('')` must raise `ParseError` when invoked at a position *past* the
+# end of source, and must match everywhere the source reaches, end of input
+# included.
+#
+# The original M2 regression was real: the rust fast path skipped the bounds
+# check whenever `plen == 0`, so an empty literal matched at any offset at all.
+# The fix made rust mirror the pure-Python guard `start < len(source)` -- but
+# that guard was itself wrong, refusing an empty literal at EOF, which is a
+# legitimate position rather than an out-of-range one.  So `""` matched at
+# every offset except `len(source)`, and `"a" ""` could not match `"a"` while
+# `"" "a"` could.
+#
+# Resolving a backend divergence in favour of the reference, without checking
+# the reference against RFC 5234, is what pinned it.  See issue #260.
 # ---------------------------------------------------------------------------
 
 
-def test_m2_empty_literal_raises_at_eof_empty_source():
+def test_260_empty_literal_matches_at_eof_empty_source():
     parser = Literal("")
-    with pytest.raises(ParseError):
-        next(parser.lparse("", 0))
+    assert next(parser.lparse("", 0)).start == 0
 
 
-def test_m2_empty_literal_raises_at_eof_nonempty_source():
+def test_260_empty_literal_matches_at_eof_nonempty_source():
     parser = Literal("")
-    with pytest.raises(ParseError):
-        next(parser.lparse("abc", 3))
+    assert next(parser.lparse("abc", 3)).start == 3
 
 
-def test_m2_empty_literal_matches_inside_source():
-    """Sanity check: empty literal does match when start is strictly
-    inside the source (Python's `start < len(source)` is true)."""
+def test_260_empty_literal_matches_inside_source():
     parser = Literal("")
     match = next(parser.lparse("abc", 1))
     assert match.start == 1  # empty literal advances nothing
+
+
+@pytest.mark.parametrize(("source", "start"), [("", 1), ("abc", 4), ("abc", 99)])
+def test_m2_empty_literal_still_raises_past_end_of_source(source: str, start: int):
+    """The M2 protection that mattered: an offset beyond the source is out of
+    range, and a zero-length pattern must not match there."""
+    parser = Literal("")
+    with pytest.raises(ParseError):
+        next(parser.lparse(source, start))
+
+
+@pytest.mark.parametrize(("source", "start"), [("a", 0), ("ab", 1), ("", 0)])
+def test_260_non_empty_literal_still_needs_room(source: str, start: int):
+    parser = Literal("ab")
+    with pytest.raises(ParseError):
+        next(parser.lparse(source, start))
 
 
 def test_h5_left_recursive_grammar_is_catchable_not_segfault():
@@ -2352,3 +2373,75 @@ def test_258_other_class_attributes_are_unaffected():
     assert R2.grammar == ['r = "a"']
     R2.create('r = "a"')
     assert R2('r').parse_all('a').value == 'a'
+
+
+# Issue #261: two grammar-level mistakes escaped as raw Python exceptions.
+@pytest.mark.parametrize(
+    'grammar',
+    ['r = %x110000', 'r = %x7FFFFFFF', 'r = %d1114112', 'r = %b1000000000000000000000'],
+)
+def test_261_num_val_beyond_the_code_point_space(grammar: str):
+    """`chr` raised ValueError, naming neither the rule nor the grammar."""
+
+    class R(Rule):
+        pass
+
+    with pytest.raises(GrammarError, match='not a Unicode code point'):
+        R.create(grammar)
+
+
+@pytest.mark.parametrize('grammar', ['r = %x10FFFF', 'r = %x41', 'r = %d1114111'])
+def test_261_the_top_of_the_range_is_still_valid(grammar: str):
+    class R(Rule):
+        pass
+
+    R.create(grammar)
+    assert R('r').definition is not None
+
+
+def test_261_incremental_alternative_needs_an_existing_definition():
+    """RFC 5234 section 3.3.  Was a bare AttributeError."""
+
+    class R(Rule):
+        pass
+
+    with pytest.raises(GrammarError, match="no definition to add to"):
+        R.create('nope =/ "a"')
+
+
+def test_261_incremental_alternative_still_works_when_defined():
+    class R(Rule):
+        pass
+
+    R.create('q = "x"')
+    R.create('q =/ "y"')
+    assert R('q').parse_all('x').value == 'x'
+    assert R('q').parse_all('y').value == 'y'
+
+
+# Issue #262: the per-parse memo keyed on `id(self)`, and an id is unique only
+# among live objects -- a Repetition freed mid-parse could have its address
+# reused and hand its cached matches to a different parser.
+def test_262_memo_keys_on_the_object_not_its_address():
+    import pathlib
+
+    import abnf._parser_python as reference
+
+    # Read the file rather than inspect the class: `abnf.parser` patches
+    # backend classes onto this module, so under the rust backend
+    # `reference.Repetition` is not the pure-Python one.
+    source = pathlib.Path(reference.__file__).read_text(encoding='utf-8')
+    assert 'cache_key = (self, start)' in source
+    assert 'cache_key = (id(self), start)' not in source
+
+
+def test_262_repetition_results_are_still_correct_and_cached():
+    class R(Rule):
+        pass
+
+    R.create('r = 1*"ab"')
+    assert R('r').parse_all('ababab').value == 'ababab'
+    # Same rule, different sources: nothing may carry over between parses.
+    assert R('r').parse_all('ab').value == 'ab'
+    with pytest.raises(ParseError):
+        R('r').parse_all('abx')
