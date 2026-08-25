@@ -1729,8 +1729,24 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
 
     @staticmethod
     def visit_defined_as(node: Node):
-        """Returns defined-as operator."""
-        return node.value.strip()
+        """Returns the defined-as operator, ``"="`` or ``"=/"``.
+
+        RFC 5234 section 4 has ``defined-as = *c-wsp ("=" / "=/") *c-wsp``,
+        and ``c-wsp`` reaches ``comment`` by way of ``c-nl`` -- so a comment
+        may sit on either side of the operator and is part of this node's
+        span.  Stripping the span only removes whitespace, which left the
+        comment text attached and made the result compare unequal to both
+        operators.
+
+        Scanning the span for ``"=/"`` would be no better, since a comment may
+        contain that text: ``foo ;see =/ below`` is a plain ``=`` rule.  The
+        operator is the one literal among the children, so take it from there.
+        """
+
+        return next(
+            (child.value for child in node.children if child.name == "literal"),
+            node.value.strip(),
+        )
 
     def visit_element(self, node: Node):
         """Creates a parser object from element node."""

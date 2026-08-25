@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+* A comment inside `defined-as` no longer turns `=` into `=/`.  RFC 5234
+  section 4 has `defined-as = *c-wsp ("=" / "=/") *c-wsp`, and `c-wsp` reaches
+  `comment` by way of `c-nl`, so a comment may sit on either side of the
+  operator and forms part of that node's span.  The visitor returned the span
+  stripped, which removes whitespace but not comment text, so the result
+  compared unequal to `"="` and took the `=/` branch: a new rule raised a bare
+  `AttributeError`, and a redefinition silently kept its earlier definition
+  alive with no `GrammarWarning`
+  (https://github.com/declaresub/abnf/issues/257).
+
+  The operator is now read from the `defined-as` node's literal child.
+  Searching the span for `"=/"` would not do, since a comment may contain that
+  text -- `foo ;see =/ below` is a plain `=` rule, and there is a test for it.
+
 * Documentation corrections and additions prompted by the recent grammar work:
 
   * Left recursion is now documented at all.  A recursive-descent parser cannot
