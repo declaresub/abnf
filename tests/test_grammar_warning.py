@@ -5,7 +5,7 @@ import warnings
 import pytest
 
 from abnf.grammars.misc import _apply_imports
-from abnf.parser import GrammarWarning, ParseError, Rule
+from abnf.parser import GrammarError, GrammarWarning, ParseError, Rule
 
 
 def test_case_insensitive_redefinition_warns():
@@ -222,3 +222,92 @@ def test_257_incremental_alternative_with_a_comment():
     R.load_grammar('q = "x"\r\nq ;note\r\n =/ "y"\r\n')
     assert R('q').parse_all('x').value == 'x'
     assert R('q').parse_all('y').value == 'y'
+
+
+# Issue #256: core rules live on the base Rule class so every grammar can
+# reference them, and Rule.get falls back to that registry -- so
+# Rule("DIGIT") and MyGrammar("DIGIT") were one object, and defining through
+# it replaced the rule for every grammar in the process.  A grammar defining
+# `DIGIT = %x30-39 / "_"` made rfc3339 accept `2_26` as a four-digit year.
+CORE_NAMES = ['ALPHA', 'BIT', 'CHAR', 'CRLF', 'DIGIT', 'DQUOTE', 'HEXDIG', 'OCTET', 'SP', 'WSP']
+
+
+@pytest.mark.parametrize('name', CORE_NAMES)
+def test_256_a_grammar_cannot_define_a_core_rule(name: str):
+    class R(Rule):
+        pass
+
+    with pytest.raises(GrammarError, match='core rule'):
+        R.create(f'{name} = %x61')
+
+
+@pytest.mark.parametrize('name', CORE_NAMES)
+def test_256_nor_extend_one_with_an_incremental_alternative(name: str):
+    """`=/` mutates the shared rule just as `=` does."""
+
+    class R(Rule):
+        pass
+
+    with pytest.raises(GrammarError, match='core rule'):
+        R.create(f'{name} =/ %x61')
+
+
+@pytest.mark.parametrize('spelling', ['digit', 'Digit', 'DIGIT', 'dIgIt'])
+def test_256_the_check_is_case_insensitive(spelling: str):
+    """ABNF rule names are case-insensitive (RFC 5234 section 2.1)."""
+
+    class R(Rule):
+        pass
+
+    with pytest.raises(GrammarError, match='core rule'):
+        R.create(f'{spelling} = %x61')
+
+
+def test_256_an_unrelated_grammar_is_not_corrupted():
+    from abnf.grammars import rfc3339
+
+    class R(Rule):
+        pass
+
+    with pytest.raises(GrammarError):
+        R.create('DIGIT = %x30-39 / "_"')
+    # date-fullyear is 4DIGIT; an underscore must not become a digit.
+    with pytest.raises(ParseError):
+        rfc3339.Rule('date-fullyear').parse_all('2_26')
+    assert rfc3339.Rule('date-fullyear').parse_all('2026').value == '2026'
+
+
+def test_256_ordinary_names_are_unaffected():
+    """Only the base registry is protected; normal rules are per-subclass."""
+
+    class G1(Rule):
+        pass
+
+    class G2(Rule):
+        pass
+
+    G1.create('token = %x61')
+    G2.create('token = %x62')
+    assert G1('token') is not G2('token')
+    assert G1('token').parse_all('a').value == 'a'
+    assert G2('token').parse_all('b').value == 'b'
+
+
+def test_256_a_grammar_can_still_reference_core_rules():
+    class R(Rule):
+        pass
+
+    R.create('pair = DIGIT ALPHA')
+    assert R('pair').parse_all('1a').value == '1a'
+    assert R('DIGIT') is Rule('DIGIT')
+
+
+def test_256_the_message_says_what_to_do():
+    class R(Rule):
+        pass
+
+    with pytest.raises(GrammarError) as excinfo:
+        R.create('DIGIT = %x61')
+    message = str(excinfo.value)
+    assert 'delete this line' in message
+    assert 'abnf.parser.Rule' in message

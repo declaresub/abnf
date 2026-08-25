@@ -1330,6 +1330,16 @@ for core_rule_def in typing.cast(
 ):
     Rule(core_rule_def[0], core_rule_def[1])
 
+#: The RFC 5234 appendix B core rules, which live on the base ``Rule`` class so
+#: that every grammar can reference them.  ``Rule.get`` falls back to that
+#: registry, so a name here resolves to one object shared by all grammars --
+#: which is right for a reference and wrong as somewhere to write.  See
+#: ``ABNFGrammarNodeVisitor.visit_rule``, which refuses to define these from a
+#: subclass, and https://github.com/declaresub/abnf/issues/256 .
+#: Frozen here, immediately after the bootstrap, so it is exactly the core
+#: rules and not whatever anyone later adds to the base registry.
+CORE_RULE_NAMES = frozenset(rule.name.casefold() for rule in Rule.rules())
+
 
 class ABNFGrammarRule(Rule):
     """Rules defining ABNF in ABNF."""
@@ -1829,14 +1839,36 @@ class ABNFGrammarNodeVisitor(NodeVisitor):
         # this assertion tells mypy that rule should actually be an object. Without, mypy
         # returns 'error: <nothing> has no attribute "definition"'
         assert rule
+        rule_name = next(
+            (c.value for c in node.children if c.name == "rulename"), rule.name
+        )
+        # A core rule lives on the base `Rule` class so that every grammar can
+        # reference it, and `Rule.get` falls back there -- so `Rule("DIGIT")`
+        # and `MyGrammar("DIGIT")` are one object.  Defining through it would
+        # replace the rule for every grammar in the process, including ones
+        # this caller never wrote: a grammar defining `DIGIT = %x30-39 / "_"`
+        # used to make `rfc3339` accept `2_26` as a year.  Refuse, rather than
+        # silently shadow, so the two readings of `DIGIT` can never diverge.
+        #
+        # Defining one *on the base class itself* is still allowed: it is
+        # explicit about its scope, and the redefinition warning below reports
+        # it.  See https://github.com/declaresub/abnf/issues/256 .
+        if self.rule_cls is not Rule and rule_name.casefold() in CORE_RULE_NAMES:
+            msg = (
+                f"{rule_name!r} is a core rule from RFC 5234 appendix B, shared by "
+                "every grammar, so a grammar cannot define it: the definition would "
+                "replace the rule everywhere, not just here.  Core rules are always "
+                f"available -- delete this line to use the standard {rule_name}.  To "
+                "change it for every grammar deliberately, define it on "
+                "abnf.parser.Rule itself."
+            )
+            raise GrammarError(msg)
         # A plain '=' redefinition silently discards the rule's existing definition
         # (RFC 5234, Section 3.3, allows incremental definition only via '=/').  Because
         # ABNF rule names are case-insensitive, names differing only in case -- e.g.
         # 'Origin' and 'origin' -- resolve to the same rule and collide this way too.
         if defined_as == "=" and getattr(rule, "_definition", None) is not None:
-            new_name = next(
-                (c.value for c in node.children if c.name == "rulename"), rule.name
-            )
+            new_name = rule_name
             existing_name = rule.name
             # This branch is reached only when the names already match under
             # casefold, so an inexact spelling match means they differ only in case.
