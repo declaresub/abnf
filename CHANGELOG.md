@@ -1,6 +1,83 @@
 # Changelog
 
-## Unreleased
+## 2.9.0
+
+* `abnf.grammars.rfc9051`'s `tagged-ext-comp` and `option-val-comp` match
+  something.  Both matched *nothing at all* -- not even the bare `astring`
+  their own first alternative admits -- because RFC 9051 writes them
+  left-recursively and a recursive-descent parser cannot evaluate that.
+  Longest-match alternation is what made it total: every alternative is
+  tried, so the recursive one is always reached.  Rewritten by hoisting the
+  repeated item into its own rule, which says the same thing without the left
+  recursion, and verified identical on both backends
+  (https://github.com/declaresub/abnf/issues/252).
+
+  About twenty rules depended on them, `list`, `esearch-response`,
+  `mailbox-list` and the `list-select-*` family among them.
+
+* `abnf.grammars.rfc9051`'s `resp-text-code` accepts its `atom SP text` form.
+  The trailing `1*<any TEXT-CHAR except "]">` was left as prose, and a Prose
+  parser always raises -- so the optional group could only ever take its empty
+  branch and that alternative never matched.  Nothing rejected the input:
+  `resp-text` falls through to `[text]`, which admits any TEXT-CHAR, so
+  `[MYCODE some text] hello` parsed with no `resp-text-code` in the tree at
+  all.  Now spelled out as `RESP-TEXT-CODE-CHAR`, TEXT-CHAR minus `%x5D`
+  (https://github.com/declaresub/abnf/issues/245).
+
+  Twelve rules reached that prose, `response` -- the top-level server response
+  -- among them, so the generated corpus had been skipping all of them; it
+  covers 223 rules now rather than 210.  `tests/test_grammars.py` asserts that
+  no loaded grammar reaches a Prose parser, which is a defect wherever it
+  appears.
+
+* `abnf.grammars.rfc9051` no longer parses IMAP atoms with RFC 5322's rule.
+  The module imported `("atom", rfc5322.Rule("atom"))` while also defining
+  `atom = 1*ATOM-CHAR` itself; imports are applied after the grammar list, so
+  the email rule won.  IMAP then accepted `' abc '` and `'(comment)abc'` --
+  leading whitespace and an RFC 5322 comment -- and rejected `'a.b'`, though
+  `.` is a perfectly good ATOM-CHAR.  `atom` feeds `auth-type`, `charset`,
+  `flag-extension` and others (https://github.com/declaresub/abnf/issues/234).
+
+  Four transcription errors in the same module go with it, since they
+  interact.  `ATOM-CHAR` and `TAG-CHAR` excluded `:`, `}` and `~`, none of
+  which are atom-specials.  `flag-perm` had lost the backslash from `"\*"`,
+  so a bare `*` was accepted -- and `\*` parsed only by way of the `atom`
+  import, so fixing either alone would have broken `PERMANENTFLAGS`
+  responses.  `TEXT-CHAR` and `QUOTED-CHAR` ran to `%xFF`, admitting lone
+  invalid UTF-8 bytes, where the RFC defines them over 7-bit `CHAR` and
+  reaches non-ASCII through `UTF8-2/3/4`.  And `mbx-list-extended` was a
+  half-rename of the RFC's `mbox-list-extended`, so that rule could not be
+  looked up by its own name.
+
+  Note the `TEXT-CHAR` correction has a usage consequence: `UTF8-2/3/4` are
+  octet rules, so IMAP data containing non-ASCII must be decoded as latin-1
+  (one code point per octet), which is what
+  {doc}`explanation/what-abnf-parses` prescribes for byte protocols.
+
+* A comment inside `defined-as` no longer turns `=` into `=/`.  RFC 5234
+  section 4 has `defined-as = *c-wsp ("=" / "=/") *c-wsp`, and `c-wsp` reaches
+  `comment` by way of `c-nl`, so a comment may sit on either side of the
+  operator and forms part of that node's span.  The visitor returned the span
+  stripped, which removes whitespace but not comment text, so the result
+  compared unequal to `"="` and took the `=/` branch: a new rule raised a bare
+  `AttributeError`, and a redefinition silently kept its earlier definition
+  alive with no `GrammarWarning`
+  (https://github.com/declaresub/abnf/issues/257).
+
+  The operator is now read from the `defined-as` node's literal child.
+  Searching the span for `"=/"` would not do, since a comment may contain that
+  text -- `foo ;see =/ below` is a plain `=` rule, and there is a test for it.
+
+* `NodeVisitor` dispatch is case-insensitive, so `visit_URI` runs.  `visit`
+  looked the node name up casefolded while the dispatch table was keyed on the
+  method-name suffix verbatim, so a method named for the rule as its grammar
+  spells it -- `visit_URI`, `visit_IPv4address`, `visit_ATOM_CHAR` -- was filed
+  under a key nothing ever asked for.  A miss returns `_skip_visit`, so the
+  node was skipped with no error and no warning
+  (https://github.com/declaresub/abnf/issues/259).
+
+  ABNF rule names are case-insensitive, so both spellings always named one
+  rule; where a visitor defines both, the lowercase one still wins, as before.
 
 * An empty literal matches at end of input.  `Literal._lparse_value`
   guarded with `start < len(source)`, so `""` matched an empty span at every
@@ -18,51 +95,105 @@
   behaviour in tests.  Both backends changed; the rust unit test that asserted
   it is updated.
 
-* Two invalid grammars raise `GrammarError` instead of a raw Python exception
-  (https://github.com/declaresub/abnf/issues/261):
+* A value returned by a custom parser is no longer replaced by source text.
+  Since 2.8.1 the engine's terminals are spans of the source and their values
+  are produced by slicing it, which is sound for nodes the engine builds --
+  but a node handed *in* by a parser you write need not correspond to any
+  span.  Returning a normalised or synthesised value is a legitimate thing to
+  do, and the pure-Python backend keeps it; the Rust backend silently
+  substituted whatever text sat at that offset.  Such nodes now carry their
+  own value across the boundary, as code points, so a surrogate survives too
+  (https://github.com/declaresub/abnf/issues/220).
 
-  * A num-val past the end of the code-point space -- `%x110000` -- raised
-    `ValueError` from `chr`, naming neither the rule nor the grammar.
-  * `=/` on a rule with no definition raised
-    `AttributeError: no attribute '_definition'`, which reads as a library
-    fault rather than as an invalid grammar.  RFC 5234 section 3.3 allows
-    incremental alternatives only for an already-defined rule.
+  Parse performance is unaffected: the new node kind is behind an `Arc`, as
+  `Node`'s children already were.  Holding it inline, or behind a `Box`, cost
+  5-9% on the benchmarks -- node lists are cloned on every match extension, so
+  the variant's size and its clone land on every parse whether or not a
+  grammar ever produces one.
 
-* The per-parse memo keys on the parser object rather than on `id(self)`.  An
-  id is unique only among live objects, so a `Repetition` freed during a parse
-  could have its address reused and hand its cached matches to a different
-  parser -- reachable only from a custom `Parser` that builds and drops
-  combinators mid-parse, but a latent hazard rather than a trade-off.  Holding
-  the object keeps it alive for exactly as long as the memo, which is the one
-  parse (https://github.com/declaresub/abnf/issues/262).
+* `abnf.grammars.rfc3986` and `abnf.grammars.rfc3987` accept URIs and IRIs they
+  used to reject.  `host` set `first_match_alternation`, citing RFC 3986
+  section 3.2.2 -- but that section is about attributing a match of the *whole*
+  host, while first match commits to `IPv4address` on a **prefix**.  Given
+  `http://1.2.3.4.5/`, `IPv4address` matched `1.2.3.4`, `reg-name` was never
+  tried, and the URI was rejected; so was any host of the shape
+  `1.2.3.4.in-addr.arpa`, which is an ordinary reverse-DNS name.  `rfc3987`
+  applied the same setting to every rule in the module, in a loop.
 
-* `NodeVisitor` dispatch is case-insensitive, so `visit_URI` runs.  `visit`
-  looked the node name up casefolded while the dispatch table was keyed on the
-  method-name suffix verbatim, so a method named for the rule as its grammar
-  spells it -- `visit_URI`, `visit_IPv4address`, `visit_ATOM_CHAR` -- was filed
-  under a key nothing ever asked for.  A miss returns `_skip_visit`, so the
-  node was skipped with no error and no warning
-  (https://github.com/declaresub/abnf/issues/259).
+  Nothing is lost by removing it: longest-match alternation already attributes
+  a full IPv4 host to `IPv4address` rather than `reg-name`, because the two tie
+  and the tie is broken by declaration order -- which is exactly what section
+  3.2.2 asks for.  Across a 48-case corpus the only changes are five
+  rejections becoming acceptances; no input that already parsed changes its
+  value or its parse tree (https://github.com/declaresub/abnf/issues/232).
 
-  ABNF rule names are case-insensitive, so both spellings always named one
-  rule; where a visitor defines both, the lowercase one still wins, as before.
-* Assigning `first_match_alternation` on a grammar class raises
-  `AttributeError` instead of being accepted and ignored.  The setting is
-  implemented by a descriptor serving both supported spellings; assigning it on
-  a class object -- rather than in a class body -- dropped a plain `bool` into
-  the class dict and shadowed that descriptor.  Nothing read the bool, so the
-  attribute reported a setting the parser was not using, and the documented
-  per-rule spelling then failed silently for that grammar from then on
-  (https://github.com/declaresub/abnf/issues/258).
+* `abnf.grammars.rfc7489` accepts the DMARC records RFC 7489 defines, including
+  the one printed in the RFC's own section B.1.1.  `dmarc-record` required the
+  `p` tag and a trailing `";"`, both of which section 6.4 brackets as optional,
+  so `v=DMARC1; p=none; rua=mailto:dmarc-feedback@example.com` was rejected --
+  as is most of what is published, since records rarely end in a separator.
+  The rule keeps reading the RFC's fixed sequence as a repetition, which is
+  what its own note about components appearing "in any order" calls for
+  (https://github.com/declaresub/abnf/issues/233).
 
-  Both supported spellings are unchanged.  A non-`bool` in the class body is
-  refused too, with `TypeError`: it shadows the descriptor exactly as a stray
-  assignment does.
+  The `URI` rule, which this module deliberately narrows to the mailto scheme
+  (section 6.2 supports no other), is now written as a char-val rather than as
+  `%x` literals, so it is case-insensitive as RFC 3986 section 3.1 requires of
+  a scheme.  `MAILTO:` used to be rejected.
 
-  `Rule` now has a metaclass, which is what makes the assignment interceptable.
-  One consequence worth knowing: a subclass combining `Rule` with a class whose
-  metaclass is unrelated -- `class R(Rule, abc.ABC)` -- now raises a metaclass
-  conflict.  Combining with `typing.Generic` and ordinary bases is unaffected.
+* `abnf.grammars.rfc6265` accepts a cookie `Domain` whose first label starts
+  with a digit.  RFC 6265 section 4.1.1 defines `domain-value` as `<subdomain>`
+  "as enhanced by [RFC1123], Section 2.1", and that section relaxes "the
+  restriction on the first character ... to allow either a letter or a digit";
+  the module's own docstring claimed the enhanced definition but transcribed
+  plain RFC 1034.  `365online.com` was rejected.
+
+  At header level this did not fail, it mislabelled: `id=a; Domain=365online.com`
+  parsed, but the attribute landed in `extension-av` rather than `domain-av`, so
+  anything walking the tree for the Domain simply did not find it.
+
+  `path-value` and `extension-av` are corrected to `*` from `1*`, per erratum
+  3444 (Verified), which the module's docstring says it incorporates.  An empty
+  `Path=` was mislabelled the same way (https://github.com/declaresub/abnf/issues/235).
+
+* `abnf.grammars.rfc2616`'s `token` accepts `~`, which it had been missing.
+  RFC 2616 defines `token` as `1*<any CHAR except CTLs or separators>`, and
+  `~` is not among the separators listed in section 2.2 -- the module
+  transcribes that prose into explicit ranges, and the conversion dropped
+  `%x7E`.  `rfc6265` imports this rule for `cookie-name`, so `~x=1` was not a
+  parseable cookie either.  RFC 7230's `tchar`, the same character set
+  transcribed separately, always had it; the two rules now accept exactly the
+  same characters, which a test checks across the printable range
+  (https://github.com/declaresub/abnf/issues/236).
+
+* `rfc7235`'s `Proxy-Authenticate` uses the rule RFC 7235 gives it, as
+  `WWW-Authenticate` already did.  Both once carried a workaround for the
+  ambiguity in the RFC's own expansion -- `challenge` can consume a trailing
+  comma, so `Basic realm="foo", Pascal realm="bar"` parsed only as far as the
+  comma.  In 2022 the parser was found to handle the rule as written and
+  `WWW-Authenticate` was reverted to it; `Proxy-Authenticate` was left behind,
+  so two rules the RFC defines identically accepted different languages, and
+  the comma-less `Basic realm="a" Newauth realm="b"` was accepted.  Tests now
+  run the same cases against both headers
+  (https://github.com/declaresub/abnf/issues/237).
+
+* Three smaller grammar transcription errors, each verified against the RFC
+  text (https://github.com/declaresub/abnf/issues/237):
+
+  * `rfc7240`'s `Preference-Applied` was built from `preference`, which permits
+    parameters.  RFC 7240 section 3 defines the header over `applied-pref` and
+    says its syntax "differs from that of the Prefer header in that parameters
+    are not included"; `Preference-Applied: respond-async; wait=10` was
+    accepted.  `Prefer` keeps its parameters.
+  * `rfc9116`'s `token-char` ran from `%x21-27`, which swept in DQUOTE -- a
+    tspecial -- and omitted `%x2D-2E`, though `-` and `.` are not tspecials.
+    So `SHA-256` and `v1.0` were rejected while `a"b` was accepted, which
+    reached `hash-alg`, the value of a PGP `Hash:` header.
+  * `rfc5234`'s `element` dropped the `prose-val` alternative that section 4
+    gives it, so `<some prose>` did not parse.
+
+  The class docstring in `rfc9116` said "Rules from RFC 5987"; it now says
+  9116.
 
 * Defining a core rule from a grammar module now raises `GrammarError`
   instead of replacing it for every grammar in the process.  The RFC 5234
@@ -83,19 +214,113 @@
   restate the core rules in their own text; leave those lines out when
   transcribing, as `abnf.grammars.rfc2616` already does.
 
-* A comment inside `defined-as` no longer turns `=` into `=/`.  RFC 5234
-  section 4 has `defined-as = *c-wsp ("=" / "=/") *c-wsp`, and `c-wsp` reaches
-  `comment` by way of `c-nl`, so a comment may sit on either side of the
-  operator and forms part of that node's span.  The visitor returned the span
-  stripped, which removes whitespace but not comment text, so the result
-  compared unequal to `"="` and took the `=/` branch: a new rule raised a bare
-  `AttributeError`, and a redefinition silently kept its earlier definition
-  alive with no `GrammarWarning`
-  (https://github.com/declaresub/abnf/issues/257).
+* Assigning `first_match_alternation` on a grammar class raises
+  `AttributeError` instead of being accepted and ignored.  The setting is
+  implemented by a descriptor serving both supported spellings; assigning it on
+  a class object -- rather than in a class body -- dropped a plain `bool` into
+  the class dict and shadowed that descriptor.  Nothing read the bool, so the
+  attribute reported a setting the parser was not using, and the documented
+  per-rule spelling then failed silently for that grammar from then on
+  (https://github.com/declaresub/abnf/issues/258).
 
-  The operator is now read from the `defined-as` node's literal child.
-  Searching the span for `"=/"` would not do, since a comment may contain that
-  text -- `foo ;see =/ below` is a plain `=` rule, and there is a test for it.
+  Both supported spellings are unchanged.  A non-`bool` in the class body is
+  refused too, with `TypeError`: it shadows the descriptor exactly as a stray
+  assignment does.
+
+  `Rule` now has a metaclass, which is what makes the assignment interceptable.
+  One consequence worth knowing: a subclass combining `Rule` with a class whose
+  metaclass is unrelated -- `class R(Rule, abc.ABC)` -- now raises a metaclass
+  conflict.  Combining with `typing.Generic` and ordinary bases is unaffected.
+
+* Two invalid grammars raise `GrammarError` instead of a raw Python exception
+  (https://github.com/declaresub/abnf/issues/261):
+
+  * A num-val past the end of the code-point space -- `%x110000` -- raised
+    `ValueError` from `chr`, naming neither the rule nor the grammar.
+  * `=/` on a rule with no definition raised
+    `AttributeError: no attribute '_definition'`, which reads as a library
+    fault rather than as an invalid grammar.  RFC 5234 section 3.3 allows
+    incremental alternatives only for an already-defined rule.
+
+* The grammar loader warns when an import overwrites a rule the module
+  defines itself.  Imports are applied after the grammar text, so an imported
+  rule replaces a definition of the same name -- which is the intended
+  mechanism, since a module writes a rule it does not own as prose
+  (`token = <token, see [HTTP], Section 5.6.2>`) and lets the import supply
+  the real one.  Nothing distinguished that from an import replacing real
+  grammar by accident, which is how #234 got in and stayed in.  A
+  `GrammarWarning` now marks the difference
+  (https://github.com/declaresub/abnf/issues/246).
+
+  All 21 import collisions across the bundled grammars are the prose pattern,
+  so this is silent today; reintroducing #234's `("atom", rfc5322.Rule("atom"))`
+  makes it fire.  A test asserts no bundled grammar emits it, because a
+  warning nobody looks at would not have caught either bug.
+
+* `Node`, `LiteralNode` and `Match` can be subclassed under the Rust backend,
+  as they always could under the pure-Python one.  The pyclasses were final,
+  so `class MyNode(Node)` raised `TypeError` -- against a how-to that says
+  installing the extension changes nothing in your code
+  (https://github.com/declaresub/abnf/issues/221).
+
+* `Repeat` accepts the values the pure-Python constructor accepts.  A negative
+  `min` is not an error there -- the repetition simply builds no mandatory
+  prefix, so it behaves as zero -- and a float `max` is compared against the
+  repetition count, so a non-integral one never caps and an integral one caps
+  where the integer would.  Both now behave the same on either backend.  The
+  stored attributes can still differ for such inputs (a negative `min` reads
+  back as `0`), but no input reaches either bound, so nothing observable
+  follows from it.  The genuine errors are unchanged: `3*2` and a negative
+  `max` raise `GrammarError`, a non-number raises `TypeError`.
+
+* The per-parse memo keys on the parser object rather than on `id(self)`.  An
+  id is unique only among live objects, so a `Repetition` freed during a parse
+  could have its address reused and hand its cached matches to a different
+  parser -- reachable only from a custom `Parser` that builds and drops
+  combinators mid-parse, but a latent hazard rather than a trade-off.  Holding
+  the object keeps it alive for exactly as long as the memo, which is the one
+  parse (https://github.com/declaresub/abnf/issues/262).
+
+* A second fuzz corpus, generated by
+  [abnfgen](http://www.quut.com/abnfgen/) rather than by Hypothesis
+  (https://github.com/declaresub/abnf/issues/251).  `gen_corpus.py` walks the
+  *built parser*, so generator and parser are the same object and agree
+  whatever the loader did -- a rule built from the wrong grammar generates
+  strings the wrong grammar accepts.  abnfgen reads the ABNF *text*, so it is
+  an independent oracle, and it is what found the left recursion above.
+
+  `tests/fuzz/effective_grammar.py` reconstructs a module's grammar as
+  self-contained ABNF, which is the hard part: imports rename rules, apply
+  transitively, win over the module's own text, and cross class namespaces
+  that can collide.  `gen_abnfgen_corpus.py` writes the corpus and
+  `test_abnfgen_corpus.py` replays it, so CI needs neither abnfgen nor the
+  generator -- 1,131 rules across all 32 grammar modules.
+
+* The abnfgen corpus generator no longer silently drops samples containing
+  surrogates.  It decoded abnfgen's output as strict UTF-8, which refuses
+  them -- so grammars admitting the surrogate block were quietly under-tested,
+  which is the exact code-point range issue #173 was about.  `rfc9116`'s
+  `comment` is one: RFC 9116 writes it `"#" *(WSP / VCHAR / %x80-FFFFF)`, and
+  that range spans `D800-DFFF`.  Decoding with `surrogatepass` keeps them, and
+  the corpus now generates to depth 9 rather than 5, where the more
+  interesting samples live.
+
+  `tests/test_rfc9116.py` pins both ends of that range and both ends of the
+  surrogate block outright, rather than leaving it to whether a given seed
+  happens to produce one.
+
+* `abnf.grammars.rfc7405` gains a test file.  The module had none, so nothing
+  checked that it could parse the `%s` and `%i` char-vals it exists to define.
+  It always could; the tests now pin it at every level -- `char-val`,
+  `element`, `rule` and `rulelist` -- so a change that breaks the chain fails.
+
+  The ten meta-grammar rules that reach `char-val` are now defined locally,
+  copied from RFC 5234 unchanged, rather than left to resolve through the
+  import chain.  This is behaviour-preserving: the module's import list never
+  contained those names, and 592 generated `rulelist` strings parse identically
+  before and after.  Spelling them out means the module no longer depends on
+  the order in which its import list is computed
+  (https://github.com/declaresub/abnf/issues/244).
 
 * Documentation corrections and additions prompted by the recent grammar work:
 
@@ -123,214 +348,6 @@
 
   Every example added here was executed rather than written from memory.
 
-* The abnfgen corpus generator no longer silently drops samples containing
-  surrogates.  It decoded abnfgen's output as strict UTF-8, which refuses
-  them -- so grammars admitting the surrogate block were quietly under-tested,
-  which is the exact code-point range issue #173 was about.  `rfc9116`'s
-  `comment` is one: RFC 9116 writes it `"#" *(WSP / VCHAR / %x80-FFFFF)`, and
-  that range spans `D800-DFFF`.  Decoding with `surrogatepass` keeps them, and
-  the corpus now generates to depth 9 rather than 5, where the more
-  interesting samples live.
-
-  `tests/test_rfc9116.py` pins both ends of that range and both ends of the
-  surrogate block outright, rather than leaving it to whether a given seed
-  happens to produce one.
-
-* `abnf.grammars.rfc9051`'s `tagged-ext-comp` and `option-val-comp` match
-  something.  Both matched *nothing at all* -- not even the bare `astring`
-  their own first alternative admits -- because RFC 9051 writes them
-  left-recursively and a recursive-descent parser cannot evaluate that.
-  Longest-match alternation is what made it total: every alternative is
-  tried, so the recursive one is always reached.  Rewritten by hoisting the
-  repeated item into its own rule, which says the same thing without the left
-  recursion, and verified identical on both backends
-  (https://github.com/declaresub/abnf/issues/252).
-
-  About twenty rules depended on them, `list`, `esearch-response`,
-  `mailbox-list` and the `list-select-*` family among them.
-
-* A second fuzz corpus, generated by
-  [abnfgen](http://www.quut.com/abnfgen/) rather than by Hypothesis
-  (https://github.com/declaresub/abnf/issues/251).  `gen_corpus.py` walks the
-  *built parser*, so generator and parser are the same object and agree
-  whatever the loader did -- a rule built from the wrong grammar generates
-  strings the wrong grammar accepts.  abnfgen reads the ABNF *text*, so it is
-  an independent oracle, and it is what found the left recursion above.
-
-  `tests/fuzz/effective_grammar.py` reconstructs a module's grammar as
-  self-contained ABNF, which is the hard part: imports rename rules, apply
-  transitively, win over the module's own text, and cross class namespaces
-  that can collide.  `gen_abnfgen_corpus.py` writes the corpus and
-  `test_abnfgen_corpus.py` replays it, so CI needs neither abnfgen nor the
-  generator -- 1,131 rules across all 32 grammar modules.
-
-* The grammar loader warns when an import overwrites a rule the module
-  defines itself.  Imports are applied after the grammar text, so an imported
-  rule replaces a definition of the same name -- which is the intended
-  mechanism, since a module writes a rule it does not own as prose
-  (`token = <token, see [HTTP], Section 5.6.2>`) and lets the import supply
-  the real one.  Nothing distinguished that from an import replacing real
-  grammar by accident, which is how #234 got in and stayed in.  A
-  `GrammarWarning` now marks the difference
-  (https://github.com/declaresub/abnf/issues/246).
-
-  All 21 import collisions across the bundled grammars are the prose pattern,
-  so this is silent today; reintroducing #234's `("atom", rfc5322.Rule("atom"))`
-  makes it fire.  A test asserts no bundled grammar emits it, because a
-  warning nobody looks at would not have caught either bug.
-
-* `abnf.grammars.rfc9051`'s `resp-text-code` accepts its `atom SP text` form.
-  The trailing `1*<any TEXT-CHAR except "]">` was left as prose, and a Prose
-  parser always raises -- so the optional group could only ever take its empty
-  branch and that alternative never matched.  Nothing rejected the input:
-  `resp-text` falls through to `[text]`, which admits any TEXT-CHAR, so
-  `[MYCODE some text] hello` parsed with no `resp-text-code` in the tree at
-  all.  Now spelled out as `RESP-TEXT-CODE-CHAR`, TEXT-CHAR minus `%x5D`
-  (https://github.com/declaresub/abnf/issues/245).
-
-  Twelve rules reached that prose, `response` -- the top-level server response
-  -- among them, so the generated corpus had been skipping all of them; it
-  covers 223 rules now rather than 210.  `tests/test_grammars.py` asserts that
-  no loaded grammar reaches a Prose parser, which is a defect wherever it
-  appears.
-
-* `abnf.grammars.rfc7405` gains a test file.  The module had none, so nothing
-  checked that it could parse the `%s` and `%i` char-vals it exists to define.
-  It always could; the tests now pin it at every level -- `char-val`,
-  `element`, `rule` and `rulelist` -- so a change that breaks the chain fails.
-
-  The ten meta-grammar rules that reach `char-val` are now defined locally,
-  copied from RFC 5234 unchanged, rather than left to resolve through the
-  import chain.  This is behaviour-preserving: the module's import list never
-  contained those names, and 592 generated `rulelist` strings parse identically
-  before and after.  Spelling them out means the module no longer depends on
-  the order in which its import list is computed
-  (https://github.com/declaresub/abnf/issues/244).
-
-* Three smaller grammar transcription errors, each verified against the RFC
-  text (https://github.com/declaresub/abnf/issues/237):
-
-  * `rfc7240`'s `Preference-Applied` was built from `preference`, which permits
-    parameters.  RFC 7240 section 3 defines the header over `applied-pref` and
-    says its syntax "differs from that of the Prefer header in that parameters
-    are not included"; `Preference-Applied: respond-async; wait=10` was
-    accepted.  `Prefer` keeps its parameters.
-  * `rfc9116`'s `token-char` ran from `%x21-27`, which swept in DQUOTE -- a
-    tspecial -- and omitted `%x2D-2E`, though `-` and `.` are not tspecials.
-    So `SHA-256` and `v1.0` were rejected while `a"b` was accepted, which
-    reached `hash-alg`, the value of a PGP `Hash:` header.
-  * `rfc5234`'s `element` dropped the `prose-val` alternative that section 4
-    gives it, so `<some prose>` did not parse.
-
-  The class docstring in `rfc9116` said "Rules from RFC 5987"; it now says
-  9116.
-
-* `rfc7235`'s `Proxy-Authenticate` uses the rule RFC 7235 gives it, as
-  `WWW-Authenticate` already did.  Both once carried a workaround for the
-  ambiguity in the RFC's own expansion -- `challenge` can consume a trailing
-  comma, so `Basic realm="foo", Pascal realm="bar"` parsed only as far as the
-  comma.  In 2022 the parser was found to handle the rule as written and
-  `WWW-Authenticate` was reverted to it; `Proxy-Authenticate` was left behind,
-  so two rules the RFC defines identically accepted different languages, and
-  the comma-less `Basic realm="a" Newauth realm="b"` was accepted.  Tests now
-  run the same cases against both headers
-  (https://github.com/declaresub/abnf/issues/237).
-
-* `abnf.grammars.rfc2616`'s `token` accepts `~`, which it had been missing.
-  RFC 2616 defines `token` as `1*<any CHAR except CTLs or separators>`, and
-  `~` is not among the separators listed in section 2.2 -- the module
-  transcribes that prose into explicit ranges, and the conversion dropped
-  `%x7E`.  `rfc6265` imports this rule for `cookie-name`, so `~x=1` was not a
-  parseable cookie either.  RFC 7230's `tchar`, the same character set
-  transcribed separately, always had it; the two rules now accept exactly the
-  same characters, which a test checks across the printable range
-  (https://github.com/declaresub/abnf/issues/236).
-
-* `abnf.grammars.rfc6265` accepts a cookie `Domain` whose first label starts
-  with a digit.  RFC 6265 section 4.1.1 defines `domain-value` as `<subdomain>`
-  "as enhanced by [RFC1123], Section 2.1", and that section relaxes "the
-  restriction on the first character ... to allow either a letter or a digit";
-  the module's own docstring claimed the enhanced definition but transcribed
-  plain RFC 1034.  `365online.com` was rejected.
-
-  At header level this did not fail, it mislabelled: `id=a; Domain=365online.com`
-  parsed, but the attribute landed in `extension-av` rather than `domain-av`, so
-  anything walking the tree for the Domain simply did not find it.
-
-  `path-value` and `extension-av` are corrected to `*` from `1*`, per erratum
-  3444 (Verified), which the module's docstring says it incorporates.  An empty
-  `Path=` was mislabelled the same way (https://github.com/declaresub/abnf/issues/235).
-
-* `abnf.grammars.rfc9051` no longer parses IMAP atoms with RFC 5322's rule.
-  The module imported `("atom", rfc5322.Rule("atom"))` while also defining
-  `atom = 1*ATOM-CHAR` itself; imports are applied after the grammar list, so
-  the email rule won.  IMAP then accepted `' abc '` and `'(comment)abc'` --
-  leading whitespace and an RFC 5322 comment -- and rejected `'a.b'`, though
-  `.` is a perfectly good ATOM-CHAR.  `atom` feeds `auth-type`, `charset`,
-  `flag-extension` and others (https://github.com/declaresub/abnf/issues/234).
-
-  Four transcription errors in the same module go with it, since they
-  interact.  `ATOM-CHAR` and `TAG-CHAR` excluded `:`, `}` and `~`, none of
-  which are atom-specials.  `flag-perm` had lost the backslash from `"\*"`,
-  so a bare `*` was accepted -- and `\*` parsed only by way of the `atom`
-  import, so fixing either alone would have broken `PERMANENTFLAGS`
-  responses.  `TEXT-CHAR` and `QUOTED-CHAR` ran to `%xFF`, admitting lone
-  invalid UTF-8 bytes, where the RFC defines them over 7-bit `CHAR` and
-  reaches non-ASCII through `UTF8-2/3/4`.  And `mbx-list-extended` was a
-  half-rename of the RFC's `mbox-list-extended`, so that rule could not be
-  looked up by its own name.
-
-  Note the `TEXT-CHAR` correction has a usage consequence: `UTF8-2/3/4` are
-  octet rules, so IMAP data containing non-ASCII must be decoded as latin-1
-  (one code point per octet), which is what
-  {doc}`explanation/what-abnf-parses` prescribes for byte protocols.
-
-* `abnf.grammars.rfc7489` accepts the DMARC records RFC 7489 defines, including
-  the one printed in the RFC's own section B.1.1.  `dmarc-record` required the
-  `p` tag and a trailing `";"`, both of which section 6.4 brackets as optional,
-  so `v=DMARC1; p=none; rua=mailto:dmarc-feedback@example.com` was rejected --
-  as is most of what is published, since records rarely end in a separator.
-  The rule keeps reading the RFC's fixed sequence as a repetition, which is
-  what its own note about components appearing "in any order" calls for
-  (https://github.com/declaresub/abnf/issues/233).
-
-  The `URI` rule, which this module deliberately narrows to the mailto scheme
-  (section 6.2 supports no other), is now written as a char-val rather than as
-  `%x` literals, so it is case-insensitive as RFC 3986 section 3.1 requires of
-  a scheme.  `MAILTO:` used to be rejected.
-
-* `abnf.grammars.rfc3986` and `abnf.grammars.rfc3987` accept URIs and IRIs they
-  used to reject.  `host` set `first_match_alternation`, citing RFC 3986
-  section 3.2.2 -- but that section is about attributing a match of the *whole*
-  host, while first match commits to `IPv4address` on a **prefix**.  Given
-  `http://1.2.3.4.5/`, `IPv4address` matched `1.2.3.4`, `reg-name` was never
-  tried, and the URI was rejected; so was any host of the shape
-  `1.2.3.4.in-addr.arpa`, which is an ordinary reverse-DNS name.  `rfc3987`
-  applied the same setting to every rule in the module, in a loop.
-
-  Nothing is lost by removing it: longest-match alternation already attributes
-  a full IPv4 host to `IPv4address` rather than `reg-name`, because the two tie
-  and the tie is broken by declaration order -- which is exactly what section
-  3.2.2 asks for.  Across a 48-case corpus the only changes are five
-  rejections becoming acceptances; no input that already parsed changes its
-  value or its parse tree (https://github.com/declaresub/abnf/issues/232).
-
-* `Node`, `LiteralNode` and `Match` can be subclassed under the Rust backend,
-  as they always could under the pure-Python one.  The pyclasses were final,
-  so `class MyNode(Node)` raised `TypeError` -- against a how-to that says
-  installing the extension changes nothing in your code
-  (https://github.com/declaresub/abnf/issues/221).
-
-* `Repeat` accepts the values the pure-Python constructor accepts.  A negative
-  `min` is not an error there -- the repetition simply builds no mandatory
-  prefix, so it behaves as zero -- and a float `max` is compared against the
-  repetition count, so a non-integral one never caps and an integral one caps
-  where the integer would.  Both now behave the same on either backend.  The
-  stored attributes can still differ for such inputs (a negative `min` reads
-  back as `0`), but no input reaches either bound, so nothing observable
-  follows from it.  The genuine errors are unchanged: `3*2` and a negative
-  `max` raise `GrammarError`, a non-number raises `TypeError`.
-
 * Document that mutating `node.children` or `match.nodes` is not supported, and
   what each backend does if you try: the pure-Python containers are live lists,
   while the Rust ones are rebuilt per access, so the change is dropped.  Making
@@ -338,22 +355,6 @@
   stops comparing equal to a list -- breaking reading code to fix writing code
   that should not exist.  A parse tree is meant to be read
   (https://github.com/declaresub/abnf/issues/221).
-
-* A value returned by a custom parser is no longer replaced by source text.
-  Since 2.8.1 the engine's terminals are spans of the source and their values
-  are produced by slicing it, which is sound for nodes the engine builds --
-  but a node handed *in* by a parser you write need not correspond to any
-  span.  Returning a normalised or synthesised value is a legitimate thing to
-  do, and the pure-Python backend keeps it; the Rust backend silently
-  substituted whatever text sat at that offset.  Such nodes now carry their
-  own value across the boundary, as code points, so a surrogate survives too
-  (https://github.com/declaresub/abnf/issues/220).
-
-  Parse performance is unaffected: the new node kind is behind an `Arc`, as
-  `Node`'s children already were.  Holding it inline, or behind a `Box`, cost
-  5-9% on the benchmarks -- node lists are cloned on every match extension, so
-  the variant's size and its clone land on every parse whether or not a
-  grammar ever produces one.
 
 * Document that `ParseError.parser` holds the parser object under the
   pure-Python backend and a description string under the Rust one.  `start`

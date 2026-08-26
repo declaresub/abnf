@@ -32,7 +32,7 @@ rust = [
 
 [package.metadata]
 requires-dist = [
-    { name = "abnf-rust", marker = "extra == 'rust'", specifier = ">=2.8.1,<3" },
+    { name = "abnf-rust", marker = "extra == 'rust'", specifier = ">=2.8.3,<3" },
     { name = "check-manifest", marker = "extra == 'dev'", specifier = "==0.51" },
     { name = "furo", marker = "extra == 'docs'", specifier = "==2025.12.19" },
     { name = "hypothesis", marker = "extra == 'dev'", specifier = "==6.165.3" },
@@ -53,15 +53,15 @@ provides-extras = ["dev", "rust", "docs"]
 
 [[package]]
 name = "abnf-rust"
-version = "2.8.1"
+version = "2.8.3"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/bb/d1/80e58006d3e47423e919e25019a1ecf37e8ae412eb7cef0278b2d7e225cb/abnf_rust-2.8.1.tar.gz", hash = "sha256:0fe36c1a304b37cce054bc7527d4235d015259787a1d62d0501aa4d378f8ed33", size = 53526, upload-time = "2026-08-14T23:53:25.472Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f5/3c/331ec518f8582d3c6cc3ce1e24451e428f7997b5d297ef2d231582ea8597/abnf_rust-2.8.3.tar.gz", hash = "sha256:a55792519808dabb0730d28024418a77406d9fcae3595bb74fbd536be582aa3e", size = 56022, upload-time = "2026-08-24T13:59:52.349Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ab/9f/4cd883d32a485dbc192d86a7fcb37218cb356cc33f2b344ad19253b5eaa9/abnf_rust-2.8.1-cp310-abi3-macosx_10_12_x86_64.whl", hash = "sha256:44a4e380b1316f43c4be7d99ef824b43db317f11b89443b4f6862114bac1948e", size = 433373, upload-time = "2026-08-14T23:53:17.856Z" },
-    { url = "https://files.pythonhosted.org/packages/83/36/1856eb47319ef39223b5d87b7288212b8ddcefdb261575e1b49f497e1542/abnf_rust-2.8.1-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:ed750bf91ebc185a3a9b8e4415e3ddb2276ffbc51f1e5108916b63bdb9638112", size = 429923, upload-time = "2026-08-14T23:53:19.549Z" },
-    { url = "https://files.pythonhosted.org/packages/3f/fb/e6f256bce790eb1644143a36291d666b3e0beb380c60feb829ac1f2c5736/abnf_rust-2.8.1-cp310-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:0a06561beb4ad4ac19b661e707e71a5a5b97e7da647488419467f989ab6fbe7a", size = 472754, upload-time = "2026-08-14T23:53:20.96Z" },
-    { url = "https://files.pythonhosted.org/packages/82/52/5a2b7ef6c373f88abfc1ee81e38f8084b699f282cc6eecd119f311ce3dde/abnf_rust-2.8.1-cp310-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:684e0cca4b0769d9f4b23e48c03485d63e4c373d6cdcd3cb7242a4c511bb514a", size = 479244, upload-time = "2026-08-14T23:53:22.381Z" },
-    { url = "https://files.pythonhosted.org/packages/e8/41/b3e6ff4b3c7144ae821d55de2f6f7409403cea8e3b1b5f4448c752e99c4c/abnf_rust-2.8.1-cp310-abi3-win_amd64.whl", hash = "sha256:d17becf65353f68af68a908a97d190009bf73ded068e7e01991d7963ea648b88", size = 318145, upload-time = "2026-08-14T23:53:23.899Z" },
+    { url = "https://files.pythonhosted.org/packages/5c/64/41a97ba4bf56a7a92a977c28f7cd6bb28fc9f1ee609b8c1ed239708b0494/abnf_rust-2.8.3-cp310-abi3-macosx_10_12_x86_64.whl", hash = "sha256:cd73076f8891b05848fd9308dda0b24c733a9a103e1a65ec846cd390475ae712", size = 435002, upload-time = "2026-08-24T13:59:46.249Z" },
+    { url = "https://files.pythonhosted.org/packages/fe/0b/cf73787bbc4f2f838b034f8fd864cde5c9befa2207e3bacd6687db9a5b00/abnf_rust-2.8.3-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:fd26b7859486cd3dce589cd6f46630d3a39adab9fa4fdf815fb0f27841f8d696", size = 432728, upload-time = "2026-08-24T13:59:47.598Z" },
+    { url = "https://files.pythonhosted.org/packages/89/17/86e0f79df4af492e9f1fafbe2c35119c6149e3bf592d922b28b7fd14c88c/abnf_rust-2.8.3-cp310-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:47974c24f51cd87e6fd9246798d47dc0d8ad87e2662eee1c059b25b0529a214b", size = 478748, upload-time = "2026-08-24T13:59:48.71Z" },
+    { url = "https://files.pythonhosted.org/packages/9b/97/5d5b01c0b96de24a062be1d7e857b45a713eca0145879d71478102c1ca3e/abnf_rust-2.8.3-cp310-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:7d4ac1c1d29f593ed3373a57a1b78ee5fc0d5a3c9c2e846ddd37bce15707a357", size = 485429, upload-time = "2026-08-24T13:59:49.866Z" },
+    { url = "https://files.pythonhosted.org/packages/6d/54/7338b5e07b22cef5e4049589303d92105b0b95a3b0cfbe84f2607a7d7b04/abnf_rust-2.8.3-cp310-abi3-win_amd64.whl", hash = "sha256:38663cf145d85f1022a34ecfe821b00d570761dfc5fc1e55d74016b109e58e1f", size = 321411, upload-time = "2026-08-24T13:59:51.131Z" },
 ]
 
 [[package]]
@@ -401,7 +401,7 @@ name = "exceptiongroup"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/50/79/66800aadf48771f6b62f7eb014e352e5d06856655206165d775e675a02c9/exceptiongroup-1.3.1.tar.gz", hash = "sha256:8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219", size = 30371, upload-time = "2025-11-21T23:01:54.787Z" }
 wheels = [
