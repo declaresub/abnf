@@ -53,7 +53,7 @@ dev = [
 'pytest-cov==7.1.0',
 'pytest-benchmark==5.2.3',
 'hypothesis==6.165.10',
-'ruff==0.16.3',
+'ruff==0.16.4',
 'setuptools==84.0.0',
 'tox==4.60.0',
 'setuptools_scm==10.2.1',
