@@ -44,7 +44,7 @@ requires-dist = [
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = "==7.1.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = "==0.16.6" },
     { name = "setuptools", marker = "extra == 'dev'", specifier = "==84.0.0" },
-    { name = "setuptools-scm", marker = "extra == 'dev'", specifier = "==10.2.2" },
+    { name = "setuptools-scm", marker = "extra == 'dev'", specifier = "==10.2.3" },
     { name = "sphinx", marker = "extra == 'docs'", specifier = "==8.1.3" },
     { name = "sphinx-copybutton", marker = "extra == 'docs'", specifier = "==0.5.2" },
     { name = "tox", marker = "extra == 'dev'", specifier = "==4.61.2" },
@@ -401,7 +401,7 @@ name = "exceptiongroup"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/50/79/66800aadf48771f6b62f7eb014e352e5d06856655206165d775e675a02c9/exceptiongroup-1.3.1.tar.gz", hash = "sha256:8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219", size = 30371, upload-time = "2025-11-21T23:01:54.787Z" }
 wheels = [
@@ -1019,7 +1019,7 @@ wheels = [
 
 [[package]]
 name = "setuptools-scm"
-version = "10.2.2"
+version = "10.2.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "packaging" },
@@ -1028,9 +1028,9 @@ dependencies = [
     { name = "typing-extensions", marker = "python_full_version < '3.11'" },
     { name = "vcs-versioning" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/cf/0b/12b674e0e567b1ecb3b24e3dd7e98b8fff36c4f470319629717c70c66a6b/setuptools_scm-10.2.2.tar.gz", hash = "sha256:36b5dcef6bbeee0bc76b7756d1b574b3762e2138611a4f18e898f22f1aaee462", size = 67111, upload-time = "2026-09-01T22:15:45.09Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3c/87/1ff7adcf6e03021ae58ce401565be3c9b8c739a44d14a8253d38b3754117/setuptools_scm-10.2.3.tar.gz", hash = "sha256:f179ed3e2a63cf5823e5ee9aa9ca08386219400443a0553224d72dde3f206b44", size = 67696, upload-time = "2026-09-03T13:03:29.565Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9a/9d/9b504c33edf83f6f09bea186fbd74e42eec8aeaf5821a81dec43cd685478/setuptools_scm-10.2.2-py3-none-any.whl", hash = "sha256:509585ce0628ede1c64ab1e40e7464481fb880c80a388effce9067bf6b2142fe", size = 29123, upload-time = "2026-09-01T22:15:43.831Z" },
+    { url = "https://files.pythonhosted.org/packages/4b/00/e9c0591b77186f6c1a8479500456ee72cd30730836c58b7a8a2654909c23/setuptools_scm-10.2.3-py3-none-any.whl", hash = "sha256:7fcf8ff55c95eb8b572a23c81495e5559b9b90f3e82fcf0952bb76c37de27a81", size = 29123, upload-time = "2026-09-03T13:03:28.346Z" },
 ]
 
 [[package]]
