@@ -53,10 +53,10 @@ dev = [
 'pytest-cov==7.1.0',
 'pytest-benchmark==5.3.0',
 'hypothesis==6.167.1',
-'ruff==0.16.5',
+'ruff==0.16.6',
 'setuptools==84.0.0',
 'tox==4.61.2',
-'setuptools_scm==10.2.2',
+'setuptools_scm==10.2.3',
 ]
 # `pip install abnf[rust]` pulls in the companion `abnf-rust`
 # distribution, which provides the compiled extension that
