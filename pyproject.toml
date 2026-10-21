@@ -78,22 +78,23 @@ rust = [
     # 2.8.1 added `set_exclude_hook` to the extension, and `abnf`
     # 2.8.1 paired with an older one died on import (issue #199).
     #
-    # 2.9.0 raises this to 2.8.3, the newest already on PyPI: 2.8.3
-    # made an undefined rule raise `GrammarError` in the engine
-    # rather than a `ParseError` an enclosing alternation could
-    # swallow, and `abnf` 2.9.0 assumes that.
-    #
-    # NEXT CYCLE, raise this to 2.9: `abnf` 2.9.0 changed the engine
-    # so a zero-length literal matches at end of input (issue #260),
-    # so 2.9.0 paired with an older extension disagrees with itself
-    # about `"a" ""`.  It cannot be named here -- 2.9 is what this
-    # release publishes.
+    # 2.9.1 raises this to 2.9, the deferral 2.9.0 recorded: `abnf`
+    # 2.9.0 changed the engine so a zero-length literal matches at
+    # end of input (issue #260), and 2.9.0 paired with 2.8.3 -- which
+    # its own floor allowed -- disagrees with itself about `"a" ""`,
+    # parsing it on pure Python and rejecting it on the extension
+    # (issue #271).
     #
     # The bound is necessary but not sufficient: it lags by a release
-    # and is only advisory for lockfile installs, so `abnf.parser`
-    # also checks the backend's capabilities and falls back rather
-    # than crashing.
-    'abnf-rust>=2.8.3,<3',
+    # and is only advisory for lockfile installs.  `abnf.parser` also
+    # gates the backend, but that gate tests for the *names* it binds,
+    # so it catches only an extension missing API -- #199's import
+    # crash.  It cannot see a semantic change behind an unchanged
+    # surface, which is exactly #260: `Literal` exists in both, so the
+    # stale extension is selected silently, with no warning and no
+    # fallback.  For that class of mismatch this floor is the only
+    # protection.
+    'abnf-rust>=2.9,<3',
 ]
 # Documentation toolchain (Sphinx + MyST for Markdown prose + autodoc for the
 # API reference from docstrings).  Kept separate from `dev` so running the test

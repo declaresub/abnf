@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.9.1
+
+* The `[rust]` extra's floor is raised to `abnf-rust>=2.9`.  `abnf` 2.9.0
+  changed the engine so a zero-length literal matches at end of input (issue
+  #260), but shipped a floor of `>=2.8.3` -- the newest version on PyPI when
+  it was built, since the release resolves this dependency before publishing.
+  `pip install abnf[rust]` could therefore pair 2.9.0 with an extension that
+  predates the change, and the two disagree: `tail = "a" ""` parses `"a"` on
+  the pure-Python backend and raises `ParseError` on `abnf-rust` 2.8.3.  This
+  repository's own `test_260_empty_literal_matches_at_eof_*` tests fail
+  against that pairing.
+
+  Nothing detected it.  The backend gate added in 2.8.2 checks that the
+  extension provides every name `abnf.parser` binds, which catches an
+  extension missing API -- the 2.8.1-with-2.7.0 import crash of issue #199 --
+  but it cannot see a behavioural change behind an unchanged surface.
+  `Literal` is present in both versions, so the stale extension was selected
+  with no warning, no fallback, and wrong parse results.  2.8.2's note that
+  the runtime check "carries the guarantee" holds only for the missing-API
+  case; for a semantic divergence this floor is the only protection
+  (https://github.com/declaresub/abnf/issues/271).
+
 ## 2.9.0
 
 * `abnf.grammars.rfc9051`'s `tagged-ext-comp` and `option-val-comp` match
