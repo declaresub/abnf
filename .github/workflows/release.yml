@@ -70,7 +70,7 @@ jobs:
           sbom/requirements.txt --output-format JSON > sbom/abnf.cdx.json
 
     - name: Upload abnf dists
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
       with:
         name: abnf-dists
         path: dist/
@@ -80,7 +80,7 @@ jobs:
       # download only abnf-dists / abnf-rust-*, never see it.  Only the
       # final github-release job (which downloads every artifact) picks
       # it up and attaches it to the release.
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
       with:
         name: abnf-sbom
         path: sbom/abnf.cdx.json
@@ -129,7 +129,7 @@ jobs:
         args: --out dist
 
     - name: Upload abnf-rust sdist
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
       with:
         name: abnf-rust-sdist
         path: packages/abnf-rust/dist/*.tar.gz
@@ -260,7 +260,7 @@ jobs:
         pytest --ignore=tests/fuzz --ignore=tests/benchmarks
 
     - name: Upload wheel
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
       with:
         name: abnf-rust-wheel-${{ matrix.target.label }}
         path: packages/abnf-rust/dist/*.whl
@@ -285,7 +285,7 @@ jobs:
 
     steps:
     - name: Download abnf dists
-      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
       with:
         name: abnf-dists
         path: dist/
@@ -321,7 +321,7 @@ jobs:
 
     steps:
     - name: Download abnf dists
-      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
       with:
         name: abnf-dists
         path: dist/
@@ -356,7 +356,7 @@ jobs:
 
     steps:
     - name: Download all abnf-rust dists
-      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
       with:
         pattern: abnf-rust-*
         merge-multiple: true
@@ -385,7 +385,7 @@ jobs:
 
     steps:
     - name: Download all abnf-rust dists
-      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
       with:
         pattern: abnf-rust-*
         merge-multiple: true
@@ -414,7 +414,7 @@ jobs:
 
     steps:
     - name: Download every artifact from this workflow run
-      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
       with:
         # `merge-multiple: true` collapses every uploaded artifact
         # into a single `dist/` so Sigstore signs them in one batch
