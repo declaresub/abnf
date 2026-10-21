@@ -1,11 +1,31 @@
-include *.md
+# setuptools_scm's file finder adds every git-tracked file to the sdist
+# on its own, so the `include` lines below are not what decides the
+# contents -- the `prune`/`exclude` lines at the bottom are.  Without
+# them a file lands in the published sdist merely by being committed,
+# which is how packages/, docs/ and CLAUDE.md all shipped in 2.9.0
+# while pyproject.toml claimed they were excluded.  Directives apply in
+# order, so the removals must come after the includes.
+
 include *.lock
+include CHANGELOG.md
+include README.md
+include SECURITY.md
 include LICENSE.txt
-include pytest.ini
-include requirements-dev.txt
 include tox.ini
-include *.yaml
 recursive-include tests *.grammar
 recursive-include tests *.json
 recursive-include tests *.py
 recursive-include tests *.tst
+
+# packages/ builds the companion `abnf-rust` distribution, which is
+# published separately; nothing in the `abnf` sdist reads it.
+prune packages
+# Documentation is built by Read the Docs from the repo, not the sdist.
+prune docs
+# CI definitions and the editor/hook/agent files are development
+# material, of no use to anyone unpacking the sdist.
+prune .github
+exclude CLAUDE.md
+exclude .gitignore
+exclude .pre-commit-config.yaml
+exclude .readthedocs.yaml
