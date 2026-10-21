@@ -108,6 +108,9 @@ docs = [
 ]
 
 [tool.check-manifest]
+# These are tracked in git but deliberately kept out of the sdist, which
+# is what MANIFEST.in's `prune`/`exclude` lines do; listed here so
+# check-manifest does not report the resulting difference as a mistake.
 ignore = [
     # The packages/abnf-rust subtree builds the companion `abnf-rust`
     # distribution and is intentionally excluded from the `abnf` sdist.

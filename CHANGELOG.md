@@ -22,6 +22,23 @@
   case; for a semantic divergence this floor is the only protection
   (https://github.com/declaresub/abnf/issues/271).
 
+* The sdist no longer ships the repository's development material.
+  `setuptools_scm`'s file finder adds every git-tracked file to the sdist on
+  its own, which quietly overrode what `MANIFEST.in` asked for: 2.9.0
+  published `packages/` -- the separate `abnf-rust` distribution's Rust
+  sources -- along with `docs/`, `.github/`, `CLAUDE.md`, `.gitignore` and
+  `.pre-commit-config.yaml`.  The first two shipped while `pyproject.toml`
+  asserted that both were excluded.  `MANIFEST.in` now prunes them
+  explicitly, after the includes, since directives apply in order.
+
+  Two entries it named had not existed for some time -- `pytest.ini` and
+  `requirements-dev.txt` -- and are removed, which also silences a warning
+  on every build.
+
+  Nothing changes for `pip install abnf`: the wheel contained only the
+  package and its `py.typed` marker all along.  `tests/` and `uv.lock` are
+  still shipped, which is deliberate.
+
 ## 2.9.0
 
 * `abnf.grammars.rfc9051`'s `tagged-ext-comp` and `option-val-comp` match
