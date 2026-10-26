@@ -54,7 +54,7 @@ dev = [
 'pytest-benchmark==5.3.0',
 'hypothesis==6.168.5',
 'ruff==0.17.0',
-'setuptools==84.0.0',
+'setuptools==84.1.0',
 'tox==4.65.0',
 'setuptools_scm==10.3.4',
 ]
